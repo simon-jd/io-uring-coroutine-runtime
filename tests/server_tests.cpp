@@ -407,8 +407,10 @@ int main(int argc, char** argv) {
                  if (round % 2) a.send("*3\r\n$3\r\nSET\r\n$7\r\npartial\r\n$5\r\nab");
                  a.reset_close(); // RST with replies still being written
              }
+             // The server copies 20 x 50 replies of 256 KiB before it sees the resets; under
+             // TSan that takes about 2.5 s on the development machine and longer on CI runners.
              REQUIRE("connection count returns to the clients still connected",
-                     eventually([&] { return connected_clients(watcher) == 1; }));
+                     eventually([&] { return connected_clients(watcher) == 1; }, 15000ms));
              CHECK(watcher.call({"EXISTS", "partial"}) == ":0\r\n");
              s.stop();
          }},
