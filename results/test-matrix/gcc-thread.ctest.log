@@ -1,0 +1,258 @@
+UpdateCTestConfiguration  from :<build>/gcc-thread/DartConfiguration.tcl
+Parse Config file:<build>/gcc-thread/DartConfiguration.tcl
+Test project <build>/gcc-thread
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+      Start  1: task
+
+1: Test command: <build>/gcc-thread/task_tests
+1: Working Directory: <build>/gcc-thread
+1: Test timeout computed to be: 300
+1: PASS value_and_nesting
+1: PASS exception_propagates
+1: PASS unstarted_task_is_destroyed
+1: PASS spawn_and_event
+1: PASS spawned_exception_fails_block_on
+1: PASS deadlock_is_reported
+1: PASS shutdown_destroys_blocked_tasks
+1: Passed 7 cases
+ 1/10 Test  #1: task .............................   Passed    0.02 sec
+test 2
+      Start  2: reactor
+
+2: Test command: <build>/gcc-thread/reactor_tests
+2: Working Directory: <build>/gcc-thread
+2: Test timeout computed to be: 300
+2: PASS nop_sleep_and_ring_flags
+2: PASS send_recv_hand_buffers_back
+2: PASS linked_timeout
+2: PASS destroyed_coroutine_recv_in_flight
+2: PASS destroyed_coroutine_keeps_fixed_buffer_until_cqe
+2: cancel-ack before target CQE in 100/100 rounds
+2: PASS cancel_ack_does_not_release_buffer
+2: defer ring: 4621 cancelled, 5379 completed
+2: plain ring: 4339 cancelled, 5661 completed
+2: PASS cancel_vs_complete_race
+2: PASS cancel_before_submit_short_circuits
+2: 1 MiB over a 4 KiB socket buffer: 256 send submissions
+2: PASS short_writes_are_resumed
+2: PASS peer_reset
+2: PASS shutdown_with_ops_in_flight
+2: PASS read_op_reads_a_pipe
+2: PASS when_all_returns_results_in_order
+2: PASS when_all_rethrows_after_every_child_finished
+2: PASS destroyed_when_all_detaches_children
+2: PASS direct_descriptors_carry_io
+2: PASS stale_direct_descriptor_is_refused
+2: PASS direct_index_reserved_while_operation_in_flight
+2: PASS stale_and_foreign_leases_rejected
+2: Passed 19 cases
+ 2/10 Test  #2: reactor ..........................   Passed    1.56 sec
+test 3
+      Start  3: buffer
+
+3: Test command: <build>/gcc-thread/buffer_tests
+3: Working Directory: <build>/gcc-thread
+3: Test timeout computed to be: 300
+3: PASS fixed_pool_fifo_waiters
+3: PASS destroyed_waiter_returns_handed_lease
+3: PASS multishot_recv_with_explicit_return
+3: PASS enobufs_when_provided_ring_is_empty
+3: PASS destroyed_stream_returns_buffers
+3: SEND_ZC over loopback: 1 notification(s), 1 reported copied
+3: PASS send_zc_buffer_held_until_notification
+3: PASS send_zc_owned_buffer
+3: PASS shutdown_waits_for_zc_notification
+3: rol: shutdown timed out with 1 operations in flight
+3: PASS shutdown_timeout_abandons_instead_of_freeing
+3: Passed 9 cases
+ 3/10 Test  #3: buffer ...........................   Passed    0.18 sec
+test 4
+      Start  4: runtime
+
+4: Test command: <build>/gcc-thread/runtime_tests
+4: Working Directory: <build>/gcc-thread
+4: Test timeout computed to be: 300
+4: PASS call_every_core_with_payloads
+4: PASS call_every_core_with_payloads/unbatched
+4: PASS call_every_core_with_payloads/busy_poll
+4: PASS call_every_core_with_payloads/doorbell
+4: PASS call_every_core_with_payloads/doorbell_busy_poll
+4: PASS posts_are_delivered_before_rings_close
+4: PASS posts_are_delivered_before_rings_close/unbatched
+4: PASS posts_are_delivered_before_rings_close/busy_poll
+4: PASS posts_are_delivered_before_rings_close/doorbell
+4: PASS posts_are_delivered_before_rings_close/doorbell_busy_poll
+4: PASS ping_pong_token_ring
+4: PASS ping_pong_token_ring/unbatched
+4: PASS ping_pong_token_ring/busy_poll
+4: PASS ping_pong_token_ring/doorbell
+4: PASS ping_pong_token_ring/doorbell_busy_poll
+4: calls answered 5384, refused after shutdown began 32
+4: PASS shutdown_with_calls_in_flight
+4: calls answered 4348, refused after shutdown began 32
+4: PASS shutdown_with_calls_in_flight/unbatched
+4: calls answered 5206, refused after shutdown began 32
+4: PASS shutdown_with_calls_in_flight/busy_poll
+4: calls answered 4256, refused after shutdown began 32
+4: PASS shutdown_with_calls_in_flight/doorbell
+4: calls answered 5070, refused after shutdown began 32
+4: PASS shutdown_with_calls_in_flight/doorbell_busy_poll
+4: MSG_RINGs for 64 concurrent calls: 1
+4: PASS concurrent_calls_share_message_rings
+4: MSG_RINGs for 64 concurrent calls: 64
+4: PASS concurrent_calls_share_message_rings/unbatched
+4: MSG_RINGs for 64 concurrent calls: 1
+4: PASS concurrent_calls_share_message_rings/busy_poll
+4: queue pushes for 64 concurrent calls: 1
+4: PASS concurrent_calls_share_message_rings/doorbell
+4: queue pushes for 64 concurrent calls: 1
+4: PASS concurrent_calls_share_message_rings/doorbell_busy_poll
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
+4: PASS sleeping_core_is_woken_for_every_message
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
+4: PASS sleeping_core_is_woken_for_every_message/unbatched
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
+4: PASS sleeping_core_is_woken_for_every_message/busy_poll
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 49, core 0 doorbells 7939
+4: PASS sleeping_core_is_woken_for_every_message/doorbell
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
+4: PASS sleeping_core_is_woken_for_every_message/doorbell_busy_poll
+4: PASS root_exception_is_rethrown
+4: PASS root_exception_is_rethrown/unbatched
+4: PASS root_exception_is_rethrown/busy_poll
+4: PASS root_exception_is_rethrown/doorbell
+4: PASS root_exception_is_rethrown/doorbell_busy_poll
+4: PASS refused_request_fails_the_call
+4: PASS refused_post_is_dropped_and_counted
+4: replies sent again: 3
+4: PASS refused_reply_is_sent_again
+4: doorbells 3, rung again 2
+4: PASS refused_doorbell_is_rung_again
+4: Passed 39 cases
+ 4/10 Test  #4: runtime ..........................   Passed    1.69 sec
+test 5
+      Start  5: ipc
+
+5: Test command: <build>/gcc-thread/ipc_tests
+5: Working Directory: <build>/gcc-thread
+5: Test timeout computed to be: 300
+5: PASS sealed_snapshot_roundtrip
+5: PASS producer_crash_before_consumer_maps
+5: PASS producer_exit_without_export
+5: PASS identity_generation_version_and_length
+5: PASS malformed_ancillary_data_has_no_fd_leak
+5: PASS reject_unsealed_truncated_and_non_memfd
+5: PASS seals_prevent_mutation_and_resize
+5: PASS invalid_creation_socket_and_closed_peer
+5: PASS repeated_import_release_returns_fd_baseline
+5: PASS detached_receive_closes_received_descriptor
+5: PASS sendmsg_owns_descriptor_copies
+5: Passed 11 cases
+ 5/10 Test  #5: ipc ..............................   Passed    0.08 sec
+test 6
+      Start  6: kv
+
+6: Test command: <build>/gcc-thread/kv_tests
+6: Working Directory: <build>/gcc-thread
+6: Test timeout computed to be: 1500
+6: PASS parses_arrays_and_inline_commands
+6: PASS split_input_parses_identically
+6: PASS incomplete_input_waits
+6: PASS protocol_errors
+6: PASS local_commands_and_errors
+6: PASS routes_keys_to_their_cores
+6: PASS protocol_error_ends_the_read_with_a_reply
+6: Passed 7 cases
+ 6/10 Test  #6: kv ...............................   Passed    3.51 sec
+test 7
+      Start  7: server_uring
+
+7: Test command: <build>/gcc-thread/server_tests "--server" "<build>/gcc-thread/kv_server" "--io" "uring"
+7: Working Directory: <build>/gcc-thread
+7: Test timeout computed to be: 600
+7: PASS basic_commands
+7: PASS pipeline_split_across_reads
+7: PASS large_values
+7: PASS protocol_error_closes_after_reply
+7: PASS slow_reader_does_not_block_other_connections
+7: PASS abrupt_disconnects_are_cleaned_up
+7: PASS many_clients_match_a_sequential_model
+7: answered 2265 of 20000 pipelined requests before the connection closed
+7: PASS shutdown_answers_received_requests
+7: shutdown took 2974 ms (drain limit 1500 ms)
+7: PASS shutdown_completes_when_a_peer_never_reads
+7: PASS shutdown_waits_for_requests_in_progress
+7: PASS direct_descriptors
+7: PASS fixed_buffer_replies
+7: Passed 12 cases
+ 7/10 Test  #7: server_uring .....................   Passed    9.41 sec
+test 8
+      Start  8: server_epoll
+
+8: Test command: <build>/gcc-thread/server_tests "--server" "<build>/gcc-thread/kv_server" "--io" "epoll"
+8: Working Directory: <build>/gcc-thread
+8: Test timeout computed to be: 600
+8: PASS basic_commands
+8: PASS pipeline_split_across_reads
+8: PASS large_values
+8: PASS protocol_error_closes_after_reply
+8: PASS slow_reader_does_not_block_other_connections
+8: PASS abrupt_disconnects_are_cleaned_up
+8: PASS many_clients_match_a_sequential_model
+8: answered 11195 of 20000 pipelined requests before the connection closed
+8: PASS shutdown_answers_received_requests
+8: shutdown took 1849 ms (drain limit 1500 ms)
+8: PASS shutdown_completes_when_a_peer_never_reads
+8: Passed 9 cases
+ 8/10 Test  #8: server_epoll .....................   Passed    5.11 sec
+test 9
+      Start  9: server_asio
+
+9: Test command: <build>/gcc-thread/server_tests "--server" "<build>/gcc-thread/kv_server" "--io" "asio"
+9: Working Directory: <build>/gcc-thread
+9: Test timeout computed to be: 600
+9: PASS basic_commands
+9: PASS pipeline_split_across_reads
+9: PASS large_values
+9: PASS protocol_error_closes_after_reply
+9: PASS slow_reader_does_not_block_other_connections
+9: PASS abrupt_disconnects_are_cleaned_up
+9: PASS many_clients_match_a_sequential_model
+9: answered 13357 of 20000 pipelined requests before the connection closed
+9: PASS shutdown_answers_received_requests
+9: shutdown took 1826 ms (drain limit 1500 ms)
+9: PASS shutdown_completes_when_a_peer_never_reads
+9: Passed 9 cases
+ 9/10 Test  #9: server_asio ......................   Passed    5.14 sec
+test 10
+      Start 10: server_uring_doorbell
+
+10: Test command: <build>/gcc-thread/server_tests "--server" "<build>/gcc-thread/kv_server" "--io" "uring" "--server-arg" "--xcore" "--server-arg" "doorbell"
+10: Working Directory: <build>/gcc-thread
+10: Test timeout computed to be: 600
+10: PASS basic_commands
+10: PASS pipeline_split_across_reads
+10: PASS large_values
+10: PASS protocol_error_closes_after_reply
+10: PASS slow_reader_does_not_block_other_connections
+10: PASS abrupt_disconnects_are_cleaned_up
+10: PASS many_clients_match_a_sequential_model
+10: answered 2265 of 20000 pipelined requests before the connection closed
+10: PASS shutdown_answers_received_requests
+10: shutdown took 2807 ms (drain limit 1500 ms)
+10: PASS shutdown_completes_when_a_peer_never_reads
+10: PASS shutdown_waits_for_requests_in_progress
+10: PASS direct_descriptors
+10: PASS fixed_buffer_replies
+10: Passed 12 cases
+10/10 Test #10: server_uring_doorbell ............   Passed    8.75 sec
+
+100% tests passed, 0 tests failed out of 10
+
+Total Test time (real) =  35.46 sec

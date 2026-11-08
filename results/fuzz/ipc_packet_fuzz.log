@@ -1,0 +1,24 @@
+date: 2026-11-07T20:06:09Z
+commit: df7ae97
+clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+command: ipc_packet_fuzz -max_total_time=600 -print_final_stats=1 <corpus>
+
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2684291902
+INFO: Loaded 1 modules   (62 inline 8-bit counters): 62 [0x5860a5881520, 0x5860a588155e), 
+INFO: Loaded 1 PC tables (62 PCs): 62 [0x5860a5881560,0x5860a5881940), 
+INFO:      165 files found in ./.cache/fuzz-corpus
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: seed corpus: files: 165 min: 1b max: 1002b total: 46768b rss: 33Mb
+#166	INITED cov: 35 ft: 78 corp: 49/7148b exec/s: 0 rss: 36Mb
+#2097152	pulse  cov: 35 ft: 79 corp: 50/7922b lim: 4096 exec/s: 1048576 rss: 446Mb
+#4194304	pulse  cov: 35 ft: 79 corp: 50/7922b lim: 4096 exec/s: 1048576 rss: 459Mb
+#8388608	pulse  cov: 35 ft: 79 corp: 50/7922b lim: 4096 exec/s: 932067 rss: 459Mb
+#16777216	pulse  cov: 35 ft: 79 corp: 50/7922b lim: 4096 exec/s: 932067 rss: 459Mb
+Done 482464087 runs in 601 second(s)
+stat::number_of_executed_units: 482464087
+stat::average_exec_per_sec:     802768
+stat::new_units_added:          42
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              489
+exit code: 0

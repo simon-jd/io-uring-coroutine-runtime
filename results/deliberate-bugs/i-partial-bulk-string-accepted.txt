@@ -1,0 +1,25 @@
+mutation: i-partial-bulk-string-accepted
+what: Treat a bulk string as complete before all its bytes (and the CRLF after them) have arrived.
+test: kv_tests split_input_parses_identically
+expected: assertion 'split input parses to the same commands' failed
+
+--- kv/resp.cpp
++++ kv/resp.cpp (mutated)
+@@ -116,9 +116,7 @@
+                 return fail("Protocol error: invalid bulk length");
+             const std::size_t start = lcr + 2;
+             const std::size_t ulen = static_cast<std::size_t>(len);
+-            if (d.size() - start < ulen + 2) return parse_status::incomplete;
+-            if (d[start + ulen] != '\r' || d[start + ulen + 1] != '\n')
+-                return fail("Protocol error: bulk string not terminated by CRLF");
++            if (d.size() < start) return parse_status::incomplete;
+             cmd.args.push_back(d.substr(start, ulen));
+             p = start + ulen + 2;
+         }
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL split_input_parses_identically: assertion 'split input parses to the same commands' failed: parse_chunked(data, {cut}) == whole at <work>/i-partial-bulk-string-accepted/src/tests/kv_tests.cpp:131
+
+result: CAUGHT

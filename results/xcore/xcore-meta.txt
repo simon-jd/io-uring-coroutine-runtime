@@ -1,0 +1,8 @@
+date: 2026-11-07T15:31:58Z
+commit: c653dc8
+kernel: 7.0.0-38-generic
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+pinned cpus: 4,6 (SMT siblings: cpu4=4-5, cpu6=6-7)
+command: nice taskset -c 4,6 xcore_bench --reps 7 --ops 400000 --cpus 4,6
+loadavg before: 3.79 4.79 4.95
+loadavg after: 3.95 4.75 4.93

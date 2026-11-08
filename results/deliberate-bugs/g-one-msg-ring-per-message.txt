@@ -1,0 +1,24 @@
+mutation: g-one-msg-ring-per-message
+what: Send every cross-core message with its own MSG_RING even when batching is on.
+test: runtime_tests concurrent_calls_share_message_rings
+expected: assertion 'concurrent calls to one core share one MSG_RING' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -770,7 +770,7 @@
+         ++outbox_pending_;
+     }
+     ob.tail = n;
+-    if (!cfg_.batch_messages) flush_target(target);
++    flush_target(target);
+ }
+ 
+ void reactor::flush_messages() noexcept {
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+MSG_RINGs for 64 concurrent calls: 64
+FAIL concurrent_calls_share_message_rings: assertion 'concurrent calls to one core share one MSG_RING' failed: rings == 1 at <work>/g-one-msg-ring-per-message/src/tests/runtime_tests.cpp:238
+
+result: CAUGHT

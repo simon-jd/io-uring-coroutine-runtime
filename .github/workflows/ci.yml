@@ -1,0 +1,67 @@
+# GitHub's ubuntu-24.04 runners (kernel 6.8+) have io_uring enabled.
+name: ci
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        sanitizer: [none, address, thread]
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build g++-14 clang
+      - name: Allow TSan on high-entropy ASLR kernels
+        if: matrix.sanitizer == 'thread'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/downloads
+            .cache/liburing-2.14
+            .cache/asio-1-36-0
+          key: deps-${{ runner.os }}-${{ hashFiles('scripts/build-liburing.sh', 'scripts/fetch-asio.sh') }}
+      - name: Build pinned liburing, fetch pinned Asio
+        run: scripts/build-liburing.sh && scripts/fetch-asio.sh
+      - name: Configure
+        run: |
+          if [ "${{ matrix.compiler }}" = gcc ]; then cxx=g++-14; cc=gcc-14; else cxx=clang++; cc=clang; fi
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_C_COMPILER=$cc -DROL_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build -j 4
+      - name: Test
+        run: ctest --test-dir build -V
+  contract-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/downloads
+            .cache/liburing-2.14
+          key: liburing-2.14-${{ runner.os }}-${{ hashFiles('scripts/build-liburing.sh') }}
+      - name: Build pinned liburing
+        run: scripts/build-liburing.sh
+      - name: Deliberate bugs must fail named assertions
+        run: python3 scripts/deliberate-bugs.py --out ci-results/deliberate-bugs --work "$RUNNER_TEMP/bugs"
+      - name: Fuzz the IPC packet validator and the RESP parser, 60 seconds each
+        run: CORPUS="$RUNNER_TEMP/corpus" CORPUS_RESP="$RUNNER_TEMP/corpus-resp" scripts/run-fuzz.sh 60 ci-results/fuzz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: contract-checks
+          path: ci-results

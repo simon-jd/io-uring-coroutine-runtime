@@ -1,0 +1,22 @@
+mutation: h-drain-cuts-off-replies
+what: On shutdown, cancel replies still being sent together with the receives, instead of after the drain deadline.
+test: server_tests shutdown_waits_for_requests_in_progress
+expected: assertion 'requests received before shutdown are answered' failed
+
+--- server/uring_server.cpp
++++ server/uring_server.cpp (mutated)
+@@ -73,6 +73,7 @@
+     cs.draining = true;
+     if (cs.accept_cancel) cs.accept_cancel->request();
+     cs.recv_cancel->request();
++    cs.hard_cancel->request();
+     cs.watchdog_running = true;
+     r.spawn(watchdog(r, sh, cs));
+     maybe_drained(cs);
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL shutdown_waits_for_requests_in_progress: assertion 'requests received before shutdown are answered' failed: r1 == "+OK\r\n" && r2 == "+OK\r\n" && r3 == bulk("v") at <work>/h-drain-cuts-off-replies/src/tests/server_tests.cpp:546
+
+result: CAUGHT

@@ -1,0 +1,8 @@
+date: 2026-11-07T08:55:57Z
+commit: 1fc1573
+kernel: 7.0.0-38-generic
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+pinned cpus: 4,6 (SMT siblings: cpu4=4-5, cpu6=6-7)
+command: nice taskset -c 4,6 sanity_bench --reps 5 --ops 200000 --cpus 4,6
+loadavg before: 3.91 3.75 3.24
+loadavg after: 3.92 3.76 3.25

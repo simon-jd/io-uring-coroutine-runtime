@@ -1,0 +1,24 @@
+mutation: a-release-at-cancel-ack
+what: Release the operation's buffer when the ASYNC_CANCEL acknowledgement arrives instead of at the operation's own CQE.
+test: reactor_tests cancel_ack_does_not_release_buffer
+expected: assertion 'buffer stays with the operation after cancel-ack' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -686,6 +686,9 @@
+     // The acknowledgement says nothing about the target's buffers: they are
+     // released by the target's own CQE, which may come before or after this.
+     cancel_source* reporter = cs.reporter;
++    if (res == 0 && slots_[cs.target.index].active &&
++        slots_[cs.target.index].gen == cs.target.gen)
++        slots_[cs.target.index].lease.reset();
+     --cs.pending;
+     free_slot(ref);
+     if (reporter) reporter->on_ack(res);
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL cancel_ack_does_not_release_buffer: assertion 'buffer stays with the operation after cancel-ack' failed: !pool.try_acquire().has_value() at <work>/a-release-at-cancel-ack/src/tests/reactor_tests.cpp:175
+
+result: CAUGHT

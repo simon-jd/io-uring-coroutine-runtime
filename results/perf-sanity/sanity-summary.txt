@@ -1,0 +1,13 @@
+bench        variant          median ns/op       min       max  reps
+call_rtt     coop_taskrun           2864.6    2785.8    2979.2  5
+call_rtt     defer_taskrun          2842.7    2784.0    2974.1  5
+call_rtt     plain                  2826.3    2728.1    3081.1  5
+nop_batch    coop_taskrun             46.4      46.2      49.2  5
+nop_batch    defer_taskrun            45.8      44.5      49.0  5
+nop_batch    plain                    45.2      44.8      48.8  5
+nop_rtt      coop_taskrun            149.9     148.6     189.1  5
+nop_rtt      defer_taskrun           142.7     138.2     152.4  5
+nop_rtt      plain                   149.8     147.1     160.9  5
+post_flood   coop_taskrun            103.8      96.7     150.4  5
+post_flood   defer_taskrun           188.3     186.8     195.1  5
+post_flood   plain                   101.9      96.8     105.1  5
