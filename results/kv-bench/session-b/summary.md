@@ -27,6 +27,19 @@ Server CPU per request, uring / epoll, paired by repetition (median [min–max];
 | 2 | set_p1 | 1.006 [0.970–1.093] | 3 of 7 |
 | 2 | set_p16 | 1.028 [0.918–1.137] | 3 of 7 |
 
+Server CPU per request split into user and system time, ns (median; from per-thread utime/stime ticks):
+
+| cores | workload | uring user / sys | epoll user / sys | asio user / sys |
+| ---: | --- | ---: | ---: | ---: |
+| 1 | get_p1 | 340 / 2784 | 460 / 2821 | 544 / 2705 |
+| 1 | get_p16 | 200 / 192 | 236 / 199 | 210 / 189 |
+| 1 | set_p1 | 319 / 2751 | 471 / 2781 | 573 / 2660 |
+| 1 | set_p16 | 252 / 194 | 205 / 190 | 243 / 184 |
+| 2 | get_p1 | 534 / 2961 | 556 / 3164 | 770 / 3106 |
+| 2 | get_p16 | 244 / 211 | 211 / 206 | 262 / 207 |
+| 2 | set_p1 | 548 / 3048 | 564 / 3029 | 856 / 3095 |
+| 2 | set_p16 | 243 / 207 | 239 / 195 | 292 / 208 |
+
 ### Closed loop (requests/s)
 
 | workload (1 core) | uring | epoll | asio | valkey |
