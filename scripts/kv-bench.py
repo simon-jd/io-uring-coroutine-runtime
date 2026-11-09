@@ -16,7 +16,8 @@ closed-loop workloads from --workloads: one build against another).
 
 --arm NAME=IO[@BUILD][,ARG...] adds an arm whose kv_server comes from BUILD
 (default --build), e.g. --arm uring-main=uring@.cache/baseline-main/build-release.
-The load generator is always --kvload, the same binary for every arm.
+The load generator is --kvload, the same binary for every arm, unless an arm
+names its own with the argument kvload=PATH (to compare load generators).
 Server and load generator run at --nice (default 0: timing runs happen in
 quiet windows, where a positive nice value let other jobs crowd the measured
 CPUs).
@@ -366,7 +367,8 @@ class Bench:
                 if f.exists():
                     src = " (" + f.read_text().strip().splitlines()[0] + ")"
             lines.append(f"arm {arm['name']}: --io {arm['io']} {' '.join(arm.get('args', []))} "
-                         f"from {arm.get('build') or a.build}{src}")
+                         f"from {arm.get('build') or a.build}{src}" +
+                         (f", load generator {arm['kvload']}" if arm.get("kvload") else ""))
         (self.out / f"{a.suite}-meta.txt").write_text("\n".join(lines) + "\n")
 
     def niced(self, cmd):
@@ -431,8 +433,8 @@ class Bench:
             p.wait()
             return "killed"
 
-    def kvload(self, mode, port, extra):
-        cmd = self.niced(["taskset", "-c", self.args.client_cpus, str(self.kvload_bin), mode,
+    def kvload(self, mode, port, extra, binary=None):
+        cmd = self.niced(["taskset", "-c", self.args.client_cpus, str(binary or self.kvload_bin), mode,
                "--port", str(port), "--threads", str(CLIENT_THREADS), "--cpus", self.args.client_cpus,
                "--keys", str(KEYS), "--value-size", str(VALUE)] + extra)
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=300)
@@ -510,8 +512,9 @@ class Bench:
     def run_arm(self, rep, arm, cores, workloads):
         cpus = self.cpus(cores)
         p, port, cmd = self.start(arm, cores, cpus)
+        gen = arm.get("kvload")
         try:
-            self.kvload("preload", port, [])
+            self.kvload("preload", port, [], gen)
             conns = str(50 * cores)
             for w in workloads:
                 kind = w[0]
@@ -521,14 +524,14 @@ class Bench:
                              "--warmup", "1", "--conns", conns,
                              "--get-ratio", "1" if op == "get" else "0"]
                     self.measure(rep, arm, cores, p.pid, f"{op}_p{pipe}",
-                                 lambda: self.kvload("closed", port, extra))
+                                 lambda: self.kvload("closed", port, extra, gen))
                 elif kind == "open":
                     _, rate = w
                     extra = ["--rate", str(rate * cores), "--duration", str(self.args.duration + 3),
                              "--warmup", "2", "--conns", conns, "--get-ratio", "0.9",
                              "--seed", str(rep + 1)]
                     self.measure(rep, arm, cores, p.pid, f"open_{rate * cores // 1000}k",
-                                 lambda: self.kvload("open", port, extra))
+                                 lambda: self.kvload("open", port, extra, gen))
                 elif kind == "vb":
                     _, pipe, n = w
                     self.measure(rep, arm, cores, p.pid, f"vb_get_p{pipe}",
@@ -608,7 +611,11 @@ def parse_arm(spec):
     name, rest = spec.split("=", 1)
     parts = rest.split(",")
     io, _, build = parts[0].partition("@")
-    arm = {"name": name, "kind": "kv", "io": io, "args": parts[1:]}
+    arm = {"name": name, "kind": "kv", "io": io, "args": [a for a in parts[1:] if not a.startswith("kvload=")]}
+    for a in parts[1:]:
+        if a.startswith("kvload="):
+            p = Path(a[len("kvload="):])
+            arm["kvload"] = str(p if p.is_absolute() else ROOT / p)
     if build:
         p = Path(build)
         arm["build"] = str(p if p.is_absolute() else ROOT / p)
