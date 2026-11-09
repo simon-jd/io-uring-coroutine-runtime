@@ -1,0 +1,95 @@
+diff --git a/include/rol/reactor.hpp b/include/rol/reactor.hpp
+index 538e651..6f36dbe 100644
+--- a/include/rol/reactor.hpp
++++ b/include/rol/reactor.hpp
+@@ -105,6 +105,13 @@ struct reactor_config {
+     // sleep (default). false announces first and submits in the same
+     // io_uring_enter that waits; kept to measure that alternative.
+     bool submit_before_announce = true;
++    // Register the ring's descriptor with the reactor's thread (Linux 5.18):
++    // io_uring_enter then names the ring by its slot in the thread's
++    // registered-ring table instead of looking the descriptor up. When the
++    // kernel refuses, the reactor uses the plain descriptor; false skips the
++    // attempt (the tests run both paths). (IORING_SETUP_NO_SQARRAY needs no
++    // option: liburing 2.14 asks for it and falls back on its own.)
++    bool register_ring_fd = true;
+     // Test hook, empty in production: called for every MSG_RING this reactor
+     // sends (target core, true for a doorbell). A non-negative result replaces
+     // the target ring's descriptor; a descriptor that is not a ring makes the
+@@ -412,6 +419,9 @@ public:
+     const reactor_stats& stats() const noexcept { return stats_; }
+     std::size_t in_flight() const noexcept { return stats_.in_flight; }
+     unsigned setup_flags() const noexcept { return setup_flags_; }
++    // Whether the ring has the SQ index array, and its registered descriptor.
++    bool has_sq_array() const noexcept { return !(setup_flags_ & IORING_SETUP_NO_SQARRAY); }
++    bool ring_fd_registered() const noexcept { return ring_fd_registered_; }
+     int ring_fd() const noexcept { return ring_.ring_fd; }
+ 
+     fixed_buffer_pool& fixed_buffers();
+@@ -537,6 +547,7 @@ private:
+     reactor_config cfg_;
+     io_uring ring_{};
+     unsigned setup_flags_ = 0;
++    bool ring_fd_registered_ = false;
+     bool ring_open_ = false;
+     bool closing_ = false;
+     bool closed_ = false;
+diff --git a/src/reactor.cpp b/src/reactor.cpp
+index 7872ad7..46f8d0c 100644
+--- a/src/reactor.cpp
++++ b/src/reactor.cpp
+@@ -54,6 +54,10 @@ reactor::reactor(reactor_config cfg, runtime* rt, unsigned core)
+     if (rc < 0) throw Failure(Error::system, "io_uring_queue_init_params failed", -rc);
+     ring_open_ = true;
+     setup_flags_ = p.flags;
++    // A registered ring descriptor is per thread: the reactor's own thread
++    // creates it here and is the only one that enters the ring. Refused (old
++    // kernel, table full): liburing keeps using the plain descriptor.
++    if (cfg.register_ring_fd) ring_fd_registered_ = io_uring_register_ring_fd(&ring_) == 1;
+     if (rt_) {
+         outbox_.resize(rt_->size());
+         resend_doorbell_.assign(rt_->size(), 0);
+diff --git a/tests/reactor_tests.cpp b/tests/reactor_tests.cpp
+index 0802027..fa5dfad 100644
+--- a/tests/reactor_tests.cpp
++++ b/tests/reactor_tests.cpp
+@@ -1,6 +1,7 @@
+ // Operation lifetime, cancellation and shutdown: the ownership contract.
+ #include "test.hpp"
+ #include "rol/when_all.hpp"
++#include <cstdio>
+ #include <fcntl.h>
+ #include <algorithm>
+ #include <atomic>
+@@ -61,6 +62,31 @@ int main(int argc, char** argv) {
+                  }(r));
+                  CHECK(r.in_flight() == 0);
+              }},
++            {"optional_ring_features_and_their_fallback",
++             [] {
++                 // With and without the registered ring descriptor: the same
++                 // operations give the same results.
++                 for (int mode = 0; mode < 2; ++mode) {
++                     reactor_config c;
++                     c.register_ring_fd = mode == 1;
++                     reactor r(c);
++                     if (!c.register_ring_fd) CHECK(!r.ring_fd_registered());
++                     socket_pair p;
++                     r.block_on([](reactor& re, int a, int b) -> task<void> {
++                         for (int i = 0; i < 300; ++i) { // more SQEs than the ring has entries
++                             auto s = co_await re.send(a, text("ping"));
++                             CHECK(s.res == 4);
++                             auto v = co_await re.recv(b, owned_buffer::allocate(16));
++                             CHECK(v.res == 4 && v.buffer.view() == "ping");
++                         }
++                         CHECK((co_await re.sleep(1ms)).res == -ETIME);
++                     }(r, p.fd[0], p.fd[1]));
++                     CHECK(r.in_flight() == 0);
++                     std::printf("mode %d: sq array %s, ring fd %s\n", mode,
++                                 r.has_sq_array() ? "yes" : "no",
++                                 r.ring_fd_registered() ? "registered" : "plain");
++                 }
++             }},
+             {"send_recv_hand_buffers_back",
+              [] {
+                  socket_pair p;

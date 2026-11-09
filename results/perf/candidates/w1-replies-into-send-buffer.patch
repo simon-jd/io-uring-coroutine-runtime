@@ -1,0 +1,142 @@
+diff --git a/kv/engine.cpp b/kv/engine.cpp
+index 0543e76..f7d9dcb 100644
+--- a/kv/engine.cpp
++++ b/kv/engine.cpp
+@@ -367,27 +367,7 @@ std::string_view plan::part_reply(const part& p) const noexcept {
+ }
+ 
+ void plan::assemble(std::string& out) {
+-    for (const auto& e : entries_) {
+-        if (e.how == combine::copy) {
+-            out += part_reply(parts_[e.first]);
+-            continue;
+-        }
+-        long long total = 0;
+-        bool failed = false;
+-        for (std::uint32_t i = 0; i < e.count && !failed; ++i) {
+-            const auto r = part_reply(parts_[e.first + i]);
+-            if (!r.empty() && r[0] == '-') {
+-                out += r;
+-                failed = true;
+-            } else if (e.how == combine::sum) {
+-                long long v = 0;
+-                if (r.size() >= 3 && r[0] == ':' && parse_ll(r.substr(1, r.size() - 3), v)) total += v;
+-            }
+-        }
+-        if (failed) continue;
+-        if (e.how == combine::sum) reply_int(out, total);
+-        else reply_simple(out, "OK");
+-    }
++    assemble_with([&out](std::string_view piece) { out += piece; });
+ }
+ 
+ bool consume(parser& ps, command& cmd, plan& p, std::string_view data, std::size_t& pos) {
+diff --git a/kv/engine.hpp b/kv/engine.hpp
+index 418f6ab..9aed901 100644
+--- a/kv/engine.hpp
++++ b/kv/engine.hpp
+@@ -96,6 +96,10 @@ public:
+ 
+     // After every batch is back: appends all replies in request order.
+     void assemble(std::string& out);
++    // The same, handing each piece to append(std::string_view) instead, so a
++    // front end can write the replies straight into its send buffer.
++    template <class Append>
++    void assemble_with(Append&& append);
+ 
+ private:
+     enum class combine : std::uint8_t { copy, sum, all_ok };
+@@ -128,6 +132,34 @@ private:
+     double sleep_ = 0;
+ };
+ 
++template <class Append>
++void plan::assemble_with(Append&& append) {
++    std::string combined; // only for replies summed or merged over several cores
++    for (const auto& e : entries_) {
++        if (e.how == combine::copy) {
++            append(part_reply(parts_[e.first]));
++            continue;
++        }
++        long long total = 0;
++        bool failed = false;
++        for (std::uint32_t i = 0; i < e.count && !failed; ++i) {
++            const auto r = part_reply(parts_[e.first + i]);
++            if (!r.empty() && r[0] == '-') {
++                append(r);
++                failed = true;
++            } else if (e.how == combine::sum) {
++                long long v = 0;
++                if (r.size() >= 3 && r[0] == ':' && parse_ll(r.substr(1, r.size() - 3), v)) total += v;
++            }
++        }
++        if (failed) continue;
++        combined.clear();
++        if (e.how == combine::sum) reply_int(combined, total);
++        else reply_simple(combined, "OK");
++        append(std::string_view(combined));
++    }
++}
++
+ // Parses every complete command in `data` from `pos` into `p`. Returns false on
+ // a protocol error (already added to the plan as the last reply). Stops early
+ // after QUIT.
+diff --git a/server/uring_server.cpp b/server/uring_server.cpp
+index cfafda8..b4a7e29 100644
+--- a/server/uring_server.cpp
++++ b/server/uring_server.cpp
+@@ -86,6 +86,18 @@ task<std::unique_ptr<kv::batch>> forward_one(reactor& r, shared& sh, unsigned ta
+     });
+ }
+ 
++// Appends `piece` to the first `used` bytes of `buf`, growing it to the next
++// power of two when it does not fit.
++void put(owned_buffer& buf, std::size_t& used, std::string_view piece) {
++    if (buf.capacity() - used < piece.size()) {
++        auto bigger = owned_buffer::allocate(std::bit_ceil(used + piece.size()));
++        if (used) std::memcpy(bigger.storage().data(), buf.storage().data(), used);
++        buf = std::move(bigger);
++    }
++    if (!piece.empty()) std::memcpy(buf.storage().data() + used, piece.data(), piece.size());
++    used += piece.size();
++}
++
+ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
+     unique_fd sock(raw_fd);
+     const config& cfg = sh.cfg;
+@@ -164,9 +176,11 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
+                 if (plan.sleep_seconds() > 0)
+                     (void)co_await r.sleep(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::duration<double>(plan.sleep_seconds())));
+-                out.clear();
+-                plan.assemble(out);
+                 bool sent = false;
++                if (use_fixed) {
++                    out.clear();
++                    plan.assemble(out);
++                }
+                 if (use_fixed && out.size() <= r.fixed_buffers().buffer_size()) {
+                     if (auto lease = r.fixed_buffers().try_acquire()) {
+                         std::memcpy(lease->data().data(), out.data(), out.size());
+@@ -186,12 +200,16 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
+                     }
+                 }
+                 if (!sent) {
+-                    if (sendbuf.capacity() < out.size())
+-                        sendbuf = owned_buffer::allocate(std::bit_ceil(out.size()));
+-                    std::memcpy(sendbuf.storage().data(), out.data(), out.size());
+-                    sendbuf.resize(out.size());
++                    // Replies go straight from the batches into the send buffer.
++                    std::size_t used = 0;
++                    if (use_fixed) {
++                        put(sendbuf, used, out);
++                    } else {
++                        plan.assemble_with([&](std::string_view piece) { put(sendbuf, used, piece); });
++                    }
++                    sendbuf.resize(used);
+                     std::size_t off = 0;
+-                    while (off < out.size()) {
++                    while (off < used) {
+                         auto s = co_await r.send(fd, std::move(sendbuf), off, {.cancel = cs.hard_cancel});
+                         sendbuf = std::move(s.buffer);
+                         if (s.res <= 0) {

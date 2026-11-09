@@ -1,0 +1,206 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 637f9b3..f7263c0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -91,6 +91,10 @@ endforeach()
+ add_test(NAME server_uring_doorbell COMMAND server_tests --server $<TARGET_FILE:kv_server>
+          --io uring --server-arg --xcore --server-arg doorbell)
+ set_tests_properties(server_uring_doorbell PROPERTIES TIMEOUT 600)
++# ... and with a spin before sleeping.
++add_test(NAME server_uring_doorbell_spin COMMAND server_tests --server $<TARGET_FILE:kv_server>
++         --io uring --server-arg --xcore --server-arg doorbell --server-arg --spin-us --server-arg 20)
++set_tests_properties(server_uring_doorbell_spin PROPERTIES TIMEOUT 600)
+ 
+ if(ROL_SANITIZER STREQUAL "none")
+   foreach(bench sanity_bench xcore_bench)
+diff --git a/include/rol/reactor.hpp b/include/rol/reactor.hpp
+index 538e651..3b684d9 100644
+--- a/include/rol/reactor.hpp
++++ b/include/rol/reactor.hpp
+@@ -93,6 +93,13 @@ struct reactor_config {
+     bool return_posts = true;
+     // Never sleep in io_uring_enter; poll for completions instead.
+     bool busy_poll = false;
++    // Before sleeping, spin this long watching for work: completions the
++    // kernel has queued for this ring (IORING_SQ_TASKRUN, so the ring is set up
++    // with IORING_SETUP_TASKRUN_FLAG) and, on the doorbell transport, the
++    // shared-memory queues. Work found: the iteration does not sleep. Nothing:
++    // it sleeps as usual (the doorbell handshake follows the spin unchanged).
++    // The iteration's SQEs are submitted before the spin. 0: no spin.
++    std::chrono::nanoseconds spin_before_sleep{0};
+     // Size of the registered file table for direct descriptors (0: none).
+     unsigned direct_files = 0;
+     // Cross-core transport. false: every chain travels in the user_data of an
+@@ -137,6 +144,8 @@ struct reactor_stats {
+     std::uint64_t doorbells = 0;         // MSG_RING SQEs sent only to wake a core
+     std::uint64_t wait_aborts = 0;       // waits skipped: the re-check found messages
+     std::uint64_t ring_retries = 0;      // refused MSG_RINGs sent again (replies, doorbells)
++    std::uint64_t spins_with_work = 0;   // spins before sleeping that found work
++    std::uint64_t spins_idle = 0;        // ... that found none (the core then slept)
+     std::uint64_t enters = 0;            // loop iterations that entered the kernel
+     std::uint64_t blocking_enters = 0;   // ... of which waited for a completion
+     std::uint64_t abandoned = 0; // still in flight when shutdown gave up
+@@ -519,6 +528,7 @@ private:
+     void ring_doorbell(unsigned target) noexcept;
+     int message_ring_fd(unsigned target, bool doorbell) const;
+     bool inbound_pending() const noexcept;
++    bool spin_for_work() noexcept;
+     void drain_inbound() noexcept;
+     void resend_refused() noexcept;
+     void on_message_chain(detail::xnode* head) noexcept;
+diff --git a/server/main.cpp b/server/main.cpp
+index 8e5503c..3a5a7a8 100644
+--- a/server/main.cpp
++++ b/server/main.cpp
+@@ -19,7 +19,7 @@ namespace {
+                  "                 [--bind ADDR] [--port P] [--drain-ms MS] [--stats]\n"
+                  "  io_uring only: [--ring defer|coop] [--xcore ring|doorbell|doorbell-early]\n"
+                  "                 [--no-batch]\n"
+-                 "                 [--busy-poll] [--direct]\n"
++                 "                 [--busy-poll] [--spin-us N] [--direct]\n"
+                  "                 [--send owned|fixed] [--recv-buffers N] [--max-queued N]\n");
+     std::exit(2);
+ }
+@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
+         else if (a == "--no-batch") cfg.batch = false;
+         else if (a == "--xcore") cfg.xcore = val();
+         else if (a == "--busy-poll") cfg.busy_poll = true;
++        else if (a == "--spin-us") cfg.spin_us = static_cast<unsigned>(std::atoi(val()));
+         else if (a == "--direct") cfg.direct = true;
+         else if (a == "--send") cfg.send = val();
+         else if (a == "--recv-buffers") cfg.recv_buffers = static_cast<unsigned>(std::atoi(val()));
+diff --git a/server/server.hpp b/server/server.hpp
+index 801146e..323091b 100644
+--- a/server/server.hpp
++++ b/server/server.hpp
+@@ -27,6 +27,7 @@ struct config {
+     std::string xcore = "ring";      // ring (chains in MSG_RING) | doorbell (shared-memory
+                                      // queues) | doorbell-early (announce before submitting)
+     bool busy_poll = false;
++    unsigned spin_us = 0;            // spin this long before sleeping (0: no spin)
+     bool direct = false;             // registered (direct) descriptors for connections
+     std::string send = "owned";      // owned (heap buffer) | fixed (registered buffer)
+     unsigned recv_buffers = 2048;    // provided buffers per core
+diff --git a/server/uring_server.cpp b/server/uring_server.cpp
+index cfafda8..a7c3597 100644
+--- a/server/uring_server.cpp
++++ b/server/uring_server.cpp
+@@ -285,7 +285,8 @@ task<void> core_root(reactor& r, shared& sh) {
+         std::fprintf(stderr,
+                      "stats core=%u io=uring enters=%llu blocking_enters=%llu sqes=%llu cqes=%llu "
+                      "message_rings=%llu doorbells=%llu queue_pushes=%llu wait_aborts=%llu "
+-                     "messages_sent=%llu replies_sent=%llu multishot_paused=%llu\n",
++                     "messages_sent=%llu replies_sent=%llu multishot_paused=%llu "
++                     "spins_with_work=%llu spins_idle=%llu\n",
+                      r.core(), static_cast<unsigned long long>(s.enters),
+                      static_cast<unsigned long long>(s.blocking_enters),
+                      static_cast<unsigned long long>(s.sqes), static_cast<unsigned long long>(s.cqes),
+@@ -295,7 +296,9 @@ task<void> core_root(reactor& r, shared& sh) {
+                      static_cast<unsigned long long>(s.wait_aborts),
+                      static_cast<unsigned long long>(s.messages_sent),
+                      static_cast<unsigned long long>(s.replies_sent),
+-                     static_cast<unsigned long long>(s.multishot_paused));
++                     static_cast<unsigned long long>(s.multishot_paused),
++                     static_cast<unsigned long long>(s.spins_with_work),
++                     static_cast<unsigned long long>(s.spins_idle));
+     }
+     cs.recv_cancel = cs.hard_cancel = cs.accept_cancel = cs.watchdog_cancel = nullptr;
+     cs.drained = nullptr;
+@@ -332,6 +335,7 @@ public:
+         rc.reactor.doorbell = cfg.xcore != "ring";
+         rc.reactor.submit_before_announce = cfg.xcore != "doorbell-early";
+         rc.reactor.busy_poll = cfg.busy_poll;
++        rc.reactor.spin_before_sleep = std::chrono::microseconds(cfg.spin_us);
+         if (cfg.direct) rc.reactor.direct_files = 4096;
+         if (cfg.send == "fixed") {
+             rc.reactor.fixed_buffers = 32;
+diff --git a/src/reactor.cpp b/src/reactor.cpp
+index 7872ad7..90c90ef 100644
+--- a/src/reactor.cpp
++++ b/src/reactor.cpp
+@@ -49,6 +49,11 @@ reactor::reactor(reactor_config cfg, runtime* rt, unsigned core)
+         throw Failure(Error::invalid, "sq_entries must be 1..32768");
+     io_uring_params p{};
+     p.flags = cfg.setup_flags | IORING_SETUP_CQSIZE;
++    // The spin watches IORING_SQ_TASKRUN, which the kernel sets only with
++    // TASKRUN_FLAG (allowed with COOP_TASKRUN or DEFER_TASKRUN).
++    if (cfg.spin_before_sleep.count() > 0 &&
++        (cfg.setup_flags & (IORING_SETUP_COOP_TASKRUN | IORING_SETUP_DEFER_TASKRUN)))
++        p.flags |= IORING_SETUP_TASKRUN_FLAG;
+     p.cq_entries = cfg.cq_entries ? cfg.cq_entries : cfg.sq_entries * 4;
+     const int rc = io_uring_queue_init_params(cfg.sq_entries, &ring_, &p);
+     if (rc < 0) throw Failure(Error::system, "io_uring_queue_init_params failed", -rc);
+@@ -252,6 +257,20 @@ void reactor::step(bool may_block, std::chrono::milliseconds wait_limit) {
+             wait_limit = std::chrono::milliseconds(1);
+     }
+     flush_messages();
++    if (may_block && cfg_.spin_before_sleep.count() > 0) {
++        if (io_uring_sq_ready(&ring_) > 0) {
++            ++stats_.enters;
++            const int s = io_uring_submit(&ring_);
++            if (s < 0 && s != -EINTR && s != -EBUSY && s != -EAGAIN)
++                throw Failure(Error::system, "io_uring_enter failed", -s);
++        }
++        if (spin_for_work()) {
++            may_block = false;
++            ++stats_.spins_with_work;
++        } else {
++            ++stats_.spins_idle;
++        }
++    }
+     // Doorbell transport: announce the sleep, then look at the queues once
+     // more. A sender publishes its chain and then reads the announcement; this
+     // core announces and then reads the queues. All four accesses are
+@@ -849,6 +868,20 @@ void reactor::ring_doorbell(unsigned target) noexcept {
+     ++stats_.doorbells;
+ }
+ 
++bool reactor::spin_for_work() noexcept {
++    const auto deadline = std::chrono::steady_clock::now() + cfg_.spin_before_sleep;
++    const bool watch_taskrun = (setup_flags_ & IORING_SETUP_TASKRUN_FLAG) != 0;
++    for (unsigned i = 1;; ++i) {
++        if (io_uring_cq_ready(&ring_) > 0) return true;
++        if (watch_taskrun && (IO_URING_READ_ONCE(*ring_.sq.kflags) & IORING_SQ_TASKRUN)) return true;
++        if (cfg_.doorbell && rt_ && inbound_pending()) return true;
++        if ((i & 31) == 0 && std::chrono::steady_clock::now() >= deadline) return false;
++#if defined(__x86_64__) || defined(__i386__)
++        __builtin_ia32_pause();
++#endif
++    }
++}
++
+ // Every source, this core included: a core may post to itself.
+ bool reactor::inbound_pending() const noexcept {
+     for (unsigned s = 0, n = rt_->size(); s < n; ++s)
+diff --git a/tests/runtime_tests.cpp b/tests/runtime_tests.cpp
+index 40ec97d..6155925 100644
+--- a/tests/runtime_tests.cpp
++++ b/tests/runtime_tests.cpp
+@@ -440,7 +440,8 @@ std::vector<Case> refusal_cases() {
+ int main(int argc, char** argv) {
+     // Every case runs with batched cross-core messages over MSG_RING (the
+     // default), with one MSG_RING per message, with busy-polling reactors,
+-    // and over the doorbell transport, sleeping and busy-polling.
++    // over the doorbell transport, sleeping and busy-polling, and with a spin
++    // before sleeping on both transports.
+     std::vector<Case> all;
+     for (auto& [name, fn] : cases()) {
+         all.emplace_back(name, [fn] { fn(runtime_config{}); });
+@@ -465,6 +466,17 @@ int main(int argc, char** argv) {
+             c.reactor.busy_poll = true;
+             fn(c);
+         });
++        all.emplace_back(name + "/spin", [fn] {
++            runtime_config c;
++            c.reactor.spin_before_sleep = std::chrono::microseconds(20);
++            fn(c);
++        });
++        all.emplace_back(name + "/doorbell_spin", [fn] {
++            runtime_config c;
++            c.reactor.doorbell = true;
++            c.reactor.spin_before_sleep = std::chrono::microseconds(20);
++            fn(c);
++        });
+     }
+     for (auto& c : refusal_cases()) all.push_back(std::move(c));
+     return run(all, argc, argv);

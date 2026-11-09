@@ -1,0 +1,176 @@
+diff --git a/bench/kvload.cpp b/bench/kvload.cpp
+index f6d0f8d..6858524 100644
+--- a/bench/kvload.cpp
++++ b/bench/kvload.cpp
+@@ -32,6 +32,7 @@
+ #include <cstdlib>
+ #include <cstring>
+ #include <deque>
++#include <memory>
+ #include <fcntl.h>
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+@@ -114,25 +115,51 @@ void append_set(std::string& out, int k, const std::string& value) {
+     out += "\r\n";
+ }
+ 
+-// Length of the first complete reply in `b` from `pos`, or 0. Sets `error`
+-// for '-' replies.
+-std::size_t reply_len(const std::string& b, std::size_t pos, bool& error) {
+-    if (pos >= b.size()) return 0;
+-    const auto e = b.find("\r\n", pos);
+-    if (e == std::string::npos) return 0;
+-    const char t = b[pos];
++// Length of the first complete reply in [p, end), or 0 if it is not all
++// there. Sets `error` for '-' replies.
++std::size_t reply_len(const char* p, const char* end, bool& error) {
++    if (p >= end) return 0;
++    const char t = *p;
+     error = t == '-';
+-    if (t == '+' || t == '-' || t == ':') return e + 2 - pos;
+     if (t == '$') {
+-        const long n = std::strtol(b.c_str() + pos + 1, nullptr, 10);
+-        if (n < 0) return e + 2 - pos;
+-        const std::size_t end = e + 2 + static_cast<std::size_t>(n) + 2;
+-        return end <= b.size() ? end - pos : 0;
++        // $<n>\r\n<n bytes>\r\n, or $-1\r\n
++        const char* q = p + 1;
++        if (q < end && *q == '-') {
++            const void* nl = std::memchr(q, '\n', static_cast<std::size_t>(end - q));
++            return nl ? static_cast<std::size_t>(static_cast<const char*>(nl) + 1 - p) : 0;
++        }
++        std::size_t n = 0;
++        while (q < end && *q >= '0' && *q <= '9') n = n * 10 + static_cast<std::size_t>(*q++ - '0');
++        if (end - q < 2) return 0;
++        const std::size_t total = static_cast<std::size_t>(q + 2 - p) + n + 2;
++        return static_cast<std::size_t>(end - p) >= total ? total : 0;
++    }
++    if (t == '+' || t == '-' || t == ':') {
++        const void* nl = std::memchr(p, '\n', static_cast<std::size_t>(end - p));
++        return nl ? static_cast<std::size_t>(static_cast<const char*>(nl) + 1 - p) : 0;
+     }
+     std::fprintf(stderr, "kvload: unexpected reply type '%c'\n", t);
+     std::exit(1);
+ }
+ 
++std::size_t reply_len(const std::string& b, std::size_t pos, bool& error) {
++    return reply_len(b.data() + pos, b.data() + b.size(), error);
++}
++
++// Receive buffer of one connection: replies are parsed where recv put them;
++// only an incomplete tail is moved to the front.
++struct rx_buffer {
++    static constexpr std::size_t cap = 64 * 1024;
++    std::unique_ptr<char[]> data{new char[cap]};
++    std::size_t len = 0;
++    char* free_space() noexcept { return data.get() + len; }
++    std::size_t free_bytes() const noexcept { return cap - len; }
++    void consume(std::size_t n) noexcept {
++        if (n < len) std::memmove(data.get(), data.get() + n, len - n);
++        len -= n;
++    }
++};
++
+ void pin(int cpu) {
+     cpu_set_t set;
+     CPU_ZERO(&set);
+@@ -187,7 +214,7 @@ struct conn_state {
+     std::int64_t next_send = 0;
+     std::string out;
+     std::size_t out_off = 0;
+-    std::string in;
++    rx_buffer in;
+     std::deque<std::int64_t> pending; // scheduled send times, in order
+     std::mt19937_64 rng;
+ };
+@@ -264,22 +291,17 @@ void run_open_thread(const options& o, int tid, std::int64_t t0, std::atomic<boo
+         now = now_ns();
+         for (int i = 0; i < n; ++i) {
+             auto& c = cs[evs[i].data.u32];
+-            char buf[65536];
+-            for (;;) {
+-                const ssize_t r = ::recv(c.fd, buf, sizeof(buf), 0);
+-                if (r > 0) {
+-                    c.in.append(buf, static_cast<std::size_t>(r));
+-                    if (static_cast<std::size_t>(r) < sizeof(buf)) break;
+-                    continue;
+-                }
+-                if (r < 0 && errno == EAGAIN) break;
++            const ssize_t r = ::recv(c.fd, c.in.free_space(), c.in.free_bytes(), 0);
++            if (r <= 0) {
++                if (r < 0 && errno == EAGAIN) continue;
+                 failed = true;
+                 return;
+             }
++            c.in.len += static_cast<std::size_t>(r);
+             std::size_t pos = 0;
+             for (;;) {
+                 bool err = false;
+-                const std::size_t len = reply_len(c.in, pos, err);
++                const std::size_t len = reply_len(c.in.data.get() + pos, c.in.data.get() + c.in.len, err);
+                 if (len == 0) break;
+                 pos += len;
+                 if (c.pending.empty()) {
+@@ -295,7 +317,12 @@ void run_open_thread(const options& o, int tid, std::int64_t t0, std::atomic<boo
+                     ++res.in_window;
+                 }
+             }
+-            c.in.erase(0, pos);
++            c.in.consume(pos);
++            if (c.in.free_bytes() == 0) {
++                std::fprintf(stderr, "kvload: reply larger than the receive buffer\n");
++                failed = true;
++                return;
++            }
+         }
+     }
+     const std::int64_t stop = now_ns();
+@@ -338,7 +365,7 @@ struct closed_conn {
+     std::size_t out_off = 0, out_end = 0;
+     int pending = 0;
+     std::int64_t sent_at = 0;
+-    std::string in;
++    rx_buffer in;
+ };
+ 
+ void run_closed_thread(const options& o, int tid, std::int64_t t0, std::atomic<bool>& failed,
+@@ -394,28 +421,28 @@ void run_closed_thread(const options& o, int tid, std::int64_t t0, std::atomic<b
+         if (now > grace_end) break;
+         for (int i = 0; i < n; ++i) {
+             auto& c = cs[evs[i].data.u32];
+-            char buf[65536];
+-            for (;;) {
+-                const ssize_t r = ::recv(c.fd, buf, sizeof(buf), 0);
+-                if (r > 0) {
+-                    c.in.append(buf, static_cast<std::size_t>(r));
+-                    if (static_cast<std::size_t>(r) < sizeof(buf)) break;
+-                    continue;
+-                }
+-                if (r < 0 && errno == EAGAIN) break;
++            const ssize_t r = ::recv(c.fd, c.in.free_space(), c.in.free_bytes(), 0);
++            if (r <= 0) {
++                if (r < 0 && errno == EAGAIN) continue;
+                 failed = true;
+                 return;
+             }
++            c.in.len += static_cast<std::size_t>(r);
+             std::size_t pos = 0;
+             for (;;) {
+                 bool err = false;
+-                const std::size_t len = reply_len(c.in, pos, err);
++                const std::size_t len = reply_len(c.in.data.get() + pos, c.in.data.get() + c.in.len, err);
+                 if (len == 0) break;
+                 pos += len;
+                 if (err) ++res.errors;
+                 if (--c.pending == 0) break;
+             }
+-            c.in.erase(0, pos);
++            c.in.consume(pos);
++            if (c.in.free_bytes() == 0) {
++                std::fprintf(stderr, "kvload: reply larger than the receive buffer\n");
++                failed = true;
++                return;
++            }
+             if (c.pending > 0) {
+                 if (!push(c)) {
+                     failed = true;

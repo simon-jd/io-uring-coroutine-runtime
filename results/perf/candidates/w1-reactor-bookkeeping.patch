@@ -1,0 +1,357 @@
+diff --git a/include/rol/detail/op_slot.hpp b/include/rol/detail/op_slot.hpp
+index 62d2489..269e1f8 100644
+--- a/include/rol/detail/op_slot.hpp
++++ b/include/rol/detail/op_slot.hpp
+@@ -4,7 +4,6 @@
+ #include <atomic>
+ #include <coroutine>
+ #include <cstdint>
+-#include <deque>
+ #include <memory>
+ #include <vector>
+ #include <linux/time_types.h>
+@@ -64,6 +63,16 @@ struct msg_storage {
+     socklen_t addrlen = 0;
+ };
+ 
++// Storage for cross-core message nodes: a free list per thread for each of a
++// few size classes. A node is usually freed by the thread that allocated it
++// (calls come back to their caller; batched posts are sent home), so the list
++// stays local. A node freed on another thread joins that thread's list; each
++// list keeps at most `keep` blocks and gives the rest back to the heap.
++namespace node_pool {
++void* allocate(std::size_t size);
++void release(void* p, std::size_t size) noexcept;
++} // namespace node_pool
++
+ // A cross-core message. Messages to one core are linked through `next` and
+ // sent as one chain, either in the user_data of an IORING_OP_MSG_RING or
+ // through the shared-memory queue for the (sender, target) pair. `stage` is
+@@ -81,6 +90,32 @@ struct xnode {
+     xnode* next = nullptr;
+     virtual ~xnode() = default;
+     virtual void run(reactor& target) noexcept = 0;
++    static void* operator new(std::size_t size) { return node_pool::allocate(size); }
++    static void operator delete(void* p, std::size_t size) noexcept { node_pool::release(p, size); }
++};
++
++// Results a multishot operation queued for its consumer, oldest first. A
++// vector with a read index: clearing an empty queue and popping cost a few
++// instructions, and slots of other kinds never allocate for it.
++class result_queue {
++public:
++    bool empty() const noexcept { return head_ == items_.size(); }
++    std::size_t size() const noexcept { return items_.size() - head_; }
++    void push_back(io_result r) { items_.push_back(r); }
++    const io_result& front() const noexcept { return items_[head_]; }
++    void pop_front() noexcept {
++        if (++head_ == items_.size()) clear();
++    }
++    void clear() noexcept {
++        items_.clear();
++        head_ = 0;
++    }
++    const io_result* begin() const noexcept { return items_.data() + head_; }
++    const io_result* end() const noexcept { return items_.data() + items_.size(); }
++
++private:
++    std::vector<io_result> items_;
++    std::size_t head_ = 0;
+ };
+ 
+ // One in-flight operation. Owned by the reactor, not by the awaiting coroutine.
+@@ -110,7 +145,7 @@ struct op_slot {
+     owned_buffer owned;
+     fixed_lease lease;
+     provided_buffer_ring* pring = nullptr;
+-    std::deque<io_result> queue;
++    result_queue queue;
+     std::unique_ptr<msg_storage> msg;
+     std::vector<unique_fd> fds;
+     std::unique_ptr<xnode> xcall;
+diff --git a/include/rol/reactor.hpp b/include/rol/reactor.hpp
+index 538e651..f6f292d 100644
+--- a/include/rol/reactor.hpp
++++ b/include/rol/reactor.hpp
+@@ -11,7 +11,6 @@
+ #include <chrono>
+ #include <coroutine>
+ #include <cstring>
+-#include <deque>
+ #include <exception>
+ #include <functional>
+ #include <memory>
+@@ -544,7 +543,15 @@ private:
+     std::thread::id thread_;
+     runtime* rt_ = nullptr;
+     unsigned core_ = 0;
+-    std::deque<detail::op_slot> slots_;
++    // The slot table: chunks of 64 slots that never move, so references stay
++    // valid while the table grows.
++    static constexpr std::uint32_t slot_chunk_bits = 6;
++    static constexpr std::uint32_t slot_chunk_mask = (1u << slot_chunk_bits) - 1;
++    detail::op_slot& raw_slot(std::uint32_t i) noexcept {
++        return slot_chunks_[i >> slot_chunk_bits][i & slot_chunk_mask];
++    }
++    std::vector<std::unique_ptr<detail::op_slot[]>> slot_chunks_;
++    std::uint32_t slot_count_ = 0;
+     std::vector<std::uint32_t> free_slots_;
+     detail::ready_list ready_;
+     detail::spawn_promise* spawned_ = nullptr;
+@@ -666,6 +673,13 @@ private:
+ 
+ // ---- template implementations ----
+ 
++inline detail::op_slot& reactor::slot_at(detail::slot_ref ref) noexcept {
++    ROL_INVARIANT(ref.index < slot_count_, "slot index out of range");
++    auto& s = raw_slot(ref.index);
++    ROL_INVARIANT(s.active && s.gen == ref.gen, "CQE or awaiter refers to a slot that is not in flight");
++    return s;
++}
++
+ namespace detail {
+ inline __kernel_timespec to_timespec(std::chrono::nanoseconds d) noexcept {
+     __kernel_timespec ts{};
+diff --git a/src/reactor.cpp b/src/reactor.cpp
+index 7872ad7..9628a5f 100644
+--- a/src/reactor.cpp
++++ b/src/reactor.cpp
+@@ -39,6 +39,56 @@ std::uint64_t tagged_pointer(ud_tag tag, const void* p) {
+ std::uint64_t tagged_value(ud_tag tag, std::uint64_t v) { return (std::uint64_t(tag) << 56) | v; }
+ } // namespace
+ 
++// ---------------------------------------------------------------- node pool
++
++namespace {
++constexpr std::size_t pool_classes = 4; // blocks of 64, 128, 192 and 256 bytes
++constexpr std::size_t pool_keep = 1024; // blocks kept per class and thread
++
++struct node_free_lists {
++    struct block {
++        block* next;
++    };
++    block* head[pool_classes] = {};
++    std::size_t count[pool_classes] = {};
++    bool alive = true;
++    ~node_free_lists() {
++        alive = false;
++        for (std::size_t c = 0; c < pool_classes; ++c)
++            for (block* b = std::exchange(head[c], nullptr); b;)
++                ::operator delete(static_cast<void*>(std::exchange(b, b->next)));
++    }
++};
++thread_local node_free_lists node_lists;
++
++std::size_t pool_class(std::size_t size) noexcept { return (size + 63) / 64 - 1; }
++} // namespace
++
++void* detail::node_pool::allocate(std::size_t size) {
++    const std::size_t c = pool_class(size);
++    if (c >= pool_classes) return ::operator new(size);
++    auto& l = node_lists;
++    if (auto* b = l.head[c]) {
++        l.head[c] = b->next;
++        --l.count[c];
++        return b;
++    }
++    return ::operator new((c + 1) * 64);
++}
++
++void detail::node_pool::release(void* p, std::size_t size) noexcept {
++    const std::size_t c = pool_class(size);
++    auto& l = node_lists;
++    if (c >= pool_classes || !l.alive || l.count[c] >= pool_keep) {
++        ::operator delete(p);
++        return;
++    }
++    auto* b = static_cast<node_free_lists::block*>(p);
++    b->next = l.head[c];
++    l.head[c] = b;
++    ++l.count[c];
++}
++
+ // ---------------------------------------------------------------- lifecycle
+ 
+ reactor::reactor(reactor_config cfg) : reactor(cfg, nullptr, 0) {}
+@@ -159,7 +209,7 @@ void reactor::close_direct(unsigned index, std::uint32_t gen) noexcept {
+     } catch (...) {
+         ROL_INVARIANT(false, "out of memory while allocating a close slot");
+     }
+-    auto& s = slots_[ref.index];
++    auto& s = raw_slot(ref.index);
+     s.detached = true;
+     s.pending = 1;
+     s.closes_file = static_cast<std::int32_t>(index);
+@@ -345,26 +395,22 @@ void reactor::dispatch(const io_uring_cqe& c) noexcept {
+ 
+ // ---------------------------------------------------------------- slots
+ 
+-detail::op_slot& reactor::slot_at(slot_ref ref) noexcept {
+-    ROL_INVARIANT(ref.index < slots_.size(), "slot index out of range");
+-    auto& s = slots_[ref.index];
+-    ROL_INVARIANT(s.active && s.gen == ref.gen, "CQE or awaiter refers to a slot that is not in flight");
+-    return s;
+-}
+-
+ slot_ref reactor::acquire_slot(op_kind kind) {
+     std::uint32_t index;
+     if (!free_slots_.empty()) {
+         index = free_slots_.back();
+         free_slots_.pop_back();
+     } else {
+-        if (slots_.size() >= std::numeric_limits<std::uint32_t>::max())
++        if (slot_count_ >= std::numeric_limits<std::uint32_t>::max() - slot_chunk_mask)
+             throw Failure(Error::full, "operation slot table exhausted");
+-        free_slots_.reserve(slots_.size() + 1);
+-        slots_.emplace_back();
+-        index = static_cast<std::uint32_t>(slots_.size() - 1);
++        free_slots_.reserve(std::size_t{slot_count_} + 1);
++        if ((slot_count_ & slot_chunk_mask) == 0) {
++            slot_chunks_.reserve(slot_chunks_.size() + 1);
++            slot_chunks_.emplace_back(new detail::op_slot[std::size_t{1} << slot_chunk_bits]);
++        }
++        index = slot_count_++;
+     }
+-    auto& s = slots_[index];
++    auto& s = raw_slot(index);
+     s.gen = (s.gen + 1) & detail::gen_mask;
+     if (s.gen == 0) s.gen = 1;
+     s.kind = kind;
+@@ -375,17 +421,18 @@ slot_ref reactor::acquire_slot(op_kind kind) {
+ }
+ 
+ void reactor::release_resources(op_slot& s) noexcept {
+-    s.owned = owned_buffer{};
+-    s.lease.reset();
++    // Most slots hold one resource or none: touch only what is there.
++    if (s.owned) s.owned = owned_buffer{};
++    if (s.lease) s.lease.reset();
+     if (s.pring) {
+         for (const auto& q : s.queue)
+             if (q.flags & IORING_CQE_F_BUFFER)
+                 s.pring->recycle(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT));
++        s.queue.clear();
++        s.pring = nullptr;
+     }
+-    s.queue.clear();
+-    s.pring = nullptr;
+-    s.fds.clear();
+-    s.xcall.reset();
++    if (!s.fds.empty()) s.fds.clear();
++    if (s.xcall) s.xcall.reset();
+ }
+ 
+ void reactor::free_slot(slot_ref ref) noexcept {
+@@ -454,12 +501,14 @@ void reactor::unregister_source(op_slot& s, slot_ref ref) noexcept {
+ 
+ void reactor::forget_source(cancel_source* src) noexcept {
+     for (auto ref : src->ops_) {
+-        if (ref.index < slots_.size() && slots_[ref.index].active && slots_[ref.index].gen == ref.gen)
+-            slots_[ref.index].source = nullptr;
++        if (ref.index < slot_count_ && raw_slot(ref.index).active && raw_slot(ref.index).gen == ref.gen)
++            raw_slot(ref.index).source = nullptr;
+     }
+     src->ops_.clear();
+-    for (auto& s : slots_)
++    for (std::uint32_t i = 0; i < slot_count_; ++i) {
++        auto& s = raw_slot(i);
+         if (s.active && s.kind == op_kind::cancel && s.reporter == src) s.reporter = nullptr;
++    }
+ }
+ 
+ io_uring_sqe* reactor::reserve_sqes(unsigned n) {
+@@ -648,8 +697,8 @@ task<send_all_result> reactor::send_all(file_ref fd, owned_buffer buf, op_option
+ // ---------------------------------------------------------------- cancellation
+ 
+ bool reactor::request_cancel(slot_ref ref, cancel_source* reporter) noexcept {
+-    if (ref.index >= slots_.size()) return false;
+-    auto& s = slots_[ref.index];
++    if (ref.index >= slot_count_) return false;
++    auto& s = raw_slot(ref.index);
+     if (!s.active || s.gen != ref.gen) return false;
+     if (s.kind == op_kind::cancel || s.kind == op_kind::xcall) return false;
+     if (s.kind == op_kind::multishot ? s.ended : s.primary_done) return false;
+@@ -661,7 +710,7 @@ bool reactor::request_cancel(slot_ref ref, cancel_source* reporter) noexcept {
+     } catch (...) {
+         ROL_INVARIANT(false, "out of memory while allocating a cancel slot");
+     }
+-    auto& cs = slots_[cref.index];
++    auto& cs = raw_slot(cref.index);
+     cs.detached = true;
+     cs.target = ref;
+     cs.reporter = reporter;
+@@ -1017,8 +1066,8 @@ void reactor::on_chain_failed(detail::xnode* head, int res) noexcept {
+ // ---------------------------------------------------------------- shutdown
+ 
+ void reactor::cancel_all() noexcept {
+-    for (std::uint32_t i = 0; i < slots_.size(); ++i) {
+-        auto& s = slots_[i];
++    for (std::uint32_t i = 0; i < slot_count_; ++i) {
++        auto& s = raw_slot(i);
+         if (s.active && s.kind != op_kind::cancel && s.kind != op_kind::xcall)
+             request_cancel({i, s.gen}, nullptr);
+     }
+@@ -1076,7 +1125,8 @@ void reactor::close_ring() noexcept {
+     if (stats_.in_flight > 0) {
+         // The kernel may still read or write these slots' memory. Leak it.
+         stats_.abandoned += stats_.in_flight;
+-        for (auto& s : slots_) {
++        for (std::uint32_t i = 0; i < slot_count_; ++i) {
++            auto& s = raw_slot(i);
+             if (!s.active) continue;
+             if (s.owned) park(std::make_shared<owned_buffer>(std::move(s.owned)));
+             if (s.msg) park(std::shared_ptr<detail::msg_storage>(std::move(s.msg)));
+diff --git a/tests/reactor_tests.cpp b/tests/reactor_tests.cpp
+index 0802027..8a00cc8 100644
+--- a/tests/reactor_tests.cpp
++++ b/tests/reactor_tests.cpp
+@@ -7,6 +7,9 @@
+ #include <chrono>
+ #include <random>
+ #include <thread>
++#include <iterator>
++#include <vector>
++#include <memory>
+ #include <sys/socket.h>
+ using namespace rol;
+ using namespace std::chrono_literals;
+@@ -61,6 +64,39 @@ int main(int argc, char** argv) {
+                  }(r));
+                  CHECK(r.in_flight() == 0);
+              }},
++            {"node_pool_hands_out_distinct_blocks",
++             [] {
++                 // Message nodes come from a per-thread pool. Live nodes must
++                 // never share memory, whichever thread freed the blocks.
++                 struct small_node final : detail::xnode {
++                     std::uint64_t mark[2] = {};
++                     void run(reactor&) noexcept override {}
++                 };
++                 struct big_node final : detail::xnode {
++                     std::uint64_t mark[20] = {};
++                     void run(reactor&) noexcept override {}
++                 };
++                 auto check_distinct = [](auto make) {
++                     using node = decltype(make());
++                     for (int round = 0; round < 3; ++round) {
++                         std::vector<node> live;
++                         for (std::uint64_t i = 0; i < 2000; ++i) {
++                             live.push_back(make());
++                             for (auto& m : live.back()->mark) m = i;
++                         }
++                         bool ok = true;
++                         for (std::uint64_t i = 0; i < live.size(); ++i)
++                             for (auto m : live[i]->mark) ok = ok && m == i;
++                         REQUIRE("live nodes never share memory", ok);
++                         // Free half on another thread: its pool takes them.
++                         std::vector<node> away(std::make_move_iterator(live.begin()),
++                                                std::make_move_iterator(live.begin() + 1000));
++                         std::thread([&away] { away.clear(); }).join();
++                     }
++                 };
++                 check_distinct([] { return std::make_unique<small_node>(); });
++                 check_distinct([] { return std::make_unique<big_node>(); });
++             }},
+             {"send_recv_hand_buffers_back",
+              [] {
+                  socket_pair p;
