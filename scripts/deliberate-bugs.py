@@ -51,9 +51,10 @@ MUTATIONS = [
         "what": "Release the operation's buffer when the awaiting coroutine is destroyed "
                 "(detach) instead of at the operation's CQE.",
         "file": "src/reactor.cpp",
-        "old": "    s.waiter = {};\n    s.detached = true;\n    ++stats_.detached;\n    unregister_source(s, ref);\n",
-        "new": "    s.waiter = {};\n    s.detached = true;\n    s.lease.reset();\n    ++stats_.detached;\n"
+        "old": "    s.waiter = {};\n    s.join = nullptr;\n    s.detached = true;\n    ++stats_.detached;\n"
                "    unregister_source(s, ref);\n",
+        "new": "    s.waiter = {};\n    s.join = nullptr;\n    s.detached = true;\n    s.lease.reset();\n"
+               "    ++stats_.detached;\n    unregister_source(s, ref);\n",
         "suite": "reactor",
         "case": "destroyed_coroutine_keeps_fixed_buffer_until_cqe",
         "expect": "assertion 'a new lease holder's bytes are not overwritten by the kernel' failed",
