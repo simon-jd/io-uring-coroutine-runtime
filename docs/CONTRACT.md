@@ -164,6 +164,12 @@ Ownership is the same on both:
   own outbox for the calling core; the caller's slot completes when that chain
   arrives. If the caller's coroutine is destroyed meanwhile, the slot keeps the
   node until the reply arrives, for the same reason it keeps buffers.
+- `co_await reactor::call_all(calls)` starts one call per (core, fn) pair from
+  one awaiter. Each call has its own slot and node, owned as above; the slots
+  share a counter in the awaiter, and the last reply resumes the caller, which
+  takes every result (and releases every slot) before it rethrows the first
+  failure. If the caller is destroyed with replies outstanding, every slot
+  detaches from the counter and keeps its node until its own reply arrives.
 - A **post** node is run by the target and, when batching, travels back in the
   next chain to the core that allocated it and is freed there; freeing it on
   the target costs one cross-thread free per message (measured in
@@ -266,6 +272,7 @@ Internal ownership invariants are checked in every build and abort with a
 message (`ROL_INVARIANT`): a CQE for a slot that is not in flight, a second
 result CQE for one operation, a notification nobody expects, a buffer released
 twice or by a stale lease, a provided buffer returned twice, an unpublished
-cross-core message, a reply for a slot that is not waiting for one, a refused
+cross-core message, a reply for a slot that is not waiting for one, a
+`call_all` caller resumed before every reply arrived, a refused
 doorbell for a core that does not exist, a direct descriptor unpinned more
 often than pinned.

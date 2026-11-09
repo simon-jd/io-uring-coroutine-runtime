@@ -10,41 +10,42 @@ messages over `IORING_OP_MSG_RING` or shared-memory queues with a doorbell), a
 sealed-memfd IPC protocol, and the server with its benchmark harness, all on
 one Linux machine over loopback.
 
-| GET, loopback, medians of 7 interleaved runs: [session A](results/kv-bench/session-a/summary.md) / [session B](results/kv-bench/session-b/summary.md) | io_uring runtime | epoll | Asio | Valkey 9.1.3 |
-| --- | ---: | ---: | ---: | ---: |
-| 1 server core, closed loop, pipeline depth 1: requests/s | 336 k / 315 k | 316 k / 305 k | 316 k / 306 k | 292 k / 277 k |
-| 1 core, depth 1: server CPU per request, µs | **2.94 / 3.13** | 3.15 / 3.29 | 3.16 / 3.26 | 3.39 / 3.57 |
-| 1 core, depth 16: requests/s | 2.69 M / 2.55 M | 2.71 M / 2.30 M | 2.67 M / 2.52 M | 2.10 M / 1.96 M |
-| 2 cores (shared-nothing keyspace), depth 1: requests/s | 604 k / 563 k | 581 k / 535 k | 534 k / 511 k | 279 k / 272 k |
-| 2 cores, depth 16: requests/s (**loss**) | 4.69 M / 4.40 M | **5.14 M / 4.56 M** | 3.01 M / 2.83 M | 3.03 M / 2.90 M |
-| 2 cores, depth 16: server CPU per request, µs (**loss**) | 0.417 / 0.449 | **0.383 / 0.418** | 0.424 / 0.464 | 0.683 / 0.712 |
+| GET, loopback, medians of 7 interleaved runs: [session A](results/kv-bench/perf-session-a/summary.md) / [session B](results/kv-bench/perf-session-b/summary.md) | io_uring runtime | same, before the performance round | epoll | Asio | Valkey 9.1.3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 server core, closed loop, pipeline depth 1: requests/s | 346 k / 351 k | 338 k / 338 k | 327 k / 334 k | 325 k / 325 k | 296 k / 298 k |
+| 1 core, depth 1: server CPU per request, µs | **2.88 / 2.86** | 2.91 / 2.96 | 3.02 / 2.99 | 3.03 / 3.05 | 3.41 / 3.34 |
+| 1 core, depth 16: requests/s | **3.72 M / 3.70 M** | 2.68 M / 2.96 M | 3.56 M / 3.54 M | 3.55 M / 3.48 M | 2.14 M / 2.16 M |
+| 2 cores (shared-nothing keyspace), depth 16: requests/s | 5.47 M / 5.22 M | 5.49 M / 5.37 M | 4.94 M / 5.07 M | 3.64 M / 3.77 M | 3.16 M / 3.15 M |
+| 2 cores, depth 16: server CPU per request, µs (**loss**) | 0.303 / 0.315 | 0.364 / 0.367 | **0.295 / 0.290** | 0.328 / 0.318 | 0.650 / 0.654 |
+| 4 cores, depth 16: requests/s | 8.92 M / 8.36 M | 8.88 M / 8.80 M | **9.11 M / 8.99 M** | 7.28 M / 7.18 M | 3.99 M / 3.94 M |
+| 4 cores, depth 16: server CPU per request, µs (**loss**) | 0.363 / 0.368 | 0.436 / 0.436 | **0.318 / 0.320** | 0.350 / 0.352 | 0.976 / 0.988 |
 
-What holds in both sessions: at 1 core and depth 1 the io_uring front end needs
-6–7% less server CPU per request than epoll (paired by repetition, 0.927 and
-0.939; lower in 7 of 7 repetitions in each session, for GET and for SET), and
-because the server is saturated there it serves more requests (6% more in A, 3%
-in B). Multishot receive needs no receive system call when each read carries
-one request. At 2 cores and depth 16 it needs 3–8% more CPU per request than
-epoll (paired ratios 1.03–1.08 for GET and SET; lower in at most 3 of 7
-repetitions) and serves fewer requests, although the throughput ranges overlap. At 1 core and depth 16 there is no
-consistent difference. Absolute numbers moved between the sessions (B ran at a
-lower clock, 5.27 vs. 5.38 GHz median, with more interference); an earlier
-single-session 11% throughput lead at depth 1 shrank to 3–6%. A busy SMT sibling
-costs about 30% on its own, so 1-core runs with interference were rejected and
-repeated under a rule fixed before either session. A doorbell transport for
-cross-core messages, built to remove the 2-core loss, is correct and three
-times faster for a round trip between spinning cores, but on the server it
-delivered 4.78 vs. 5.24 M requests/s at depth 16 with the same CPU per request,
-so it is an option, not the default. The test suites pass in 6 compiler ×
-sanitizer configurations, 10 of 10 deliberate contract violations are caught by
-named assertions, and both fuzz targets run clean ([results](results/README.md)).
+What holds in both sessions (paired by repetition, [details](results/README.md)): a
+performance round cut the server's CPU per request at depth 16 by 16–26%
+against the published code on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
+cell), mostly in code every front end shares (a one-pass path for RESP number
+lines, an open-addressing key table, one hash per key) and, with more than two
+cores, by awaiting all target cores from one awaiter. Against epoll, io_uring
+needs 4–6% less CPU per request at 1 core (depth 1, and depth 16 for GET), and
+at depth 16 4–8% more at 2 cores (at most 1 of 7 repetitions the other way)
+and 11–13% more at 4 cores (none). The extra is user time: about 130
+instructions per request more than epoll's loop at 2 cores and 280 at 4
+(callgrind), in the runtime's operation slots, message nodes and coroutine
+resumptions. Tried and dropped, each
+measured against the same baseline: leaner slot bookkeeping, replies written
+straight into the send buffer, a registered ring descriptor, a spin before
+sleeping (a quarter to a third less throughput) and a cheaper load-generator
+receive path ([design trade-offs](docs/design-tradeoffs.md), Part 3). The test
+suites pass in 6 compiler × sanitizer configurations, 13 of 13 deliberate
+contract violations are caught by named assertions, and both fuzz targets run
+clean.
 
-Limitations: one shared machine (a training job and a VM ran on the server
-CPUs' siblings in session B, per the per-run records), loopback only (client
-and server share the kernel's TCP work), 1 and 2 server cores (at 4 the load
-generator was the limit), no rejection rule at 2 cores, tail latencies
-dominated by other jobs, no profiler (`perf` is blocked), zero-copy send
-measured only on loopback.
+Limitations: one shared machine (other jobs' interference is recorded per
+run), loopback only (client and server share the kernel's TCP work), 1, 2 and 4
+server cores (4 at depth 16 only: at depth 1 the load generator is the limit),
+no rejection rule above 1 core, tail latencies dominated by other jobs, no
+hardware counters (`perf` is blocked; callgrind counts instructions, not
+cache misses), zero-copy send measured only on loopback.
 
 Details: [results](results/README.md), [ownership contract](docs/CONTRACT.md),
 [design trade-offs](docs/design-tradeoffs.md), [IPC protocol](docs/IPC.md).
@@ -68,11 +69,12 @@ with TSan. Without Asio the build skips that front end and its tests.
 | Script | What it does |
 | --- | --- |
 | `scripts/test-matrix.sh` | GCC and clang, each plain, ASan + UBSan and TSan; all suites |
-| `scripts/deliberate-bugs.py` | applies ten contract violations one at a time; each must fail its named assertion |
+| `scripts/deliberate-bugs.py` | applies thirteen contract violations one at a time; each must fail its named assertion |
 | `scripts/run-fuzz.sh [seconds]` | libFuzzer on the IPC packet validator and the RESP parser |
 | `scripts/build-valkey.sh` | Valkey 9.1.3 and valkey-benchmark from source (benchmark reference) |
 | `scripts/xcore-study.sh 4,6` | cross-core messaging study on two CPUs |
-| `scripts/kv-bench.py --suite main` | the server comparison, with per-run clock and interference records (also `variants`, `diag`, `crosscheck`, `probe`) |
+| `scripts/kv-bench.py --suite main` | the server comparison, with per-run clock and interference records (also `variants`, `diag`, `crosscheck`, `probe`, and `compare` for one build against another: `--arm NAME=IO@BUILD`) |
+| `scripts/callgrind-profile.sh`, `scripts/callgrind-summary.py` | user-space instructions per request by module, under callgrind |
 | `scripts/kv-summary.py` | tables from the raw benchmark lines |
 
 ## Run the server

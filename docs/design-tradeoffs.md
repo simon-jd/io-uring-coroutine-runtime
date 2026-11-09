@@ -2,7 +2,9 @@
 
 Decisions, the alternatives rejected, and the measurement or reasoning behind
 each. The first part covers the runtime core; the second the key-value server,
-the baselines and the performance study. Numbers come from the files under
+the baselines and the round-3 performance study; the third the performance
+round that followed (what was optimized, what was tried and dropped, and
+where the remaining loss sits). Numbers come from the files under
 [results/](../results/README.md); each section names its source. Numbers from
 different measurement sessions are never compared with each other.
 
@@ -192,7 +194,9 @@ per-request cost includes that machinery.
 
 ## Shared-nothing keyspace; core 0 hands out connections round-robin
 
-*Chosen:* key k belongs to core `fnv1a(k) mod cores`, and only that core's
+*Chosen:* key k belongs to the core picked by the upper half of its 64-bit
+hash (`kv::key_hash`; FNV-1a before the performance round, Part 3), and only
+that core's
 thread touches its shard. A connection lives on one core. Per read it runs its
 own core's commands in place and sends every other core one batch
 (`kv::plan`). Core 0 accepts and hands each connection to the next core in turn
@@ -211,9 +215,11 @@ between cores, not about routing.
 
 *Chosen:* a read's commands for core t travel as one `kv::batch` with their
 argument bytes copied (the receive buffer is reused while the batch is away).
-The connection awaits every target at once with `when_all` (one target: a plain
-`call`). The batch object goes to the target and back and is reused, so the
-steady state allocates only the call node.
+The connection awaits every target at once with `reactor::call_all` (one
+target: a plain `call`; `when_all` over a coroutine per target before the
+performance round, Part 3). The batch object goes to the target and back and
+is reused, so the steady state allocates the call nodes and, with several
+targets, one vector for the results.
 
 *Rejected:* one call per command (sixteen messages per read at pipeline depth
 16) and awaiting the targets one after another (one round trip per target).
@@ -397,8 +403,9 @@ the target and an RCU-deferred free (see above), and the reply needs another.
 Moving the chains into shared memory and ringing only sleeping cores (the
 doorbell transport above) removed those MSG_RINGs but not the loss: same CPU
 per request, lower throughput. Its size moved between the main sessions (3.8%
-and 7.7% for GET); its sign did not. Where the remaining cost sits is not
-established without a profiler (`perf_event_paranoid=4` on this host).
+and 7.7% for GET); its sign did not. The performance round (Part 3, "Where
+the CPU goes") located it: the extra time is user time, about 120 more
+instructions per request in the runtime and front end than in the epoll loop.
 
 ## Multishot receive into provided buffers, parsed in place, bounded
 
@@ -546,18 +553,242 @@ processes used CPU time on the server CPUs and their siblings, names the main
 ones: processes named `python` (the machine's training job, unpinned) and a
 QEMU VM; `python` was the largest of them in 11 of the 33 rejected runs.
 
-## Zero-copy send is not in the performance table## Zero-copy send is not in the performance table
+## Zero-copy send is not in the performance table
 
 Over loopback the kernel copies anyway (`IORING_SEND_ZC_REPORT_USAGE` reports
 it), so a loopback SEND_ZC number would not be a zero-copy result. The server
 uses plain sends.
 
-## No profiler
+## Profiling without perf
 
-`perf` is blocked (`perf_event_paranoid=4`) and there is no sudo. The study
-uses what is available without privileges: `getrusage(RUSAGE_THREAD)` and
+`perf` is blocked (`perf_event_paranoid=4`) and there is no sudo. Round 3
+used what is available without privileges: `getrusage(RUSAGE_THREAD)` and
 voluntary context switches per thread, `/proc/<pid>/task/*/schedstat` and
 `status` for the server's CPU time, run-queue wait and context switches,
 `/proc/stat` and `scaling_cur_freq` for the machine around it, the reactor's
 own counters (`io_uring_enter` calls, SQEs, CQEs, MSG_RINGs, doorbells, queue
-pushes) and the kernel source.
+pushes) and the kernel source. The performance round added callgrind
+(valgrind 3.26) for user-space instruction counts per function
+(`scripts/callgrind-profile.sh`, Part 3) and the per-thread user/system split
+in every benchmark summary. Neither sees cache misses on real hardware or the
+kernel's instructions.
+
+# Part 3: the performance round
+
+The question: how much cheaper can each module on the request path get, and
+where does the 2-core loss against epoll come from? Every candidate was built
+from its own source tree and measured against the published `main` (3eb4121)
+or against the branch before it, in one quiet window, interleaved in rotating
+order, under a decision rule committed before the run
+(`results/perf/w*/RULES.md`). Kept changes are separate commits; rejected ones
+are not in the code, and their diffs are in
+[`results/perf/candidates/`](../results/perf/candidates) so they can be
+measured again. The comparison with the other front ends at the end of the
+round is in the README (sessions `perf-session-a` and `perf-session-b`).
+
+## Where the CPU goes
+
+*User or kernel.* The harness records every server thread's user and system
+ticks. In round 3's sessions (GET, 2 cores, depth 16) the io_uring front end
+spent 218 and 244 ns of user time per request against epoll's 195 and 211,
+and 196 and 211 ns of system time against 199 and 206
+(`results/kv-bench/session-a`, `session-b`, table "split into user and system
+time"). The extra cost is user space; the kernel's share (MSG_RING, task work,
+the receive and send paths) is the same. Window 3 shows the same at 4 cores,
+where the gap is larger: 194 vs. 123 ns user, 200 vs. 194 ns system.
+
+*Which user code.* Callgrind counts user-space instructions per request
+(`scripts/callgrind-profile.sh`, `results/profile`). Valgrind runs the
+server's threads one at a time, so these are counts of work, not time, and the
+kernel is not seen. GET, 2 cores, depth 16, instructions per request:
+
+| instructions per request | `main`, io_uring | `main`, epoll | engine change, io_uring | engine change, epoll |
+| --- | ---: | ---: | ---: | ---: |
+| RESP parser | 488 | 491 | 248 | 251 |
+| reply encoders | 178 | 178 | 149 | 149 |
+| engine: plan, batch, shard, hashing | 624 | 626 | 507 | 509 |
+| byte copies | 75 | 67 | 72 | 64 |
+| allocator | 11 | 1 | 11 | 0 |
+| runtime: reactor, slots, cross-core | 123 | — | 123 | — |
+| front end | 29 | 30 | 29 | 30 |
+| other | 23 | 28 | 14 | 19 |
+| **total** | **1,551** | **1,421** | **1,153** | **1,022** |
+
+The parser and the engine, shared by every front end, were most of the
+instructions, so they came first. The io_uring front end's own code (runtime,
+front end and its allocations, about 160 instructions per request) costs about
+130 more than the epoll loop's (about 30), before and after the engine change: per read an operation
+slot each for the receive item, the send and the cross-core call, and three
+coroutine resumptions (receive, reply, send completion) where epoll calls
+`read` and `send` directly. That difference is 8–11% of the instructions,
+the size of the measured loss (3–10% more CPU per request at 2 cores).
+
+## Kept: one-pass number lines, an open-addressing shard, one hash per key
+
+- *Parser.* A count or length line that is a plain decimal followed by CRLF
+  is read in one pass. Anything else (a sign, a leading zero, more than 18
+  digits, a line not complete yet) takes the old `find_crlf` + `parse_ll`
+  path, so the accepted input and every error message are unchanged. A test
+  and the fuzz target compare it with the old parser (kept in
+  `tests/kv_reference.hpp`) on commands, outcome and error text, for whole
+  streams and every prefix.
+- *Reply encoders.* The type byte, the number and the CRLF are built on the
+  stack and appended once; a bulk reply is three appends instead of five.
+- *Shard.* `std::unordered_map<std::string, std::string>` became open
+  addressing with linear probing, at most half full, deletion by backward
+  shift (no tombstones). A slot holds the key's 64-bit hash and a pointer to
+  one heap block with the key and the value, so a hit reads the slot array
+  and that block. Before, it read the bucket array, the node, the key's own
+  heap buffer (the 16-byte keys do not fit libstdc++'s 15-byte inline string)
+  and the value's. A test runs 60,000 random commands over a small keyspace
+  (collisions, wrap-around, deletions inside probe runs) against the old map
+  and checks the table's invariants; the fuzz target runs every shard command
+  it parses on both.
+- *One hash.* One multiply-fold hash per key: its upper half picks the core,
+  its lower bits the slot (before: FNV-1a for the core, `std::hash` again in
+  the map).
+
+Window 1 (`results/perf/w1`), CPU per request against `main`, paired by
+repetition: median ratio, and in how many of 7 repetitions it was lower:
+
+| | io_uring | epoll |
+| --- | ---: | ---: |
+| 1 core, GET depth 16 | 0.719 (7) | 0.816 (7) |
+| 1 core, SET depth 16 | 0.838 (7) | 0.787 (7) |
+| 2 cores, GET depth 16 | 0.837 (6) | 0.847 (7) |
+| 2 cores, SET depth 16 | 0.794 (6) | 0.798 (7) |
+| 1 core, GET depth 1 | 0.975 (5 of 6) | 0.947 (7) |
+
+Instructions per request fell from 1,551 to 1,153 (io_uring) and 1,421 to
+1,022 (epoll). At depth 1 system calls dominate and the change is 3–5%. It
+helps both front ends by about the same amount, so it moves the comparison
+with Valkey and leaves the gap to epoll where it was (window 2:
+io_uring/epoll CPU 1.051 and 1.063 at 2 cores, depth 16). Deliberate bugs k
+(delete without the backward shift) and l (the fast path accepts a leading
+zero) fail their named assertions.
+
+## Kept: one awaiter for calls to several cores (`reactor::call_all`)
+
+With more than two cores a read sends batches to several cores. The front end
+awaited them with `when_all` over one `forward_one` coroutine per target: two
+coroutine frames per target and four vectors per read. `call_all` starts
+every call from one awaiter; the call slots share a join counter, and the last
+reply resumes the caller, which releases every slot before it rethrows a
+failure. A destroyed awaiter detaches its slots, which keep their nodes until
+the replies arrive. Tests cover results in call order, a throwing call and a
+frame destroyed with replies outstanding, in every transport mode; deliberate
+bug n (resume at the first reply) trips the invariant "call_all resumed before
+every reply arrived".
+
+Window 3 (`results/perf/w3`), CPU per request against the branch before it:
+0.929 and 0.918 at 4 cores (GET, SET, depth 16; 7 of 7 lower), 0.949 and 0.959
+at 3 cores (5 of 7), 1.016 and 0.996 at 2 cores, where the code path did not
+change (control). User time per request at 4 cores fell from 194 to 164 ns;
+epoll's is 123. Callgrind at 4 cores (`results/profile`): allocator
+instructions per request 199 before, 61 after (epoll: 3), total 1,623 before,
+1,399 after (epoll: 1,116).
+
+## Rejected: leaner operation bookkeeping in the reactor
+
+A slot table of fixed chunks with an inline lookup (it is a `std::deque` of
+slots), queued multishot results in a vector instead of a `std::deque`,
+releasing only the resources a slot holds, and a per-thread free list for
+message nodes. It cut the runtime's instructions from 123 to 90 per request
+and the allocator's from 11 to 3 (total 1,551 to 1,510, GET, 2 cores, depth
+16), but CPU time did not follow (window 1, against `main`): 1.030 at 2 cores
+GET depth 16 (2 of 7 lower; the rule needed 6), and 1.065 at 1 core SET depth
+16 with 5 of 7 higher, which alone rejects it. A 2.6% change in instructions
+is below what 7 paired runs on this machine resolve.
+
+## Rejected: replies assembled straight into the send buffer
+
+The io_uring front end assembled the replies into a string and copied it into
+the send buffer (epoll sends from the string). Writing them straight into the
+send buffer removed that copy (8 of 75 copy instructions per request) without
+changing the total (1,552), and CPU per request did not move in window 1: the
+best cell was 0.977 (2 cores, SET depth 16, 5 of 7 lower).
+
+## Rejected: registered ring descriptor; NO_SQARRAY was already in use
+
+`io_uring_register_ring_fd` lets `io_uring_enter` skip the descriptor lookup.
+The server enters the kernel 5.7 times per 1,000 requests at depth 16 and 59
+times at depth 1 (round-3 diag suite, `results/kv-bench/variants`), so there
+is little to save, and window 1 found nothing: best cell 0.976 (2 cores, GET depth 16, 5 of 7 lower).
+`IORING_SETUP_NO_SQARRAY` needed no change: liburing 2.14 asks for it by
+default and falls back on kernels without it, and the reactor test that prints
+the ring's features shows no SQ array on this kernel.
+
+## Rejected: a spin before sleeping (both transports)
+
+The suggested next step for the doorbell transport, which idles more at
+depth 16: before sleeping, spin for 20 µs watching the completion queue, the
+kernel's "task work pending" flag (`IORING_SQ_TASKRUN`, which needs
+`IORING_SETUP_TASKRUN_FLAG`) and the shared-memory queues. Throughput dropped (window 2,
+paired against the same transport without the spin, 2 cores): MSG_RING 0.740
+(GET) and 0.633 (SET) at depth 16, doorbell 0.737 and 0.767, 0 of 7 higher in
+each, with 8–9% more CPU per request. Which part costs it (the submission
+before each spin, liburing entering the kernel whenever the flag is set and no
+completion is visible yet, or the spin itself) was not measured; the option
+was removed.
+
+The doorbell transport itself stays an option, not the default: in the same
+window it delivered 0.997 and 0.831 of MSG_RING's requests per second at 2
+cores, depth 16, and 1.193 and 1.115 at 4 cores (5 and 4 of 7 higher), which
+is short of the 6-of-7 bar.
+
+## Not kept: a cheaper receive path in the load generator
+
+`kvload` parsed replies after copying each receive into a string. Parsing in
+the receive buffer lowered its CPU per request at depth 16 GET (0.956, 6 of
+7) but not SET (1.004, 2 of 7), and the server's requests per second moved by
+more than the 3% the rule allowed (1.095 at 2 cores, GET depth 16), so the
+generator was left as it was. The same window answered the question behind
+it: at 4 server cores and depth 16 the generator uses 39–59% of its 8 CPUs,
+so 4-core comparisons at depth 16 are valid; at depth 1 it uses 86–89% and is
+the limit (window 2, load-generator table).
+
+## Not tried
+
+- `IOSQE_CQE_SKIP_SUCCESS` on sends: a send that succeeds then posts no
+  completion, so there is no point at which the runtime knows the kernel is
+  done with the buffer. The contract hands the buffer back with the result.
+- Send and receive bundles (6.10), incremental provided-buffer consumption
+  (6.12): a read here is at most a few hundred bytes and fits one provided
+  buffer, and buffer handling is a few instructions per request in the
+  profile. Both would need a runtime probe and a fallback for the 6.8 CI
+  kernels.
+- Zero-copy send for large values: over loopback the kernel copies anyway
+  (Part 2, "Zero-copy send is not in the performance table").
+
+## Where the remaining loss sits
+
+At the end of the round (5d86cbd; `results/kv-bench/perf-session-a` and
+`perf-session-b`, 1 h apart), io_uring needs less CPU per request than epoll
+at 1 core: 0.950 / 0.936 for GET at depth 1 and 0.948 / 0.943 at depth 16
+(paired by repetition; 6 or 7 of 7 lower in each session). It needs more
+wherever pipelined requests cross cores: 1.036 / 1.059 (GET) and 1.080 / 1.051
+(SET) at 2 cores, depth 16, and 1.117 / 1.114 and 1.133 / 1.123 at 4 cores,
+where no repetition went the other way. The difference is user time (4 cores,
+GET: 166 / 163 ns of user time per request against 123 / 123; system time
+198 / 204 against 196 / 197) and shows in the instruction counts at 4 cores:
+1,399 against 1,116 per request, of which the runtime is 218 and the
+allocations for call nodes and results 61 (epoll: 3). Per read the io_uring
+connection uses an operation slot for its receive item, its send and each
+cross-core call and is resumed for each; the epoll loop calls `read` and
+`send` and moves batches through a mutex-protected vector. Trimming that
+bookkeeping by 2.6% of the instructions (the rejected candidate above) did
+not register in CPU time.
+
+Not tried yet, in order of what the profile suggests: a per-thread pool for
+message nodes on its own, now that they are the main allocation at 4 cores
+(it was part of the rejected bundle, measured at 2 cores, where allocations
+were 11 instructions per request); and handling the next receive without
+waiting for the previous send's completion (two send buffers per connection
+and linked sends to keep the order), which removes one slot and one
+resumption per read.
+
+One more observation from the final sessions: at 2 and 4 cores the lower CPU
+per GET did not raise GET throughput over `main` (2 cores, depth 16: 5.47 /
+5.22 M against 5.49 / 5.37 M requests/s), while SET throughput rose (5.72 /
+5.84 M against 5.13 / 5.06 M). The cores do the same GET work in less CPU
+time and idle more; why GET leaves that time unused was not investigated.

@@ -1,14 +1,148 @@
 # Results
 
 All runs on one shared machine: Intel Core i9-13900K (CPUs 0–15 are 8 P-cores ×
-2 SMT threads, 16–31 are E-cores), Linux 7.0.0-38-generic, GCC 15.2, clang
-21.1.8, liburing 2.14 (pinned, static). Every file below was produced by a
-script in `scripts/`; the commit each run used is recorded in the file or in
-its `*-meta.txt`. Those commits belong to the development history, which was
-squashed into a single commit when the repository was published. Other projects ran on the machine at the same time (a model
+2 SMT threads, 16–31 are E-cores), Linux 7.0.0 (-38-generic in round 3,
+-42-generic in the performance round), GCC 15.2, clang 21.1.8, liburing 2.14
+(pinned, static). Every file below was produced by a script in `scripts/`; the
+commit each run used is recorded in the file or in its `*-meta.txt`. Round-3
+commits belong to the development history, which was squashed into a single
+commit when the repository was published; performance-round commits are on
+this branch, except the candidates' own commits (their diffs are in
+[perf/candidates/](perf/candidates)). Other projects ran on the machine at the same time (a model
 training job that takes one full CPU and is not pinned, container services,
 another project's builds and VMs). Numbers from different sessions are never
 put in one comparison.
+
+## Performance round (2026-11-08 and 11-09)
+
+What was optimized, what was dropped and why: [design-tradeoffs.md, Part
+3](../docs/design-tradeoffs.md). Every comparison below interleaves builds
+from separate source trees in one quiet window; each window's decision rules
+were committed before it ran (`RULES.md` in its directory).
+
+| Directory | Command | Builds | What it shows |
+| --- | --- | --- | --- |
+| [perf/w1/](perf/w1) | `scripts/kv-bench.py --suite compare --reps 7 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --arm NAME=IO@BUILD ...` | main 3eb4121; main + one change each: engine (kept), reactor bookkeeping, replies into the send buffer, registered ring descriptor | engine change kept, the other three rejected; 2026-11-08 22:25–22:59 PST |
+| [perf/w2/](perf/w2) | the same with `--cores 2,4`, no rejection rule | 3796efd (main + engine), + spin before sleeping, + load-generator change; main | spin (both transports) removed, load-generator change not kept; at 4 cores, depth 16, the generator uses 39–59% of its CPUs; 11-09 03:36–04:08 |
+| [perf/w3/](perf/w3) | `--cores 2,3,4 --workloads get_p16,set_p16` | 3796efd, + `call_all` | `call_all` kept; 04:55–05:08 |
+| [perf/candidates/](perf/candidates) | `git diff` against the build each was compared with | | the rejected changes, to measure again |
+| [profile/](profile) | `scripts/callgrind-profile.sh`, `scripts/callgrind-summary.py` | main, 3796efd, 5d86cbd, the window-1 candidates | user-space instructions per request by module (`summary.md`) |
+| [kv-bench/perf-session-a/](kv-bench/perf-session-a) | `scripts/kv-bench.py --suite main --reps 7 --cores 1,2 --max-interference 0.05 --retries 3 --build <5d86cbd build> --arm uring-main=uring@<main build>`, then `--cores 4 --only get_p16,set_p16 --harness-cpu 11 --out .../cores4` | 5d86cbd against main 3eb4121 | the final comparison; 11-09 08:27–09:42 |
+| [kv-bench/perf-session-b/](kv-bench/perf-session-b) | the same | the same | the same comparison, 11-09 10:44–11:58 |
+| [test-matrix/](test-matrix) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 5d86cbd | 10 suites, 151 cases, GCC and clang, each plain, ASan + UBSan and TSan (Debug): 6 of 6 pass |
+| [deliberate-bugs/](deliberate-bugs) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 5d86cbd (script 8d6b3be) | 13 contract violations, each caught by a named assertion |
+| [fuzz/](fuzz) | `taskset -c 10-15,24-31 nice scripts/run-fuzz.sh 600` | 5d86cbd | 600 s per target: IPC validator 302,901,197 executions, RESP parser 1,818,354 (each input now also checked against the reference parser and map); no findings |
+
+Both final sessions ran the servers built from an archive of 5d86cbd
+(`.cache/final-5d86cbd` on the build machine). Session A's meta file says
+"5d86cbd (uncommitted changes)": the test-matrix logs in the working tree had
+just been rewritten. Session B's says 120f2ca, the branch head by then; the
+commits in between changed only scripts and results. Changes to the protocol since round 3: server and load generator
+at nice 0 (nice +10 let other jobs crowd the measured CPUs), every summary
+splits server CPU into user and system time, and the 4-core cells (CPUs
+2,4,6,8) run the harness on CPU 11 instead of 9, the sibling of CPU 8. The
+rejection rule is unchanged (1 core only). The 4-core cells are depth 16 only:
+at depth 1 the load generator is the limit (window 2: 86–89% of its CPUs).
+
+### Final comparison: perf-session-a / perf-session-b (GET, medians of 7)
+
+| | io_uring | io_uring, `main` | epoll | Asio | Valkey |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 core, depth 1: requests/s | 346 k / 351 k | 338 k / 338 k | 327 k / 334 k | 325 k / 325 k | 296 k / 298 k |
+| 1 core, depth 1: CPU per request, µs | 2.88 / 2.86 | 2.91 / 2.96 | 3.02 / 2.99 | 3.03 / 3.05 | 3.41 / 3.34 |
+| 1 core, depth 16: requests/s | 3.72 M / 3.70 M | 2.68 M / 2.96 M | 3.56 M / 3.54 M | 3.55 M / 3.48 M | 2.14 M / 2.16 M |
+| 1 core, depth 16: CPU per request, µs | 0.269 / 0.271 | 0.370 / 0.335 | 0.286 / 0.280 | 0.285 / 0.290 | 0.466 / 0.463 |
+| 2 cores, depth 1: requests/s | 639 k / 633 k | 623 k / 613 k | 628 k / 634 k | 569 k / 575 k | 292 k / 290 k |
+| 2 cores, depth 16: requests/s | 5.47 M / 5.22 M | 5.49 M / 5.37 M | 4.94 M / 5.07 M | 3.64 M / 3.77 M | 3.16 M / 3.15 M |
+| 2 cores, depth 16: CPU per request, µs | 0.303 / 0.315 | 0.364 / 0.367 | 0.295 / 0.290 | 0.328 / 0.318 | 0.650 / 0.654 |
+| 4 cores, depth 16: requests/s | 8.92 M / 8.36 M | 8.88 M / 8.80 M | 9.11 M / 8.99 M | 7.28 M / 7.18 M | 3.99 M / 3.94 M |
+| 4 cores, depth 16: CPU per request, µs | 0.363 / 0.368 | 0.436 / 0.436 | 0.318 / 0.320 | 0.350 / 0.352 | 0.976 / 0.988 |
+
+Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
+
+| | io_uring / epoll, GET | io_uring / epoll, SET | io_uring / `main`, GET | io_uring / `main`, SET |
+| --- | ---: | ---: | ---: | ---: |
+| 1 core, depth 1 | 0.950 (7) / 0.936 (7) | 0.944 (6) / 0.959 (6) | 0.971 (6) / 0.950 (6) | 0.969 (5) / 1.001 (3) |
+| 1 core, depth 16 | 0.948 (7) / 0.943 (6) | 1.043 (1) / 1.023 (1) | 0.741 (7) / 0.796 (7) | 0.815 (7) / 0.805 (7) |
+| 2 cores, depth 1 | 0.982 (5) / 1.009 (2) | 0.997 (5) / 0.988 (5) | 0.975 (7) / 0.978 (5) | 0.999 (5) / 0.970 (7) |
+| 2 cores, depth 16 | 1.036 (1) / 1.059 (0) | 1.080 (1) / 1.051 (1) | 0.841 (6) / 0.842 (7) | 0.815 (7) / 0.807 (7) |
+| 4 cores, depth 16 | 1.117 (0) / 1.114 (0) | 1.133 (0) / 1.123 (0) | 0.833 (7) / 0.844 (7) | 0.815 (7) / 0.823 (7) |
+
+- **Holds in both sessions:** against the published code, 16–26% less CPU per
+  request at depth 16 on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
+  cell), 2–5% at depth 1 for GET. Against epoll, less CPU per request at 1
+  core (depth 1 GET and SET, depth 16 GET), more at 2 cores and depth 16
+  (4–8%) and at 4 cores (11–13%, no repetition the other way). Valkey needs
+  1.7 times (1 core) to 2.7 times (4 cores) the io_uring server's CPU per GET
+  at depth 16.
+- **Not consistent or small:** 2 cores, depth 1 (within 2%; GET either sign);
+  SET at 1 core, depth 16
+  (io_uring 2–4% more, 1 of 7 the other way in both). At 2 and 4 cores the
+  lower CPU per GET did not raise GET throughput over `main` (cores idle
+  more; not investigated), while SET throughput rose (2 cores: 5.72 / 5.84 M
+  against 5.13 / 5.06 M).
+- The extra io_uring cost is user time: at 4 cores, depth 16, GET 166 / 163 ns
+  user against epoll's 123 / 123, system 198 / 204 against 196 / 197 (tables
+  "split into user and system time").
+- The 4-core cells used 48–49% of the load generator's 8 CPUs (median; at
+  most 56%). Rejected and repeated at 1 core: 12 runs in A, 5 in B; every
+  cell has 7 accepted repetitions. Open-loop medians agree across the front
+  ends (1 core, 200 k requests/s: 15–16 µs in both sessions); tails are in
+  the summaries without a ranking.
+
+### Tests at 5d86cbd
+
+| Suite | Cases | Covers |
+| --- | ---: | --- |
+| task | 7 | lazy tasks, ready list |
+| reactor | 19 | operation lifetime, cancellation, shutdown, `when_all`, direct descriptors |
+| buffer | 9 | fixed pool, provided rings, SEND_ZC ownership |
+| runtime | 54 | 10 cross-core cases (3 of them `call_all`) × MSG_RING batched / one MSG_RING per message / busy-poll / doorbell / doorbell busy-poll, plus 4 refused-MSG_RING cases |
+| ipc | 11 | sealed snapshots, descriptor ownership |
+| kv | 9 | RESP parser (every split point; against the reference parser), routing plan, shard table against the reference map |
+| server_uring, server_uring_doorbell | 12 each | end to end against `kv_server --io uring` (1 to 4 cores), over each transport |
+| server_epoll, server_asio | 9 each | the same end-to-end cases against the baselines |
+
+The server suites start the `kv_server` binary built with the same sanitizer
+and require exit status 0 after SIGTERM, so a sanitizer report inside the
+server fails the test. From the logs (all six configurations): the cancel
+acknowledgement was reaped before the target's own CQE in 100 of 100 rounds;
+the cancel-vs-complete race produced both outcomes on both ring types (for
+example 4,880 cancelled / 5,120 completed on the DEFER_TASKRUN ring under clang
++ TSan); the lost-wake-up stress case had 0 stalls in 4,000 rounds on every
+transport, and over the doorbell transport the target's second look at its
+queues found a message and skipped the wait between 4 and 1,313 times per
+configuration; refused replies were sent again and refused doorbells rung
+again.
+
+### Deliberate bugs at 5d86cbd
+
+| Mutation | Caught by (named assertion) |
+| --- | --- |
+| a: release the buffer at the cancel acknowledgement | `cancel_ack_does_not_release_buffer`: *buffer stays with the operation after cancel-ack* |
+| b: give a SEND_ZC buffer back at the first CQE | `send_zc_buffer_held_until_notification`: *zero-copy payload arrives unmodified* |
+| c: release the buffer when the awaiting coroutine is destroyed | `destroyed_coroutine_keeps_fixed_buffer_until_cqe`: *a new lease holder's bytes are not overwritten by the kernel* |
+| d: skip ownership of descriptors received by a detached recvmsg | `detached_receive_closes_received_descriptor`: *received descriptor closed by the slot* |
+| e: submit through a stale direct-descriptor reference | `stale_direct_descriptor_is_refused`: *stale direct descriptor does not reach the new connection* |
+| f: reuse a direct-descriptor index while an operation names it | `direct_index_reserved_while_operation_in_flight`: *an index stays reserved while an operation names it* |
+| g: one MSG_RING per message despite batching | `concurrent_calls_share_message_rings`: *concurrent calls to one core share one MSG_RING* |
+| h: cancel replies at the start of a drain | `shutdown_waits_for_requests_in_progress`: *requests received before shutdown are answered* |
+| i: accept a bulk string before all its bytes arrived | `split_input_parses_identically`: *split input parses to the same commands* |
+| j: doorbell transport, sleep without looking at the queues again | `sleeping_core_is_woken_for_every_message/doorbell`: *a sleeping core is woken for every message* (the watchdog counts the stall; no hang) |
+| k: delete from the shard table without the backward shift | `shard_matches_reference_map`: *shard replies match the reference map* |
+| l: let the parser's one-pass number path accept a leading zero | `parser_matches_reference`: *parser matches the reference parser* |
+| m: resume a `call_all` caller at the first reply | `call_all_returns_results_in_call_order`: invariant *call_all resumed before every reply arrived* (named n in 5d86cbd's commit message) |
+
+(b), (c) and (e) fail on observed wrong data (bytes on the wire or in a new
+holder's buffer, a send reaching another connection); (h) on missing replies;
+(i), (k) and (l) on differently parsed commands or different replies; (j) on a
+stalled call; (m) on the runtime's own invariant; (a), (d), (f) and (g) on the
+ownership or batching state the test inspects. The first run at 5d86cbd
+reported (c) as not caught because its anchor in the source no longer matched
+(`detach()` gained a line); the mutation was updated to the current code and
+the suite run again (`results/deliberate-bugs`).
+
+# Round 3 (2026-11-07)
 
 ## Index (round 3)
 
@@ -19,9 +153,6 @@ put in one comparison.
 | [kv-bench/variants/](kv-bench/variants) | `scripts/kv-bench.py --suite variants --reps 7 --cores 2 --arms uring,uring-doorbell,uring-doorbell-early,uring-coop,uring-coop-doorbell`; `--suite diag --reps 2 --cores 2` | c653dc8 | MSG_RING vs. doorbell transport, ring flags (`variants.jsonl`); the servers' own I/O counters per 1,000 requests (`diag.jsonl`) |
 | [probe/](probe) | `scripts/kv-bench.py --suite probe --reps 6 --out results/probe` | 3386a66 | what moves the 1-core depth-1 result: a busy SMT sibling, busy P-cores |
 | [xcore/](xcore) | `REPS=7 OPS=400000 scripts/xcore-study.sh 4,6` | c653dc8 | cross-core messaging: ring flags × batching / doorbell × idle mode |
-| [test-matrix/](test-matrix) | `taskset -c 2-9,16-23 scripts/test-matrix.sh` | df7ae97 | 10 suites, 134 cases, GCC and clang, each plain, ASan + UBSan and TSan (Debug): 6 of 6 pass |
-| [deliberate-bugs/](deliberate-bugs) | `taskset -c 2-9,16-23 python3 scripts/deliberate-bugs.py` | df7ae97 | 10 contract violations, each caught by a named assertion; diff and failing output per mutation |
-| [fuzz/](fuzz) | `taskset -c 2-9,16-23 scripts/run-fuzz.sh 600` | df7ae97 | 600 s of libFuzzer + ASan/UBSan per target: IPC validator 482,464,087 executions, RESP parser 10,346,156; no findings |
 | [kv-bench/round2/](kv-bench/round2) | round 2's suites (main, variants, diag, crosscheck, 4-core calibration) | c562e3b | kept for the results round 3 did not repeat: registered-buffer replies, direct descriptors, the valkey-benchmark cross-check, and why 4 server cores are not compared |
 | [perf-sanity/](perf-sanity) | `scripts/perf-sanity.sh 4,6` | 1fc1573 | round 1's quick check (kept for the 188 vs. 104 ns post-flood figure the study explains) |
 
@@ -163,54 +294,22 @@ A busy sibling costs about 30%; the 1-core server never sleeps at depth 1
 
 Explanations in [design-tradeoffs.md](../docs/design-tradeoffs.md).
 
-## Tests (test-matrix at df7ae97)
+Round 3's test matrix, deliberate-bug and fuzz results (df7ae97: 134 cases, 10
+of 10 mutations, 482,464,087 and 10,346,156 fuzz executions) are in the git
+history of `results/test-matrix`, `results/deliberate-bugs` and
+`results/fuzz`; those directories now hold the performance round's runs.
 
-| Suite | Cases | Covers |
-| --- | ---: | --- |
-| task | 7 | lazy tasks, ready list |
-| reactor | 19 | operation lifetime, cancellation, shutdown, `when_all`, direct descriptors |
-| buffer | 9 | fixed pool, provided rings, SEND_ZC ownership |
-| runtime | 39 | 7 cross-core cases × MSG_RING batched / one MSG_RING per message / busy-poll / doorbell / doorbell busy-poll, plus 4 refused-MSG_RING cases |
-| ipc | 11 | sealed snapshots, descriptor ownership |
-| kv | 7 | RESP parser (every split point), routing plan |
-| server_uring, server_uring_doorbell | 12 each | end to end against `kv_server --io uring`, over each transport |
-| server_epoll, server_asio | 9 each | the same end-to-end cases against the baselines |
-
-The server suites start the `kv_server` binary built with the same sanitizer
-and require exit status 0 after SIGTERM, so a sanitizer report inside the
-server fails the test. Observations from the logs (all six configurations):
-the cancel acknowledgement was reaped before the target's own CQE in 100 of 100
-rounds; the cancel-vs-complete race produced both outcomes on both ring types
-(for example 4,873 cancelled / 5,127 completed on the DEFER_TASKRUN ring under
-clang + TSan); the lost-wake-up stress case had 0 stalls in 4,000 rounds on
-every transport, and over the doorbell transport the target's second look at
-its queues found a message and skipped the wait 426 times (clang + TSan);
-three refused replies were sent again and two refused doorbells rung again.
-
-## Deliberate bugs (df7ae97)
-
-| Mutation | Caught by (named assertion) |
-| --- | --- |
-| a: release the buffer at the cancel acknowledgement | `cancel_ack_does_not_release_buffer`: *buffer stays with the operation after cancel-ack* |
-| b: give a SEND_ZC buffer back at the first CQE | `send_zc_buffer_held_until_notification`: *zero-copy payload arrives unmodified* |
-| c: release the buffer when the awaiting coroutine is destroyed | `destroyed_coroutine_keeps_fixed_buffer_until_cqe`: *a new lease holder's bytes are not overwritten by the kernel* |
-| d: skip ownership of descriptors received by a detached recvmsg | `detached_receive_closes_received_descriptor`: *received descriptor closed by the slot* |
-| e: submit through a stale direct-descriptor reference | `stale_direct_descriptor_is_refused`: *stale direct descriptor does not reach the new connection* |
-| f: reuse a direct-descriptor index while an operation names it | `direct_index_reserved_while_operation_in_flight`: *an index stays reserved while an operation names it* |
-| g: one MSG_RING per message despite batching | `concurrent_calls_share_message_rings`: *concurrent calls to one core share one MSG_RING* |
-| h: cancel replies at the start of a drain | `shutdown_waits_for_requests_in_progress`: *requests received before shutdown are answered* |
-| i: accept a bulk string before all its bytes arrived | `split_input_parses_identically`: *split input parses to the same commands* |
-| j: doorbell transport, sleep without looking at the queues again | `sleeping_core_is_woken_for_every_message/doorbell`: *a sleeping core is woken for every message* (the watchdog counts the stall; no hang) |
-
-(b), (c) and (e) fail on observed wrong data (bytes on the wire or in a new
-holder's buffer, a send reaching another connection); (h) on missing replies;
-(i) on differently parsed commands; (j) on a stalled call; (a), (d), (f) and
-(g) on the ownership or batching state the test inspects.
-
-## Not verified
+# Not verified
 
 - Tail latencies on an idle machine: every run here shared the host with other
   jobs.
 - Why the doorbell transport's cores idle more at depth 16 with the same work
-  per request, and why COOP_TASKRUN stalls at depth 16 (no profiler or
-  scheduler tracing on this host).
+  per request, and why COOP_TASKRUN stalls at depth 16 (round 3; no profiler
+  or scheduler tracing on this host).
+- Why a 20 µs spin before sleeping cut depth-16 throughput by a quarter or
+  more on both transports (window 2).
+- Cache behaviour: callgrind counts instructions, not cache misses, so the
+  shard table's fewer memory reads per lookup follow from its layout and were
+  not measured on the hardware.
+- This branch has not run on the GitHub CI runners (Linux 6.8). It uses no
+  io_uring feature that the published `main` did not already use.
