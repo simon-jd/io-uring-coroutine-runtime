@@ -24,11 +24,12 @@ What holds in both sessions (paired by repetition, [details](results/README.md))
 performance round cut the server's CPU per request at depth 16 by 16–26%
 against the published code on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
 cell), mostly in code every front end shares (a one-pass path for RESP number
-lines, an open-addressing key table, one hash per key) and, with more than two
-cores, by awaiting all target cores from one awaiter. Against epoll, io_uring
-needs 4–6% less CPU per request at 1 core (depth 1, and depth 16 for GET), and
-at depth 16 4–8% more at 2 cores (at most 1 of 7 repetitions the other way)
-and 11–13% more at 4 cores (none). The extra is user time: about 130
+lines, an open-addressing key table, one hash function for both the core and
+the table slot) and, with more than two cores, by awaiting all target cores
+from one awaiter. Against epoll, io_uring needs 4–6% less CPU per request at 1
+core (depth 1, and depth 16 for GET) but 2–4% more for SET at depth 16 (1 of 7
+repetitions the other way), and at depth 16 4–8% more at 2 cores (at most 1 of
+7) and 11–13% more at 4 cores (none). The extra is user time: about 130
 instructions per request more than epoll's loop at 2 cores and 280 at 4
 (callgrind), in the runtime's operation slots, message nodes and coroutine
 resumptions. Tried and dropped, each

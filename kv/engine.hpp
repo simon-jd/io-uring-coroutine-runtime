@@ -22,8 +22,8 @@ enum class cmd_id : std::uint8_t {
     ping, echo, get, set, del, exists, dbsize, flushall, config, command, info, quit, debug, unknown
 };
 
-// 64-bit hash of a key, computed once per key and used twice: its upper half
-// picks the owning core, its lower bits the slot in that core's table.
+// 64-bit hash of a key. Its upper half picks the owning core, its lower bits
+// the slot in that core's table; routing and the table lookup each compute it.
 std::uint64_t key_hash(std::string_view key) noexcept;
 
 // Which core owns `key`.

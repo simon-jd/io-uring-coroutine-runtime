@@ -623,7 +623,7 @@ coroutine resumptions (receive, reply, send completion) where epoll calls
 `read` and `send` directly. That difference is 8–11% of the instructions,
 the size of the measured loss (3–10% more CPU per request at 2 cores).
 
-## Kept: one-pass number lines, an open-addressing shard, one hash per key
+## Kept: one-pass number lines, an open-addressing shard, one hash function
 
 - *Parser.* A count or length line that is a plain decimal followed by CRLF
   is read in one pass. Anything else (a sign, a leading zero, more than 18
@@ -644,9 +644,11 @@ the size of the measured loss (3–10% more CPU per request at 2 cores).
   (collisions, wrap-around, deletions inside probe runs) against the old map
   and checks the table's invariants; the fuzz target runs every shard command
   it parses on both.
-- *One hash.* One multiply-fold hash per key: its upper half picks the core,
+- *One hash function.* One multiply-fold hash: its upper half picks the core,
   its lower bits the slot (before: FNV-1a for the core, `std::hash` again in
-  the map).
+  the map). It is still computed twice per key, once when the command is
+  routed and once in the owning core's table; passing it along with the
+  batch was not tried.
 
 Window 1 (`results/perf/w1`), CPU per request against `main`, paired by
 repetition: median ratio, and in how many of 7 repetitions it was lower:
@@ -677,7 +679,7 @@ reply resumes the caller, which releases every slot before it rethrows a
 failure. A destroyed awaiter detaches its slots, which keep their nodes until
 the replies arrive. Tests cover results in call order, a throwing call and a
 frame destroyed with replies outstanding, in every transport mode; deliberate
-bug n (resume at the first reply) trips the invariant "call_all resumed before
+bug m (resume at the first reply) trips the invariant "call_all resumed before
 every reply arrived".
 
 Window 3 (`results/perf/w3`), CPU per request against the branch before it:
