@@ -191,6 +191,65 @@ def paired_ratios(rows, a, b, out):
     out.append("")
 
 
+def paired_metric(rows, a, b, metric, lower_better, out):
+    """Per repetition, arm a's metric over arm b's, for every closed-loop cell."""
+    closed = [r for r in rows if r.get("mode") == "closed"]
+    keys = sorted({(r["cores"], r["workload"]) for r in closed})
+    word = "below" if lower_better else "above"
+    lines = []
+    for cores, w in keys:
+        ratios = []
+        for rep in sorted({r["rep"] for r in closed}):
+            ra = [r for r in closed if r["arm"] == a and r["cores"] == cores and r["workload"] == w
+                  and r["rep"] == rep]
+            rb = [r for r in closed if r["arm"] == b and r["cores"] == cores and r["workload"] == w
+                  and r["rep"] == rep]
+            if ra and rb:
+                ratios.append(ra[-1][metric] / rb[-1][metric])
+        if ratios:
+            better = sum(1 for x in ratios if (x < 1 if lower_better else x > 1))
+            lines.append(f"| {cores} | {w} | {med(ratios):.3f} [{min(ratios):.3f}–{max(ratios):.3f}] | "
+                         f"{better} of {len(ratios)} |")
+    if lines:
+        out.append(f"| cores | workload | {a} / {b} | repetitions {word} 1 |")
+        out.append("| ---: | --- | ---: | ---: |")
+        out += lines
+        out.append("")
+
+
+def compare_section(rows, rejected, out):
+    arms = []
+    for r in rows:
+        if "workload" in r and r["arm"] not in arms:
+            arms.append(r["arm"])
+    out += ["## Build comparison", ""]
+    session_facts(rows, out, rejected)
+    closed = [r for r in rows if r.get("mode") == "closed"]
+    workloads = []
+    for r in closed:
+        if r["workload"] not in workloads:
+            workloads.append(r["workload"])
+    for c in sorted({r["cores"] for r in closed}):
+        closed_table(closed, arms, c, workloads, out)
+    # Each arm against its front end's published baseline (<io>-main), and
+    # each io_uring arm against the epoll arm built from the same tree.
+    pairs = []
+    for a in arms:
+        io, _, tag = a.partition("-")
+        if tag and tag != "main" and f"{io}-main" in arms:
+            pairs.append((a, f"{io}-main"))
+    for a in arms:
+        io, _, tag = a.partition("-")
+        if io == "uring" and f"epoll-{tag}" in arms:
+            pairs.append((a, f"epoll-{tag}"))
+    for a, b in pairs:
+        out += [f"### {a} against {b}", "",
+                "Server CPU per request, paired by repetition (median [min–max]):", ""]
+        paired_metric(closed, a, b, "server_cpu_us_per_req", True, out)
+        out += ["Requests per second, paired by repetition:", ""]
+        paired_metric(closed, a, b, "rps", False, out)
+
+
 def main():
     d = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "results" / "kv-bench"
     out = ["# kv-bench summary", "",
@@ -210,6 +269,9 @@ def main():
         out += ["### Open loop, 90% GET / 10% SET (latency from scheduled send time)", ""]
         for c in sorted({r["cores"] for r in main_rows if "cores" in r}):
             open_table([r for r in main_rows if r.get("mode") == "open"], arms, c, out)
+    cmp_rows = load(d / "compare.jsonl")
+    if cmp_rows:
+        compare_section(cmp_rows, [r for r in load(d / "compare.jsonl", True) if r.get("rejected")], out)
     var_rows = load(d / "variants.jsonl")
     if var_rows:
         arms = []

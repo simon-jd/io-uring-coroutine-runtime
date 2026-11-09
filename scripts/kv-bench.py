@@ -11,10 +11,18 @@ average before and after, the server's CPU time (sum of
 
 Suites: main (the four servers, 1 and 2 cores), variants (io_uring options,
 2 cores), crosscheck (valkey-benchmark, 1 core), diag (one run per arm with the
-servers' own I/O counters, 2 cores).
+servers' own I/O counters, 2 cores), compare (only the arms given with --arm,
+closed-loop workloads from --workloads: one build against another).
 
-Usage: scripts/kv-bench.py [--suite main|variants|crosscheck|diag] [--reps 5]
-                           [--out results/kv-bench] [--quick]
+--arm NAME=IO[@BUILD][,ARG...] adds an arm whose kv_server comes from BUILD
+(default --build), e.g. --arm uring-main=uring@.cache/baseline-main/build-release.
+The load generator is always --kvload, the same binary for every arm.
+Server and load generator run at --nice (default 0: timing runs happen in
+quiet windows, where a positive nice value let other jobs crowd the measured
+CPUs).
+
+Usage: scripts/kv-bench.py [--suite main|variants|crosscheck|diag|compare] [--reps 5]
+                           [--out results/kv-bench] [--quick] [--arm SPEC ...]
 """
 import argparse
 import json
@@ -309,6 +317,7 @@ class Bench:
         self.raw = open(self.out / f"{args.suite}.jsonl", "a")
         self.logs = Path(args.logs)
         self.logs.mkdir(parents=True, exist_ok=True)
+        self.kvload_bin = Path(args.kvload) if args.kvload else self.build / "kvload"
         self.port = 17101
         self.write_meta()
 
@@ -340,7 +349,8 @@ class Bench:
             f"suite: {a.suite}, reps {a.reps}, cores {a.cores}, measured window {a.duration} s "
             f"(closed loop, after 1 s warm-up; open loop {a.duration + 3} s after 2 s)",
             f"server cpus: first <cores> of {a.server_cpus}; client cpus: {a.client_cpus} "
-            f"({CLIENT_THREADS} kvload threads); both under nice (+10) and taskset",
+            f"({CLIENT_THREADS} kvload threads); both under taskset at nice {a.nice}",
+            f"kvload: {self.kvload_bin}",
             f"keys: {KEYS} preloaded, values {VALUE} bytes; connections: 50 per server core",
             f"loadavg at start: {' '.join(map(str, loadavg()))}",
             f"rejection rule: " + (f"interference fraction > {a.max_interference} in closed-loop runs on "
@@ -349,7 +359,18 @@ class Bench:
             f"harness cpu: {a.harness_cpu}; frequency sampled every 0.1 s (scaling_cur_freq, "
             f"cpuinfo_avg_freq)",
         ]
+        for arm in a.arm_list:
+            src = ""
+            if arm.get("build"):
+                f = Path(arm["build"]).parent / "SOURCE"
+                if f.exists():
+                    src = " (" + f.read_text().strip().splitlines()[0] + ")"
+            lines.append(f"arm {arm['name']}: --io {arm['io']} {' '.join(arm.get('args', []))} "
+                         f"from {arm.get('build') or a.build}{src}")
         (self.out / f"{a.suite}-meta.txt").write_text("\n".join(lines) + "\n")
+
+    def niced(self, cmd):
+        return (["nice", "-n", str(self.args.nice)] if self.args.nice else []) + cmd
 
     def server_cmd(self, arm, cores, cpus, port):
         if arm["kind"] == "valkey":
@@ -357,13 +378,14 @@ class Bench:
             return [str(self.valkey / "valkey-server"), "--port", str(port), "--bind", "127.0.0.1",
                     "--save", "", "--appendonly", "no", "--io-threads", str(cores),
                     "--protected-mode", "no", "--server-cpulist", cpus, "--logfile", str(log)]
-        return [str(self.build / "kv_server"), "--io", arm["io"], "--cores", str(cores),
+        build = Path(arm["build"]) if arm.get("build") else self.build
+        return [str(build / "kv_server"), "--io", arm["io"], "--cores", str(cores),
                 "--cpus", cpus, "--port", str(port)] + arm.get("args", [])
 
     def start(self, arm, cores, cpus, extra=()):
         self.port += 1
         port = self.port
-        cmd = ["nice", "taskset", "-c", cpus] + self.server_cmd(arm, cores, cpus, port) + list(extra)
+        cmd = self.niced(["taskset", "-c", cpus] + self.server_cmd(arm, cores, cpus, port) + list(extra))
         self.last_stderr = self.logs / f"{arm['name']}-{port}.stderr"
         err = open(self.last_stderr, "w")
         p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err)
@@ -392,7 +414,7 @@ class Bench:
         requests = res["completed"] + KEYS  # the preload is counted too
         rec = {"rep": rep, "arm": arm["name"], "cores": cores, "workload": f"{op}_p{pipe}",
                "rps": res["rps"], "requests_counted": requests, "server_exit": code,
-               "server_cmd": " ".join(cmd), "client_cmd": " ".join(ccmd[3:]),
+               "server_cmd": " ".join(cmd), "client_cmd": " ".join(ccmd[ccmd.index("taskset") + 3:]),
                "counters": totals,
                "per_1k_requests": {k: round(1000 * v / requests, 3) for k, v in totals.items()}}
         self.raw.write(json.dumps(rec) + "\n")
@@ -410,18 +432,19 @@ class Bench:
             return "killed"
 
     def kvload(self, mode, port, extra):
-        cmd = ["nice", "taskset", "-c", self.args.client_cpus, str(self.build / "kvload"), mode,
+        cmd = self.niced(["taskset", "-c", self.args.client_cpus, str(self.kvload_bin), mode,
                "--port", str(port), "--threads", str(CLIENT_THREADS), "--cpus", self.args.client_cpus,
-               "--keys", str(KEYS), "--value-size", str(VALUE)] + extra
+               "--keys", str(KEYS), "--value-size", str(VALUE)] + extra)
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=300)
         if r.returncode != 0:
             raise RuntimeError(f"kvload failed ({r.returncode}): {r.stderr.strip()}")
         return json.loads(r.stdout.strip().splitlines()[-1]), cmd
 
     def valkey_benchmark(self, port, pipeline, requests):
-        cmd = ["nice", "taskset", "-c", self.args.client_cpus, str(self.valkey / "valkey-benchmark"),
-               "-h", "127.0.0.1", "-p", str(port), "-c", "50", "-n", str(requests), "-P", str(pipeline),
-               "-t", "get", "-r", str(KEYS), "-d", str(VALUE), "--threads", "4", "--csv", "-q"]
+        cmd = self.niced(["taskset", "-c", self.args.client_cpus, str(self.valkey / "valkey-benchmark"),
+                          "-h", "127.0.0.1", "-p", str(port), "-c", "50", "-n", str(requests),
+                          "-P", str(pipeline), "-t", "get", "-r", str(KEYS), "-d", str(VALUE),
+                          "--threads", "4", "--csv", "-q"])
         t0 = os.times()
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=300)
         t1 = os.times()
@@ -459,7 +482,8 @@ class Bench:
                    "loadavg_before": la0, "loadavg_after": la1, "wall_s": round(wall, 3),
                    "server_cpu_s": round((c1 - c0) / 1e9, 4),
                    "server_cpu_us_per_req": round((c1 - c0) / 1e3 / max(1, res["completed"]), 4),
-                   "client_cmd": " ".join(cmd[3:]), **res, "env": e, "attempt": attempt}
+                   "client_cmd": " ".join(cmd[cmd.index("taskset") + 3:]), **res, "env": e,
+                   "attempt": attempt}
             if extra_fields:
                 rec.update(extra_fields)
             limit = self.args.max_interference
@@ -579,10 +603,22 @@ VARIANT_ARMS = [
 ]
 
 
+def parse_arm(spec):
+    """NAME=IO[@BUILD][,ARG...] -> arm dict."""
+    name, rest = spec.split("=", 1)
+    parts = rest.split(",")
+    io, _, build = parts[0].partition("@")
+    arm = {"name": name, "kind": "kv", "io": io, "args": parts[1:]}
+    if build:
+        p = Path(build)
+        arm["build"] = str(p if p.is_absolute() else ROOT / p)
+    return arm
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--suite", default="main",
-                    choices=["main", "variants", "crosscheck", "diag", "probe"])
+                    choices=["main", "variants", "crosscheck", "diag", "probe", "compare"])
     ap.add_argument("--reps", type=int, default=5)
     ap.add_argument("--duration", type=float, default=5.0)
     ap.add_argument("--cores", default="1,2")
@@ -601,11 +637,18 @@ def main():
                     help="the rejection rule applies to closed-loop runs on at most this many cores")
     ap.add_argument("--harness-cpu", type=int, default=9,
                     help="CPU for this script itself (not a server or client CPU)")
+    ap.add_argument("--arm", action="append", default=[],
+                    help="extra arm NAME=IO[@BUILD][,ARG...] (repeatable)")
+    ap.add_argument("--workloads", default="get_p1,get_p16,set_p16",
+                    help="compare suite: closed-loop workloads <get|set>_p<depth>")
+    ap.add_argument("--kvload", default="", help="load generator binary (default: <build>/kvload)")
+    ap.add_argument("--nice", type=int, default=0, help="nice value for server and load generator")
     ap.add_argument("--probe-pcores", default="4,6,8",
                     help="probe suite: CPUs that get a spinning process in the 'pcores' condition")
     args = ap.parse_args()
     if args.quick:
         args.reps, args.duration = 1, 2.0
+    args.arm_list = [parse_arm(spec) for spec in args.arm]
     if args.harness_cpu >= 0:
         os.sched_setaffinity(0, {args.harness_cpu})
     b = Bench(args)
@@ -613,8 +656,23 @@ def main():
         run_probe(b, args)
         return 0
     cores_list = [int(c) for c in args.cores.split(",")]
+    if args.suite == "compare":
+        arms = list(args.arm_list)
+        workloads = []
+        for w in args.workloads.split(","):
+            op, depth = w.split("_p")
+            workloads.append(("closed", op, int(depth)))
+        if args.arms:
+            keep = set(args.arms.split(","))
+            arms = [a for a in arms if a["name"] in keep]
+        for rep in range(args.reps):
+            for cores in cores_list:
+                order = arms[rep % len(arms):] + arms[:rep % len(arms)]
+                for arm in order:
+                    b.run_arm(rep, arm, cores, workloads)
+        return 0
     if args.suite == "main":
-        arms = MAIN_ARMS
+        arms = MAIN_ARMS + args.arm_list
         workloads = [("closed", "get", 1), ("closed", "get", 16), ("closed", "set", 1),
                      ("closed", "set", 16), ("open", 50_000), ("open", 100_000), ("open", 200_000)]
     elif args.suite == "variants":
