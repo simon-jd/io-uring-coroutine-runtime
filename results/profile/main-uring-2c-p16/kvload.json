@@ -1,0 +1,1 @@
+{"mode":"closed","pipeline":16,"rps":215414.0,"duration_s":8.0,"conns":100,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":1831456,"errors":0,"batches":107707,"rtt_p50_us":7164.9,"rtt_p99_us":10351.7,"rtt_p999_us":12235.9,"client_cpu_s":3.834}

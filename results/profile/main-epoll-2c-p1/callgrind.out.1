@@ -1,0 +1,1835 @@
+# callgrind format
+version: 1
+creator: callgrind-3.26.0
+pid: 1447033
+cmd:  /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/baseline-main/build-release/kv_server --io epoll --cores 2 --cpus 10,12 --port 18247
+part: 1
+
+
+desc: I1 cache: 
+desc: D1 cache: 
+desc: LL cache: 
+
+desc: Timerange: Basic block 0 - 353187631
+desc: Trigger: dump
+
+positions: line
+events: Ir
+summary: 1459204933
+
+
+ob=(8) /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/baseline-main/build-release/kv_server
+fl=(228) ???
+fn=(1766) kv::plan::part_reply(kv::plan::part const&) const
+0 15461970
+
+ob=(1) /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+fl=(1) ???
+fn=(0) 0x0000000000023340
+cob=(8)
+cfi=(228)
+cfn=(1364) (below main)
+calls=0 0 
+0 88
+
+ob=(7) /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.35
+fl=(205) ???
+fn=(1794) std::_Hash_bytes(void const*, unsigned long, unsigned long)
+0 43489215
+
+fn=(1424) operator delete(void*, unsigned long)
+0 4556
+cob=(4) ???
+cfi=(191) ???
+cfn=(1426) 0x000000000496a540
+calls=2278 0 
+0 319064
+
+fn=(1430) operator delete(void*)
+0 4556
+cob=(4)
+cfi=(191)
+cfn=(1432) 0x000000000496ada0
+calls=2278 0 
+0 309952
+
+fn=(1420) operator new(unsigned long)
+0 25058
+cob=(4)
+cfi=(191)
+cfn=(1226) 0x000000000496a320
+calls=2278 0 
+0 340181
+0 11390
+
+fn=(1632) 0x00000000000f5ee0
+cob=(8)
+cfi=(228)
+cfn=(1634) std::thread::_State_impl<std::thread::_Invoker<std::tuple<kvs::(anonymous namespace)::epoll_frontend::epoll_frontend(kvs::config const&, int)::{lambda()#1}> > >::_M_run()
+calls=0 0 
+0 1459204845
+
+ob=(8)
+fl=(228)
+fn=(1786) kv::plan::route(kv::cmd_id, unsigned int, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>)
+0 13057461
+cfn=(1810) kv::batch::add(kv::cmd_id, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>)
+calls=343667 0 
+0 51332873
+0 10652823
+cob=(4)
+cfi=(191)
+cfn=(1418) 0x0000000004007cd0
+calls=51 0 
+0 2346
+0 1718783
+cfn=(1788) kv::shard::execute(kv::cmd_id, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+calls=343522 0 
+0 136885037
+0 8246432
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 5585
+0 3029
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=49 0 
+0 9602
+0 2735
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 12147
+0 1600
+
+fn=(1646) kvs::(anonymous namespace)::epoll_frontend::run(kvs::(anonymous namespace)::core&)
+0 283430
+cob=(4)
+cfi=(191)
+cfn=(1648) 0x0000000004007a90
+calls=40490 0 
+0 2753330
+0 22654612
+cfn=(1738) kvs::(anonymous namespace)::epoll_frontend::flush_outboxes(kvs::(anonymous namespace)::core&)
+calls=40490 0 
+0 24298742
+0 243140
+cfn=(1722) kvs::(anonymous namespace)::epoll_frontend::adopt(kvs::(anonymous namespace)::core&, int)
+calls=50 0 
+0 46472
+0 505
+cob=(4)
+cfi=(191)
+cfn=(1716) 0x0000000004007aa0
+calls=101 0 
+0 6772
+0 503
+cfn=(1720) kvs::set_nodelay(int)
+calls=100 0 
+0 2500
+0 2750314
+cfn=(1768) kvs::(anonymous namespace)::epoll_frontend::drive(kvs::(anonymous namespace)::core&, unsigned int)
+calls=687189 0 
+0 106496750
+0 687321
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=6 0 
+0 588
+0 1032
+cob=(4)
+cfi=(191)
+cfn=(1422) 0x0000000004007ce0
+calls=6 0 
+0 258
+0 134546
+cob=(4)
+cfi=(191)
+cfn=(1740) 0x0000000004007ee0
+calls=26902 0 
+0 1802434
+0 53804
+cob=(4)
+cfi=(191)
+cfn=(1778) 0x0000000004007f20
+calls=26902 0 
+0 860864
+0 322824
+cob=(4)
+cfi=(191)
+cfn=(1780) 0x0000000004007be0
+calls=26902 0 
+0 699452
+0 20289071
+cfn=(1822) kv::batch::execute(kv::shard&)
+calls=343667 0 
+0 181366301
+0 7904529
+cfn=(1722)
+calls=50 0 
+0 46139
+0 5498362
+cob=(4)
+cfi=(191)
+cfn=(1740)
+calls=687289 0 
+0 46048363
+0 12026525
+cfn=(1764) kv::plan::assemble(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+calls=343667 0 
+0 41595280
+0 1374668
+cfn=(1768)
+calls=343667 0 
+0 105849436
+0 343688
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=1 0 
+0 423
+0 478
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=1 0 
+0 43
+0 906
+cob=(4)
+cfi=(191)
+cfn=(1774) 0x00000000040080d0
+calls=100 0 
+0 6900
+0 1300
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 17526
+0 700
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 16774
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 17689
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 19024
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 18731
+0 1900
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 15819
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 19693
+0 700
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 18305
+0 700
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 17690
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 20729
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 18282
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 19741
+0 300
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 13416
+0 1500
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 18514
+0 600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 19397
+0 1100
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 15323
+0 700
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 15225
+0 728
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=12 0 
+0 592
+0 156
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=12 0 
+0 1324
+0 4810407
+cfn=(1744) kvs::(anonymous namespace)::epoll_frontend::route(kvs::(anonymous namespace)::core&, unsigned int, kvs::(anonymous namespace)::conn&, std::basic_string_view<char, std::char_traits<char> >, bool) [clone .isra.0]
+calls=687189 0 
+0 866937312
+0 687225
+cob=(4)
+cfi=(191)
+cfn=(1408) 0x0000000004007c20
+calls=12 0 
+0 194
+0 24
+
+fn=(1756) kv::plan::add(kv::command const&)
+0 10995024
+cfn=(1758) kv::(anonymous namespace)::classify(std::basic_string_view<char, std::char_traits<char> >)
+calls=687189 0 
+0 21302859
+0 109950240
+cfn=(1786)
+calls=687189 0 
+0 221930453
+0 8934857
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 20747
+0 1700
+
+fn=(1834) kv::reply_bulk(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::basic_string_view<char, std::char_traits<char> >)
+0 110634029
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=687189 0 
+0 13743780
+0 5496312
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=686989 0 
+0 9617846
+0 1374778
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=200 0 
+0 17373
+0 2200
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=200 0 
+0 2800
+0 3400
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=200 0 
+0 8600
+0 4815723
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=200 0 
+0 3400
+0 2600
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=200 0 
+0 41958
+0 1000
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=200 0 
+0 4800
+0 800
+
+fn=(1404) main
+cob=(4)
+cfi=(191)
+cfn=(1710) 0x00000000040079d0
+calls=0 0 
+0 88
+
+fn=(1738)
+0 1613860
+cob=(4)
+cfi=(191)
+cfn=(1778)
+calls=39055 0 
+0 1249760
+0 12880795
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=28 0 
+0 4260
+0 8092
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=28 0 
+0 1628
+0 255
+cob=(4)
+cfi=(191)
+cfn=(1780)
+calls=1 0 
+0 26
+0 78108
+cob=(4)
+cfi=(191)
+cfn=(1780)
+calls=39054 0 
+0 1015404
+0 5563414
+cob=(4)
+cfi=(191)
+cfn=(1782) 0x0000000004007a10
+calls=26902 0 
+0 1802434
+0 80706
+
+fn=(1634)
+cfn=(1646)
+calls=0 0 
+0 1459204845
+
+fn=(1764)
+0 30236316
+cfn=(1766)
+calls=687189 0 
+0 15461970
+0 16491336
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=687089 0 
+0 16490136
+0 3436345
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 12646
+0 2000
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=100 0 
+0 2400
+0 1500
+
+fn=(1788)
+0 15805347
+cfn=(1790) std::__detail::_Node_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, false, false> std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::__detail::_Select1st, std::equal_to<void>, kv::shard::hash, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_find_tr<std::basic_string_view<char, std::char_traits<char> >, void, void>(std::basic_string_view<char, std::char_traits<char> > const&)
+calls=687189 0 
+0 99907995
+0 12369402
+cfn=(1834)
+calls=687189 0 
+0 145771399
+
+fn=(1822)
+0 31964131
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=200 0 
+0 41252
+0 4400
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 4300
+0 4400
+cfn=(1788)
+calls=100 0 
+0 79489
+0 5153505
+cfn=(1788)
+calls=343567 0 
+0 136889617
+0 7218807
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 4600
+0 1800
+
+fn=(1810)
+0 16837883
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=687234 0 
+0 11339711
+0 19243952
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 20439
+0 1300
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=100 0 
+0 1300
+0 6100
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=200 0 
+0 40317
+0 2200
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=100 0 
+0 1500
+0 1600
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 4300
+0 3783237
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=100 0 
+0 2000
+0 2600
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 19774
+0 3800
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 19560
+0 1300
+
+fn=(1722)
+0 1722
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=2 0 
+0 100
+0 686
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=98 0 
+0 20965
+0 3100
+cfn=(1736) kv::plan::plan(unsigned int, unsigned int, kv::shard&, kv::server_info const&)
+calls=100 0 
+0 53711
+0 2200
+cob=(4)
+cfi=(191)
+cfn=(1536) 0x0000000004007e80
+calls=100 0 
+0 900
+0 4166
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=12 0 
+0 1611
+0 960
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=12 0 
+0 516
+0 312
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=12 0 
+0 592
+0 108
+cob=(4)
+cfi=(191)
+cfn=(1408)
+calls=12 0 
+0 194
+0 156
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=12 0 
+0 516
+0 96
+
+fn=(1748) kv::consume(kv::parser&, kv::command&, kv::plan&, std::basic_string_view<char, std::char_traits<char> >, unsigned long&)
+0 27487560
+cfn=(1750) kv::parser::next(std::basic_string_view<char, std::char_traits<char> >, unsigned long&, kv::command&)
+calls=1374378 0 
+0 343648717
+0 4123134
+cfn=(1750)
+calls=687189 0 
+0 18554103
+0 8933457
+cfn=(1756)
+calls=687189 0 
+0 373135880
+0 15118158
+
+fn=(1720)
+0 1100
+cob=(4)
+cfi=(191)
+cfn=(1490) 0x0000000004008060
+calls=100 0 
+0 900
+0 500
+
+fn=(1736)
+0 2000
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 20090
+0 700
+cob=(4)
+cfi=(191)
+cfn=(1526) 0x0000000004007b10
+calls=100 0 
+0 1300
+0 2800
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=100 0 
+0 21721
+0 5100
+
+fn=(1750)
+0 37795395
+cob=(4)
+cfi=(191)
+cfn=(1752) 0x0000000004007d20
+calls=687189 0 
+0 14430969
+0 20615670
+cfn=(1784) kv::parse_ll(std::basic_string_view<char, std::char_traits<char> >, long long&)
+calls=687189 0 
+0 32297883
+0 32297783
+cob=(4)
+cfi=(191)
+cfn=(1752)
+calls=1374378 0 
+0 28861938
+0 10995024
+
+ob=(4)
+fl=(191)
+fn=(1426)
+0 4556
+cob=(7)
+cfi=(205)
+cfn=(1430)
+calls=2278 0 
+0 314508
+0 5
+
+fn=(1648)
+0 80980
+cob=(2) /usr/lib/x86_64-linux-gnu/libc.so.6
+cfi=(285) ./misc/../sysdeps/unix/sysv/linux/epoll_wait.c
+cfn=(1650) epoll_wait
+calls=40490 28 
+0 2672350
+
+fn=(1770) 0x0000000004007ac0
+0 1374378
+cob=(2)
+cfi=(304) ./socket/../sysdeps/unix/sysv/linux/send.c
+cfn=(1772) send
+calls=687189 24 
+0 44667285
+
+fn=(1408)
+0 5499050
+cob=(2)
+cfi=(234) ./string/../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S
+cfn=(1410) __memcpy_avx_unaligned_erms
+calls=2749525 255 
+0 45711011
+
+fn=(1418)
+0 4556
+cob=(7)
+cfi=(205)
+cfn=(1420)
+calls=2278 0 
+0 376629
+
+fn=(1490)
+0 200
+cob=(2)
+cfi=(248) ./socket/../sysdeps/unix/sysv/linux/setsockopt.c
+cfn=(1492) setsockopt
+calls=100 94 
+0 700
+
+ob=(8)
+fl=(228)
+fn=(1750)
+0 32985072
+cfn=(1784)
+calls=1374378 0 
+0 77652357
+0 74220412
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=200 0 
+0 40617
+0 4100
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=100 0 
+0 4300
+0 1300
+
+fn=(1768)
+0 21647541
+cfn=(1744)
+calls=687189 0 
+0 103767859
+0 17867494
+cob=(4)
+cfi=(191)
+cfn=(1770)
+calls=687189 0 
+0 46041663
+0 23021629
+
+fn=(1784)
+0 109950240
+
+fn=(1790)
+0 9620646
+cob=(4)
+cfi=(191)
+cfn=(1792) 0x0000000004007950
+calls=687189 0 
+0 35046639
+0 11223414
+cob=(4)
+cfi=(191)
+cfn=(1792)
+calls=200346 0 
+0 10217646
+0 5267103
+cob=(4)
+cfi=(191)
+cfn=(1442) 0x0000000004007a70
+calls=887535 0 
+0 19885587
+0 8646960
+
+fn=(1364)
+cob=(2)
+cfi=(229) ./csu/../csu/libc-start.c
+cfn=(1366) __libc_start_main@@GLIBC_2.34
+calls=0 242 
+0 88
+
+fn=(1744)
+0 26113182
+cfn=(1746) kv::plan::begin()
+calls=1374378 0 
+0 40546471
+0 9620646
+cfn=(1748)
+calls=1374378 0 
+0 791001009
+0 20961624
+cob=(4)
+cfi=(191)
+cfn=(1418)
+calls=7 0 
+0 1280
+0 2464
+cob=(4)
+cfi=(191)
+cfn=(1422)
+calls=7 0 
+0 513
+0 40200713
+cfn=(1764)
+calls=343522 0 
+0 40539369
+0 1717900
+
+fn=(1746)
+0 12026895
+
+ob=(4)
+fl=(191)
+fn=(1526)
+0 200
+cob=(2)
+cfi=(208) ./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S
+cfn=(746) __memset_avx2_unaligned_erms
+calls=100 198 
+0 1100
+
+fn=(1710)
+cob=(2)
+cfi=(299) ./signal/../sysdeps/unix/sysv/linux/sigwait.c
+cfn=(1712) sigwait
+calls=0 24 
+0 88
+
+fn=(1740)
+0 1428382
+cob=(2)
+cfi=(302) ./io/../sysdeps/unix/sysv/linux/read.c
+cfn=(1742) read
+calls=714191 25 
+0 46422415
+
+fn=(1774)
+0 200
+cob=(2)
+cfi=(305) ./io/../sysdeps/unix/sysv/linux/close.c
+cfn=(1776) close
+calls=100 26 
+0 6700
+
+fn=(1536)
+0 200
+cob=(2)
+cfi=(252) ./misc/../sysdeps/unix/syscall-template.S
+cfn=(1538) epoll_ctl
+calls=100 120 
+0 700
+
+fn=(1716)
+0 202
+cob=(2)
+cfi=(301) ./socket/../sysdeps/unix/sysv/linux/accept4.c
+cfn=(1718) accept4
+calls=101 29 
+0 6570
+
+fn=(1432)
+0 4556
+cob=(2)
+cfi=(194) ./malloc/./malloc/malloc.c
+cfn=(1436) free
+calls=2278 3319 
+0 305396
+0 5
+
+fn=(1442)
+0 1775070
+cob=(2)
+cfi=(220) ./string/../sysdeps/x86_64/multiarch/memcmp-avx2-movbe.S
+cfn=(902) __memcmp_avx2_movbe
+calls=887535 73 
+0 18110517
+
+fn=(1752)
+0 4123134
+cob=(2)
+cfi=(303) ./string/../sysdeps/x86_64/multiarch/memchr-avx2.S
+cfn=(1754) __memchr_avx2
+calls=2061567 61 
+0 39169773
+
+ob=(8)
+fl=(228)
+fn=(1746)
+0 28519576
+
+fn=(1758)
+0 21302859
+
+ob=(4)
+fl=(191)
+fn=(1782)
+0 53804
+cob=(2)
+cfi=(298) ./io/../sysdeps/unix/sysv/linux/write.c
+cfn=(1706) write
+calls=26902 25 
+0 1748630
+
+fn=(1226)
+0 4556
+cob=(2)
+cfi=(194)
+cfn=(1230) malloc
+calls=2278 3283 
+0 335625
+0 5
+
+fn=(1422)
+0 4556
+cob=(7)
+cfi=(205)
+cfn=(1424)
+calls=2278 0 
+0 323620
+
+fn=(1778)
+0 131914
+cob=(2)
+cfi=(262) ./nptl/./nptl/pthread_mutex_lock.c
+cfn=(1580) pthread_mutex_lock@@GLIBC_2.2.5
+calls=65957 71 
+0 1978710
+
+fn=(1780)
+0 131914
+cob=(2)
+cfi=(263) ./nptl/./nptl/pthread_mutex_unlock.c
+cfn=(1582) pthread_mutex_unlock@@GLIBC_2.2.5
+calls=65957 357 
+0 1582968
+
+fn=(1792)
+0 1775070
+cob=(7)
+cfi=(205)
+cfn=(1794)
+calls=887535 0 
+0 43489215
+
+ob=(2)
+fl=(285)
+fn=(1650)
+28 80980
++2 202450
+-2 40490
++2 121470
+cfi=(286) ./nptl/./nptl/cancellation.c
+cfn=(1652) __syscall_cancel
+calls=40490 +44 
+* 2145980
++4 80980
+
+fl=(263)
+fn=(1582)
+357 65957
+51 65957
++1 131914
+357 197871
+55 131914
++8 65957
+-3 65957
+-21 65957
++1 263828
++28 65957
++2 65957
+359 131914
+43 263828
+
+fl=(298)
+fn=(1706)
+25 53804
++1 107608
+-1 26902
++1 80706
+cfi=(286)
+cfn=(1652)
+calls=26902 +48 
+* 1425806
++1 53804
+
+fl=(301)
+fn=(1718)
+29 202
++2 404
+-2 101
++2 303
+cfi=(286)
+cfn=(1652)
+calls=101 +43 
+* 5358
++4 202
+
+fl=(305)
+fn=(1776)
+26 200
++1 600
+-1 100
++1 300
+cfi=(286)
+cfn=(1652)
+calls=100 +47 
+* 5300
++1 200
+
+fl=(229)
+fn=(1366)
+cfi=(230) ./csu/../sysdeps/nptl/libc_start_call_main.h
+cfn=(1396) (below main)
+calls=0 30 
+360 88
+
+fl=(252)
+fn=(1538)
+120 600
++2 100
+
+fn=(1730) mprotect
+117 95
++5 19
+
+fl=(287) ./nptl/../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S
+fn=(1654) __syscall_cancel_arch
+31 1468974
++6 1468974
++1 1468974
++1 1468974
++4 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++1 1468974
++4 1468974
+
+fl=(303)
+fn=(1754)
+61 2061567
++7 2061567
++2 2061567
++3 2061567
++1 2061567
++2 2061567
++1 2061567
++1 2061567
++1 2061567
++3 2061567
++1 2061567
++3 2061567
++1 2061567
++2 687189
++1 687189
++1 687189
++1 687189
++2 1374378
++7 1374378
++5 1374378
++7 1374378
++1 1374378
++1 1374378
++1 1374378
+
+fl=(269) ./misc/../sysdeps/unix/sysv/linux/x86_64/clone.S
+fn=(1596) clone
+cfi=(255) ./nptl/./nptl/pthread_create.c
+cfn=(1602) start_thread
+calls=0 339 
+100 1459204845
+
+fl=(234)
+fn=(1410)
+255 2749525
++1 2749525
++6 2749525
++1 2749525
++2 1374590
++1 1374590
++1 1374590
++3 687197
++1 687197
++1 687197
++3 1374394
++30 1374935
++1 1374935
++2 1031264
++1 1031264
++2 1031160
++4 1031160
++1 1030956
++1 1030956
++1 1030956
++1 1030956
++1 1030956
++1 1030956
++2 1030956
++2 1030956
++6 204
++1 204
++1 204
++1 204
++1 204
++7 343671
++1 343671
++1 343671
++1 343671
++2 343671
++17 104
++1 104
++1 104
++1 104
++1 104
++7 687393
++1 687393
++1 687393
++1 687393
++1 687393
++1 687393
++1 1374786
++5 687393
++1 687393
++5 687393
++1 687393
++2 687393
++1 687393
++1 687393
+
+fl=(304)
+fn=(1772)
+24 1374378
++4 2748756
+-4 687189
++4 2061567
+cfi=(286)
+cfn=(1652)
+calls=687189 +46 
+* 36421017
++4 1374378
+
+fl=(230)
+fn=(1396)
+cob=(8)
+cfi=(228)
+cfn=(1404)
+calls=0 0 
+59 88
+
+fl=(299)
+fn=(1712)
+31 4
+-3 4
+cfi=(300) ./signal/../sysdeps/unix/sysv/linux/sigtimedwait.c
+cfn=(1714) sigtimedwait
+calls=1 -4 
+* 78
++3 2
+
+fl=(208)
+fn=(746)
+198 100
++1 200
++5 100
++1 100
+341 100
++9 100
++1 100
++31 100
++1 100
++1 100
+
+fl=(286)
+fn=(1652)
+74 7344870
+-37 2937948
++1 8813844
++11 17627688
+cfi=(287)
+cfn=(1654)
+calls=1468974 -18 
+* 22034610
++5 1468974
+-5 1468974
++5 1468974
++6 1468974
++17 1468974
+-17 4406934
++18 6
++1 3
++1 9
+-2 2
++1 1
++1 3
+-1 2937942
++1 4406910
+-2 2
+
+fl=(302)
+fn=(1742)
+25 1428382
++1 2856764
+-1 714191
++1 2142573
+cfi=(286)
+cfn=(1652)
+calls=714191 +48 
+* 37852123
++1 1428382
+
+fl=(255)
+fn=(1602)
+cob=(7)
+cfi=(205)
+cfn=(1632)
+calls=0 0 
+454 1459204845
+
+fl=(248)
+fn=(1492)
+94 200
+-65 400
++74 100
+
+fl=(300)
+fn=(1714)
+24 2
++7 3
+-7 4
++7 2
+cfi=(286)
+cfn=(1652)
+calls=1 +43 
+* 58
++30 2
+-30 1
++30 2
++4 4
+
+fl=(194)
+fn=(1436)
+3319 2278
++3 4556
++15 4556
+-4 6834
++8 6834
++6 6816
++6 2272
+-3 4544
++3 2272
+-3 2272
++1 4544
++2 6816
+3007 762
++8 762
+-12 762
++4 2286
++1 762
++7 762
+3354 762
++10 4530
+-34 1516
++40 3032
+fi=(193) ./malloc/./malloc/arena.c
+151 4548
+-6 3032
++6 1516
+fe=(194)
+3374 4548
+cfn=(1814) _int_free_chunk
+calls=1516 4351 
+* 221222
+
+fn=(1816) _int_free_merge_chunk
+4407 12128
++7 7580
+-6 1516
++9 4548
++5 4548
++4 3032
+-1 3032
++1 3032
+1895 4548
+4433 3032
++2 625
++2 625
++1 2500
++2 625
+-4 625
++4 625
+cfn=(1820) unlink_chunk.isra.0
+calls=625 1592 
+* 12106
++18 3032
++6 3032
++4 755
++4 3032
++9 178
+-1 178
++2 356
++2 534
++7 2676
++1 5352
++1 1338
++2 2676
++3 8028
++4 1338
+-1 1338
++2 1338
++1 1338
++2 4014
++1 1338
+-61 1338
+-1 2676
++1 8028
+-1 1338
+cfn=(1818) _int_free_maybe_trim
+calls=1338 +83 
+* 32112
++57 178
+-1 178
++2 178
++1 178
++2 534
++1 178
+-61 178
+-1 356
++1 1068
+-1 178
+cfn=(1818)
+calls=178 +83 
+* 4272
++20 761
++1 761
+-1 761
+cfn=(1820)
+calls=761 1592 
+* 14648
++1 761
+
+fn=(1230)
+3283 2278
+1269 4556
++19 2278
+3287 2278
+1288 6130
+3287 3148
++2 4686
++2 3124
++2 13596
+3030 1162
++4 2324
++4 581
++1 581
+3294 581
+-7 1408
++19 1697
+cfn=(1232) __libc_malloc2
+calls=1697 -59 
+* 283809
+-17 1408
+
+fn=(1232)
+3247 10182
++4 3394
++8 13576
++2 5091
+cfn=(1234) _int_malloc
+calls=1697 3790 
+* 214232
++3 3394
++8 6788
++4 5091
+fi=(193)
+151 5091
+fe=(194)
+3276 1697
+fi=(193)
+145 1697
++6 1697
+fe=(194)
+3276 3394
++3 8485
+
+fn=(1820)
+1592 1414
++2 4242
+-2 1414
++2 2828
++3 1414
++3 2828
+-2 1414
++2 2828
++3 1414
++1 1414
++1 3278
++2 36
++1 54
++3 36
++14 18
++1 18
++3 2828
+
+fn=(1814)
+4351 6064
++8 1516
+-3 1516
++3 1516
+-3 3032
++6 3032
++11 3032
++27 4548
+-35 3032
++1 6064
++2 3032
+cfn=(1816)
+calls=1516 +39 
+* 177258
+* 1516
++3 6064
+
+fn=(1242) alloc_perturb
+1887 910
++1 2730
++2 910
+
+fn=(1818)
+4528 16676
++3 3032
++19 16676
+
+fn=(1234)
+3790 13576
++32 3394
+1288 9778
+3831 2586
++16 2586
++54 60
++18 1694
+-1 1694
++12 3388
+-11 3388
+-1 5082
++12 3388
+-6 919
++5 919
+-7 919
++2 1838
++9 1838
++3 1838
+-3 14
++3 14
++1 2778
+-3 926
++5 926
++1 3704
++2 3704
+-10 926
++12 1852
++1 1852
++2 1852
++11 3686
++29 20
++1 20
++4 40
++31 40
++8 96
++1 5
++1 5
+-1 5
++4 10
+-4 14
++1 14
+-1 14
++4 28
++5 4
+-2 1
++3 2
++44 70
++9 35
+-9 140
++1 35
++1 35
++1 35
++1 35
++6 70
+3831 1616
+1288 404
+3850 404
++2 404
+-2 404
++2 808
+-2 1281
++2 1281
+-2 1281
++2 2562
++2 3
++1 6
++2 3
++1 3
++1 3
++2 12
++1 3
++5 9
++1 6
+2919 6
+3872 9
++4 24
++1 6
+3047 6
+1888 3
+3893 3
+1888 6
+4340 15273
+3901 1311
+-52 7686
+4105 105
+3930 105
+4111 112
++13 803
+-2 1606
++2 24
++3 12
+-3 12
++3 24
+4277 30
++3 120
++2 45
++1 15
+1888 15
+4286 15
+1888 30
+4280 80
++2 30
++1 10
+1888 10
+4286 10
+1888 23
+4286 3
+1888 6
+4031 104
++52 18
+-51 18
++51 54
+3959 1824
++2 906
+-1 1812
++27 15
++1 15
++4 30
++31 75
++2 30
++1 45
++1 15
+-1 15
++1 15
+-2 2
++1 3
++1 1
+-1 1
++1 1
++4 35
++26 3
++1 2
++6 1
++13 1
++1 2
+-47 27
++36 2
+4195 803
++1 803
++1 803
+-1 803
++1 803
++1 1606
++1 2409
++5 3272
++16 288
++2 576
+-4 680
++8 52
++3 104
++2 24
++1 24
++1 24
+-2 96
+-27 24
++4 2373
++3 3148
+-3 2349
++3 3116
+-3 2325
++3 3096
+-3 1532
+4308 1550
++1 2325
++2 1550
++3 3100
++5 756
+-2 756
++2 1512
+-2 756
++7 756
+-8 756
++3 756
++2 756
+-3 756
++1 3024
++2 756
+1888 2268
+2324 19
++12 19
+-12 38
++12 19
+4336 57
+cfn=(1242)
+calls=19 1887 
+* 95
+* 19
+4208 16
++5 64
++1 32
++24 56
++3 56
++2 28
++3 56
+-3 112
++3 28
+cfn=(1820)
+calls=28 1592 
+* 724
++3 168
++15 25
++1 50
++3 50
+-9 25
++9 50
++1 25
++1 25
++3 50
++1 19
++1 65
+2325 19
++36 76
++1 19
+-1 19
++1 19
++9 190
++6 57
++3 76
+fi=(193)
+145 19
+fe=(194)
+2388 57
+fi=(193)
+145 19
+fe=(194)
+2388 38
+fi=(193)
+473 19
+fe=(194)
+2387 19
+fi=(193)
+477 38
+fe=(194)
+2387 19
+fi=(193)
+477 19
++1 19
++1 38
++3 57
++12 57
++3 19
++1 19
+fe=(194)
+2391 57
++1 19
+-1 19
++1 95
+2698 57
++1 19
++4 19
++1 38
++3 38
++5 38
+-2 19
++2 19
+-3 19
++2 19
++4 19
+-3 19
++1 19
+-1 57
++1 19
+4335 19
+-83 3
+-1 3
++1 6
++1 6
+3965 891
+-1 1782
++3 891
+-1 891
++1 1782
++1 2673
++1 1782
++2 1710
++4 855
++6 855
+-6 5985
++2 2565
++5 855
+-4 855
++4 1710
+cfn=(1242)
+calls=855 1887 
+* 4275
+-7 36
++6 36
+-6 252
++2 108
++5 36
+-4 36
++4 72
+cfn=(1242)
+calls=36 1887 
+* 180
++1 891
+fi=(193)
+485 19
+-1 57
++1 38
+-1 19
+cfi=(252)
+cfn=(1730)
+calls=19 117 
+* 114
+* 76
++5 38
+fe=(194)
+
+fl=(262)
+fn=(1580)
+71 65957
++3 65957
++2 65957
++2 197871
+-7 197871
++10 65957
++2 131914
+-39 65957
++1 131914
++3 263828
++40 197871
++70 65957
++2 65957
++3 65957
+-59 65957
++62 131914
+45 131914
+
+fl=(220)
+fn=(902)
+73 887535
++7 887535
++1 887535
++75 200346
++10 200346
++1 200346
++1 200346
++3 400692
+401 887535
++1 887535
++5 887535
++1 887535
++1 887535
++1 887535
++1 887535
++3 756211
++1 756211
++1 756211
++1 756211
++3 756211
++1 756211
++1 584191
++1 1168382
++6 131324
++1 131324
++82 131324
++1 131324
++1 131324
++1 131324
++1 131324
++4 102998
++1 102998
++1 102998
++1 102998
++1 102998
++1 102998
++2 102998
++2 102998
+
+totals: 1459204948

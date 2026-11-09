@@ -20,10 +20,9 @@ from collections import Counter
 MODULES = [
     ("RESP parser", r"kv::parser::|kv::parse_ll|find_crlf|short_number|kv::consume|__memchr"),
     ("reply encoders", r"kv::reply_"),
-    ("std::string appends (replies, batch arguments)", r"_M_append|_M_replace|basic_string.*append|_M_mutate"),
     ("engine: plan, batch, shard, hashing",
      r"kv::plan::|kv::batch::|kv::shard::|kv::owner|kv::key_hash|classify|_Hash_bytes|_Hashtable|"
-     r"__memcmp|kv::\(anonymous namespace\)::ieq"),
+     r"__memcmp|kv::\(anonymous namespace\)::ieq|_M_append|_M_replace|_M_mutate"),
     ("byte copies (memcpy/memmove)", r"__memcpy|__memmove|memmove"),
     ("allocator", r"^malloc$|^free$|_int_malloc|_int_free|operator new|operator delete|"
                   r"cfree|tcache|node_pool"),
