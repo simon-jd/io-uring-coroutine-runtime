@@ -404,6 +404,7 @@ void reactor::free_slot(slot_ref ref) noexcept {
     s.res = s.timeout_res = 0;
     s.flags = 0;
     s.waiter = {};
+    s.join = nullptr;
     s.source = nullptr;
     s.reporter = nullptr;
     s.target = {};
@@ -427,6 +428,7 @@ void reactor::finish_take(slot_ref ref) noexcept {
 void reactor::detach(slot_ref ref) noexcept {
     auto& s = slot_at(ref);
     s.waiter = {};
+    s.join = nullptr;
     s.detached = true;
     ++stats_.detached;
     unregister_source(s, ref);
@@ -529,6 +531,12 @@ void reactor::complete(op_slot& s, slot_ref ref) noexcept {
     if (!s.primary_done || s.timeout_pending) return;
     if (s.timeout_res == -ETIME && s.res == -ECANCELED) s.res = -ETIME;
     s.timeout_res = 0;
+    if (s.join) {
+        // One of a call_all's replies. The slot waits for the caller to take
+        // it; the last reply resumes the caller inline, which frees the slots.
+        if (--s.join->remaining == 0) std::exchange(s.join->parent, {}).resume();
+        return;
+    }
     if (s.waiter) {
         // Resume inline. The slot may be freed or reused by the time resume()
         // returns, so nothing touches `s` afterwards.
@@ -902,12 +910,16 @@ void reactor::send_post(unsigned target, std::unique_ptr<detail::xnode> node) {
     enqueue_message(target, n);
 }
 
-slot_ref reactor::start_call(std::coroutine_handle<> h, unsigned target,
-                             std::unique_ptr<detail::xnode> node) {
-    check_thread();
+void reactor::check_call_target(unsigned target) const {
     if (!rt_) throw Failure(Error::invalid, "call() needs a reactor created by a runtime");
     if (target >= rt_->size()) throw Failure(Error::invalid, "no such core");
     if (!rt_->accepting()) throw Failure(Error::closed, "runtime is shutting down");
+}
+
+slot_ref reactor::start_call(std::coroutine_handle<> h, unsigned target,
+                             std::unique_ptr<detail::xnode> node) {
+    check_thread();
+    check_call_target(target);
     const auto ref = acquire_slot(op_kind::xcall);
     auto& s = slot_at(ref);
     s.xcall = std::move(node);

@@ -3,6 +3,11 @@
 #include "rol/when_all.hpp"
 #include "test.hpp"
 #include <atomic>
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <span>
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <numeric>
@@ -116,6 +121,116 @@ std::vector<std::pair<std::string, std::function<void(runtime_config)>>> cases()
                  CHECK(verified.load() == static_cast<int>(cores) * calls);
                  CHECK(std::accumulate(served.begin(), served.end(), std::uint64_t{0}) ==
                        std::uint64_t{cores} * calls);
+             }},
+            {"call_all_returns_results_in_call_order",
+             [](runtime_config base) {
+                 // Every core calls all other cores at once, with payloads,
+                 // in a different order each round.
+                 constexpr unsigned cores = 4;
+                 constexpr int rounds = 400;
+                 runtime rt(with_cores(base, cores));
+                 std::vector<std::uint64_t> served(cores, 0);
+                 std::atomic<int> verified{0};
+                 rt.run([&](reactor& r) -> task<void> {
+                     std::mt19937 rng(r.core() + 11);
+                     auto make = [&served](unsigned t, std::shared_ptr<std::vector<std::uint32_t>> p) {
+                         return std::pair{t, [p, &served](reactor& tr) {
+                                              ++served[tr.core()];
+                                              return std::pair{tr.core(),
+                                                               std::accumulate(p->begin(), p->end(),
+                                                                               std::uint64_t{0})};
+                                          }};
+                     };
+                     using call = decltype(make(0, nullptr));
+                     std::vector<call> calls;
+                     for (int i = 0; i < rounds; ++i) {
+                         calls.clear();
+                         std::vector<std::uint64_t> sums;
+                         std::vector<unsigned> order;
+                         for (unsigned k = 1; k < cores; ++k) order.push_back((r.core() + k) % cores);
+                         std::shuffle(order.begin(), order.end(), rng);
+                         for (unsigned t : order) {
+                             auto p = std::make_shared<std::vector<std::uint32_t>>(1 + rng() % 32);
+                             for (auto& x : *p) x = static_cast<std::uint32_t>(rng());
+                             sums.push_back(std::accumulate(p->begin(), p->end(), std::uint64_t{0}));
+                             calls.push_back(make(t, std::move(p)));
+                         }
+                         const auto got = co_await r.call_all(std::span(calls));
+                         bool ok = got.size() == order.size();
+                         for (std::size_t k = 0; ok && k < got.size(); ++k)
+                             ok = got[k].first == order[k] && got[k].second == sums[k];
+                         REQUIRE("call_all returns every result in call order", ok);
+                         verified.fetch_add(1);
+                     }
+                 });
+                 CHECK(verified.load() == static_cast<int>(cores) * rounds);
+                 CHECK(std::accumulate(served.begin(), served.end(), std::uint64_t{0}) ==
+                       std::uint64_t{cores} * rounds * (cores - 1));
+                 CHECK(rt.outstanding() == 0);
+             }},
+            {"call_all_rethrows_after_every_reply",
+             [](runtime_config base) {
+                 // One function throws; the others' results are released and
+                 // the exception reaches the caller once every reply is back.
+                 constexpr unsigned cores = 4;
+                 runtime rt(with_cores(base, cores));
+                 std::atomic<int> ran{0}, caught{0};
+                 rt.run([&](reactor& r) -> task<void> {
+                     if (r.core() != 0) co_return;
+                     auto make = [&ran](unsigned t, bool fail) {
+                         return std::pair{t, [fail, &ran](reactor&) {
+                                              ran.fetch_add(1);
+                                              if (fail) throw std::runtime_error("boom");
+                                              return std::make_unique<int>(7);
+                                          }};
+                     };
+                     using call = decltype(make(0, false));
+                     for (int i = 0; i < 50; ++i) {
+                         std::vector<call> calls;
+                         for (unsigned t = 1; t < cores; ++t) calls.push_back(make(t, t == 2));
+                         try {
+                             (void)co_await r.call_all(std::span(calls));
+                         } catch (const std::runtime_error& e) {
+                             if (std::string(e.what()) == "boom") caught.fetch_add(1);
+                         }
+                         REQUIRE("call_all rethrows a failure after every reply arrived",
+                                 r.in_flight() == 0 && ran.load() == 3 * (i + 1));
+                     }
+                 });
+                 REQUIRE("call_all rethrows a failure after every reply arrived", caught.load() == 50);
+                 CHECK(rt.outstanding() == 0);
+             }},
+            {"destroyed_call_all_leaves_slots_to_replies",
+             [](runtime_config base) {
+                 // The awaiting frame is destroyed while every target is still
+                 // running its function: the slots keep the nodes until the
+                 // replies arrive, then free them.
+                 constexpr unsigned cores = 3;
+                 runtime rt(with_cores(base, cores));
+                 std::atomic<int> finished{0};
+                 rt.run([&](reactor& r) -> task<void> {
+                     if (r.core() != 0) co_return;
+                     auto make = [&finished](unsigned t) {
+                         return std::pair{t, [&finished](reactor&) {
+                                              spin_for(20ms);
+                                              finished.fetch_add(1);
+                                              return std::make_unique<std::vector<char>>(4096, 'x');
+                                          }};
+                     };
+                     using call = decltype(make(0));
+                     std::vector<call> calls{make(1), make(2)};
+                     bool resumed = false;
+                     auto caller = [](reactor& re, std::vector<call>& c, bool& done) -> eager {
+                         (void)co_await re.call_all(std::span(c));
+                         done = true; // must never run: the frame is destroyed first
+                     }(r, calls, resumed);
+                     co_await r.nop(); // the chains leave in this iteration
+                     caller.destroy();
+                     while (finished.load() < 2 || r.in_flight() > 0) co_await r.sleep(1ms);
+                     REQUIRE("a destroyed call_all leaves its slots to the replies",
+                             !resumed && r.in_flight() == 0 && r.stats().detached_released >= 2);
+                 });
+                 CHECK(rt.outstanding() == 0);
              }},
             {"posts_are_delivered_before_rings_close",
              [](runtime_config base) {

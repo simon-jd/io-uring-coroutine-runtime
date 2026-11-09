@@ -433,6 +433,13 @@ public:
     void post(unsigned target, F fn);
     template <class F>
     auto call(unsigned target, F fn);
+    // Calls several cores at once: calls[i].second runs on core calls[i].first
+    // (functions are moved out of `calls`). Resumes once every reply is back
+    // and returns the results in the order of `calls`. If calls fail, every
+    // slot is still released first; then the first failure in that order is
+    // thrown. One slot and one message node per call; no coroutine frames.
+    template <class F>
+    auto call_all(std::span<std::pair<unsigned, F>> calls);
 
     // ---- operations ----
     template <class Prep, class Take>
@@ -480,6 +487,7 @@ public:
     void close_stream(detail::slot_ref ref) noexcept;
     detail::slot_ref start_call(std::coroutine_handle<> h, unsigned target,
                                 std::unique_ptr<detail::xnode> node);
+    void check_call_target(unsigned target) const; // what start_call would refuse
     void send_post(unsigned target, std::unique_ptr<detail::xnode> node);
     void on_spawn_done(detail::spawn_promise* p) noexcept;
     void record_task_error(std::exception_ptr e) noexcept;
@@ -1097,6 +1105,74 @@ template <class F>
 auto reactor::call(unsigned target, F fn) {
     using R = std::invoke_result_t<F&, reactor&>;
     return call_awaiter<F, R>(*this, target, std::move(fn));
+}
+
+template <class F, class R>
+class call_all_awaiter {
+public:
+    call_all_awaiter(reactor& r, std::span<std::pair<unsigned, F>> calls) : r_(&r), calls_(calls) {}
+    call_all_awaiter(const call_all_awaiter&) = delete;
+    call_all_awaiter& operator=(const call_all_awaiter&) = delete;
+    ~call_all_awaiter() {
+        // Destroyed with replies outstanding: each slot keeps its node until
+        // its reply arrives, and no longer counts down `join_`.
+        for (auto ref : refs_)
+            if (ref) r_->detach(ref);
+    }
+    bool await_ready() const noexcept { return calls_.empty(); }
+    bool await_suspend(std::coroutine_handle<> h) {
+        for (auto& c : calls_) r_->check_call_target(c.first); // throws before anything starts
+        join_.parent = h;
+        join_.remaining = calls_.size();
+        refs_.reserve(calls_.size());
+        for (auto& c : calls_) {
+            auto node = std::make_unique<detail::call_node<F, R>>(std::move(c.second));
+            const auto ref = r_->start_call({}, c.first, std::move(node));
+            r_->slot_at(ref).join = &join_;
+            refs_.push_back(ref);
+        }
+        return true; // a reply always arrives in a later loop iteration
+    }
+    auto await_resume() {
+        int failure = 0;
+        std::exception_ptr error;
+        std::vector<std::conditional_t<std::is_void_v<R>, detail::unit, R>> out;
+        out.reserve(refs_.size());
+        for (auto& ref : refs_) {
+            auto& s = r_->slot_at(ref);
+            ROL_INVARIANT(s.primary_done, "call_all resumed before every reply arrived");
+            auto* node = static_cast<detail::call_node<F, R>*>(s.xcall.get());
+            if (s.res < 0) {
+                if (!failure && !error) failure = s.res;
+            } else {
+                ROL_INVARIANT(node->stage.load(std::memory_order_acquire) == 2,
+                              "cross-core reply arrived before the result was published");
+                if (node->error) {
+                    if (!failure && !error) error = node->error;
+                } else if (!failure && !error) {
+                    out.push_back(std::move(*node->result));
+                }
+            }
+            r_->finish_take(std::exchange(ref, {}));
+        }
+        refs_.clear();
+        if (failure) throw Failure(Error::closed, "cross-core call could not be delivered", -failure);
+        if (error) std::rethrow_exception(error);
+        if constexpr (std::is_void_v<R>) return;
+        else return out;
+    }
+
+private:
+    reactor* r_;
+    std::span<std::pair<unsigned, F>> calls_;
+    std::vector<detail::slot_ref> refs_;
+    detail::call_join join_;
+};
+
+template <class F>
+auto reactor::call_all(std::span<std::pair<unsigned, F>> calls) {
+    using R = std::invoke_result_t<F&, reactor&>;
+    return call_all_awaiter<F, R>(*this, calls);
 }
 
 template <class F>

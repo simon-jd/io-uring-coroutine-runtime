@@ -83,6 +83,13 @@ struct xnode {
     virtual void run(reactor& target) noexcept = 0;
 };
 
+// Shared by the slots of one reactor::call_all: the last reply resumes the
+// caller.
+struct call_join {
+    std::size_t remaining = 0;
+    std::coroutine_handle<> parent;
+};
+
 // One in-flight operation. Owned by the reactor, not by the awaiting coroutine.
 // Everything the kernel may touch (buffers, iovecs, msghdr, control data, file
 // descriptors being passed, timespecs, cross-core reply targets) lives here
@@ -114,6 +121,7 @@ struct op_slot {
     std::unique_ptr<msg_storage> msg;
     std::vector<unique_fd> fds;
     std::unique_ptr<xnode> xcall;
+    call_join* join = nullptr; // xcall started by call_all: count down instead of resuming
     __kernel_timespec ts{};
 
     slot_ref target;                // cancel operations: what they cancel

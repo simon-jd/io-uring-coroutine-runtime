@@ -3,9 +3,9 @@
 // Per core: one reactor, one shard, one provided-buffer ring. Core 0 accepts
 // and hands each connection to a core round-robin (a post). A connection is one
 // coroutine: multishot receive into provided buffers, parse in place, run this
-// core's commands, send every other core one batch with reactor::call (all
-// batched into one MSG_RING per target per loop iteration by the runtime), then
-// send the replies in request order.
+// core's commands, send every other core one batch with reactor::call or, for
+// several cores, reactor::call_all (all batched into one MSG_RING per target per
+// loop iteration by the runtime), then send the replies in request order.
 //
 // Shutdown: core 0 reads an eventfd; on a stop request it tells every core to
 // drain. Draining stops accepting, cancels every multishot receive, lets each
@@ -14,7 +14,6 @@
 // cancelled.
 #include "kv/engine.hpp"
 #include "rol/runtime.hpp"
-#include "rol/when_all.hpp"
 #include "server.hpp"
 #include <bit>
 #include <cerrno>
@@ -78,13 +77,16 @@ void begin_drain(reactor& r, shared& sh, core_state& cs) {
     maybe_drained(cs);
 }
 
-task<std::unique_ptr<kv::batch>> forward_one(reactor& r, shared& sh, unsigned target,
-                                             std::unique_ptr<kv::batch> b) {
-    co_return co_await r.call(target, [b = std::move(b), &sh](reactor& t) mutable {
-        b->execute(sh.cores[t.core()]->store);
+// Runs one connection's batch on the core that owns its keys and sends the
+// batch object back with the replies in it.
+struct run_batch {
+    std::unique_ptr<kv::batch> b;
+    shared* sh;
+    std::unique_ptr<kv::batch> operator()(reactor& t) {
+        b->execute(sh->cores[t.core()]->store);
         return std::move(b);
-    });
-}
+    }
+};
 
 task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
     unique_fd sock(raw_fd);
@@ -104,6 +106,7 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
     kv::command cmd;
     kv::plan plan(r.core(), cfg.cores, cs.store, sh.info);
     std::string in, out;
+    std::vector<std::pair<unsigned, run_batch>> calls; // reused for every read
     owned_buffer sendbuf = owned_buffer::allocate(16 * 1024);
     const bool use_fixed = cfg.send == "fixed";
     bool open = true;
@@ -154,10 +157,9 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
                     });
                     plan.give_back(t, std::move(b));
                 } else if (targets.size() > 1) {
-                    std::vector<task<std::unique_ptr<kv::batch>>> calls;
-                    calls.reserve(targets.size());
-                    for (unsigned t : targets) calls.push_back(forward_one(r, sh, t, plan.take(t)));
-                    auto back = co_await when_all(std::move(calls));
+                    calls.clear();
+                    for (unsigned t : targets) calls.push_back({t, run_batch{plan.take(t), &sh}});
+                    auto back = co_await r.call_all(std::span(calls));
                     for (std::size_t i = 0; i < targets.size(); ++i)
                         plan.give_back(targets[i], std::move(back[i]));
                 }

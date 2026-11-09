@@ -164,6 +164,17 @@ MUTATIONS = [
         "case": "parser_matches_reference",
         "expect": "assertion 'parser matches the reference parser' failed",
     },
+    {
+        "name": "n-call-all-resumes-early",
+        "what": "Resume a call_all's caller at the first reply instead of the last, so it "
+                "reads results the other cores have not published yet.",
+        "file": "src/reactor.cpp",
+        "old": "        if (--s.join->remaining == 0) std::exchange(s.join->parent, {}).resume();\n",
+        "new": "        if (--s.join->remaining, true) std::exchange(s.join->parent, {}).resume();\n",
+        "suite": "runtime",
+        "case": "call_all_returns_results_in_call_order",
+        "expect": "rol invariant violated: call_all resumed before every reply arrived",
+    },
 ]
 
 COPY = ["CMakeLists.txt", "include", "src", "kv", "server", "tests", "bench", "fuzz"]
