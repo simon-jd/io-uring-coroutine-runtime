@@ -3,9 +3,13 @@
 
 Usage: scripts/callgrind-summary.py <label>=<out-dir> [...] > table.md
 
-Each function's exclusive instruction count (callgrind_annotate, no inlining
-attribution beyond what the compiler left) is divided by the requests kvload
-completed while the counters ran, and summed into modules by name.
+Each function's exclusive instruction count (callgrind_annotate; inlined code
+counts for the function it was inlined into) is divided by the requests kvload
+completed while the counters ran, and summed into modules by name. The thread
+entry frames (clone, start_thread, the runtime's core loop entry) are listed by
+callgrind_annotate with the whole dump's cost because they were active when the
+counters were zeroed and dumped; entries at 100% are left out, and the module
+sum is checked against PROGRAM TOTALS.
 """
 import json
 import re
@@ -33,10 +37,17 @@ def load(d):
     text = subprocess.run(["callgrind_annotate", "--threshold=100", "--inclusive=no", "--auto=no",
                            f"{d}/callgrind.out.1"], capture_output=True, text=True, check=True).stdout
     per = Counter()
+    total = None
     for line in text.splitlines():
-        m = re.match(r"\s*([\d,]+) \(\s*[\d.]+%\)\s+(.*)", line)
-        if not m or "PROGRAM TOTALS" in m.group(2):
+        m = re.match(r"\s*([\d,]+) \(\s*([\d.]+)%\)\s+(.*)", line)
+        if not m:
             continue
+        if "PROGRAM TOTALS" in m.group(3):
+            total = int(m.group(1).replace(",", "")) / completed
+            continue
+        if float(m.group(2)) >= 99.95:
+            continue
+        m = re.match(r"\s*([\d,]+) \(\s*[\d.]+%\)\s+(.*)", line)
         name = re.sub(r"\s*\[[^\]]*\]$", "", m.group(2))
         name = name.split(":", 1)[1] if ":" in name else name
         per[name] += int(m.group(1).replace(",", "")) / completed
@@ -48,6 +59,8 @@ def load(d):
                 break
         else:
             out["other (libc, kernel entry stubs, threads)"] += v
+    if total is None or abs(sum(out.values()) - total) > 0.01 * total:
+        sys.exit(f"{d}: module sum {sum(out.values()):.0f} does not match PROGRAM TOTALS {total}")
     return out, completed
 
 
