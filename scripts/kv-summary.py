@@ -165,6 +165,33 @@ def session_facts(rows, out, rejected=()):
     out.append("")
 
 
+def user_system_table(rows, arms, out):
+    """Server user and system CPU per request (ns), from the per-thread
+    utime/stime ticks the harness records (1/100 s resolution, so only runs of
+    several seconds are meaningful). Medians over repetitions."""
+    closed = [r for r in rows if r.get("mode") == "closed" and "server_utime_s" in r.get("env", {})]
+    if not closed:
+        return
+    keys = sorted({(r["cores"], r["workload"]) for r in closed})
+    out.append("Server CPU per request split into user and system time, ns (median; from "
+               "per-thread utime/stime ticks):")
+    out.append("")
+    out.append("| cores | workload | " + " | ".join(f"{a} user / sys" for a in arms) + " |")
+    out.append("| ---: | --- |" + " ---: |" * len(arms))
+    for cores, w in keys:
+        cells = []
+        for a in arms:
+            rs = [r for r in closed if r["arm"] == a and r["cores"] == cores and r["workload"] == w]
+            if not rs:
+                cells.append("—")
+                continue
+            u = med([r["env"]["server_utime_s"] * 1e9 / r["completed"] for r in rs])
+            sy = med([r["env"]["server_stime_s"] * 1e9 / r["completed"] for r in rs])
+            cells.append(f"{u:.0f} / {sy:.0f}")
+        out.append(f"| {cores} | {w} | " + " | ".join(cells) + " |")
+    out.append("")
+
+
 def paired_ratios(rows, a, b, out):
     """Per repetition, arm a's CPU per request over arm b's (same rep, same core
     count, run minutes apart); median and range over repetitions."""
@@ -238,6 +265,7 @@ def compare_section(rows, rejected, out):
     for r in closed:
         if r["workload"] not in workloads:
             workloads.append(r["workload"])
+    user_system_table(closed, arms, out)
     for c in sorted({r["cores"] for r in closed}):
         closed_table(closed, arms, c, workloads, out)
         out.append(f"Load-generator CPU per request, µs (median), {c} core{'s' if c > 1 else ''}; "
@@ -298,6 +326,15 @@ def main():
         session_facts(main_rows, out,
                       [r for r in load(d / "main.jsonl", True) if r.get("rejected")])
         paired_ratios(main_rows, "uring", "epoll", out)
+        extra = []
+        for r in main_rows:
+            if "workload" in r and r["arm"] not in arms and r["arm"] not in extra:
+                extra.append(r["arm"])
+        if extra:
+            arms = arms + extra
+            for a in extra:
+                paired_ratios(main_rows, "uring", a, out)
+        user_system_table(main_rows, [a for a in arms if a != "valkey"], out)
         out += ["### Closed loop (requests/s)", ""]
         for c in sorted({r["cores"] for r in main_rows if "cores" in r}):
             closed_table([r for r in main_rows if r.get("mode") == "closed"], arms, c,

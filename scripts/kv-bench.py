@@ -648,6 +648,8 @@ def main():
                     help="extra arm NAME=IO[@BUILD][,ARG...] (repeatable)")
     ap.add_argument("--workloads", default="get_p1,get_p16,set_p16",
                     help="compare suite: closed-loop workloads <get|set>_p<depth>")
+    ap.add_argument("--only", default="",
+                    help="main suite: run only these closed-loop workloads (e.g. get_p16,set_p16)")
     ap.add_argument("--kvload", default="", help="load generator binary (default: <build>/kvload)")
     ap.add_argument("--nice", type=int, default=0, help="nice value for server and load generator")
     ap.add_argument("--probe-pcores", default="4,6,8",
@@ -682,6 +684,9 @@ def main():
         arms = MAIN_ARMS + args.arm_list
         workloads = [("closed", "get", 1), ("closed", "get", 16), ("closed", "set", 1),
                      ("closed", "set", 16), ("open", 50_000), ("open", 100_000), ("open", 200_000)]
+        if args.only:
+            keep = set(args.only.split(","))
+            workloads = [w for w in workloads if w[0] == "closed" and f"{w[1]}_p{w[2]}" in keep]
     elif args.suite == "variants":
         arms = VARIANT_ARMS
         cores_list = [c for c in cores_list if c > 1]
