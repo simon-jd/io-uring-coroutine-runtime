@@ -2,7 +2,8 @@
 """Summarize the raw kv-bench JSON lines into results/kv-bench/summary.md.
 
 Every cell is the median over repetitions, with the minimum and maximum in
-brackets where the spread matters. Usage: scripts/kv-summary.py [results-dir]
+brackets where the spread matters. Usage: scripts/kv-summary.py [results-dir] [A:B ...]
+(each A:B adds a paired comparison of arm A against arm B to the build comparison).
 """
 import json
 import statistics
@@ -205,7 +206,8 @@ def paired_metric(rows, a, b, metric, lower_better, out):
             rb = [r for r in closed if r["arm"] == b and r["cores"] == cores and r["workload"] == w
                   and r["rep"] == rep]
             if ra and rb:
-                ratios.append(ra[-1][metric] / rb[-1][metric])
+                get = metric if callable(metric) else (lambda r, k=metric: r[k])
+                ratios.append(get(ra[-1]) / get(rb[-1]))
         if ratios:
             better = sum(1 for x in ratios if (x < 1 if lower_better else x > 1))
             lines.append(f"| {cores} | {w} | {med(ratios):.3f} [{min(ratios):.3f}–{max(ratios):.3f}] | "
@@ -215,6 +217,13 @@ def paired_metric(rows, a, b, metric, lower_better, out):
         out.append("| ---: | --- | ---: | ---: |")
         out += lines
         out.append("")
+
+
+def client_us(r):
+    return r["client_cpu_s"] * 1e6 / max(1, r["completed"])
+
+
+EXTRA_PAIRS = [tuple(a.split(":", 1)) for a in sys.argv[2:] if ":" in a]
 
 
 def compare_section(rows, rejected, out):
@@ -231,6 +240,19 @@ def compare_section(rows, rejected, out):
             workloads.append(r["workload"])
     for c in sorted({r["cores"] for r in closed}):
         closed_table(closed, arms, c, workloads, out)
+        out.append(f"Load-generator CPU per request, µs (median), {c} core{'s' if c > 1 else ''}; "
+                   f"share of its 8 CPUs in brackets:")
+        out.append("")
+        out.append("| workload | " + " | ".join(arms) + " |")
+        out.append("| --- |" + " ---: |" * len(arms))
+        for w in workloads:
+            cells = []
+            for a in arms:
+                rs = [r for r in closed if r["arm"] == a and r["cores"] == c and r["workload"] == w]
+                cells.append(f"{med([client_us(r) for r in rs]):.3f} "
+                             f"[{med([r['client_cpu_s'] / (r['wall_s'] * 8) for r in rs]):.0%}]" if rs else "—")
+            out.append(f"| {w} | " + " | ".join(cells) + " |")
+        out.append("")
     # Each arm against its front end's published baseline (<io>-main), and
     # each io_uring arm against the epoll arm built from the same tree.
     pairs = []
@@ -242,12 +264,26 @@ def compare_section(rows, rejected, out):
         io, _, tag = a.partition("-")
         if io == "uring" and f"epoll-{tag}" in arms:
             pairs.append((a, f"epoll-{tag}"))
+    for a in arms:
+        if a.endswith("-newload") and a[:-len("-newload")] in arms:
+            pairs.append((a, a[:-len("-newload")]))
+    for a in arms:
+        io, _, tag = a.partition("-")
+        if io == "uring" and tag and tag != "main" and "uring-" + tag.split("-")[0] in arms \
+                and "uring-" + tag.split("-")[0] != a and not a.endswith("-newload"):
+            pairs.append((a, "uring-" + tag.split("-")[0]))
+    pairs += [p for p in EXTRA_PAIRS if p[0] in arms and p[1] in arms]
+    seen = set()
+    pairs = [p for p in pairs if not (p in seen or seen.add(p))]
     for a, b in pairs:
         out += [f"### {a} against {b}", "",
                 "Server CPU per request, paired by repetition (median [min–max]):", ""]
         paired_metric(closed, a, b, "server_cpu_us_per_req", True, out)
         out += ["Requests per second, paired by repetition:", ""]
         paired_metric(closed, a, b, "rps", False, out)
+        if a.endswith("-newload"):
+            out += ["Load-generator CPU per request, paired by repetition:", ""]
+            paired_metric(closed, a, b, client_us, True, out)
 
 
 def main():
