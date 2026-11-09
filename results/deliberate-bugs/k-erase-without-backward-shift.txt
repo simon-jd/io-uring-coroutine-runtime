@@ -1,0 +1,23 @@
+mutation: k-erase-without-backward-shift
+what: Delete a key from the open-addressing shard table by emptying its slot, without moving later members of the probe run back: keys behind the hole become unreachable.
+test: kv_tests shard_matches_reference_map
+expected: assertion 'shard replies match the reference map' failed
+
+--- kv/engine.cpp
++++ kv/engine.cpp (mutated)
+@@ -211,7 +211,7 @@
+     // Backward shift: pull later members of the probe run into the hole when
+     // the hole lies between their home slot and where they are now.
+     const std::size_t mask = slots_.size() - 1;
+-    for (std::size_t j = (i + 1) & mask; slots_[j].e; j = (j + 1) & mask) {
++    for (std::size_t j = (i + 1) & mask; false && slots_[j].e; j = (j + 1) & mask) {
+         const std::size_t home = static_cast<std::size_t>(slots_[j].hash) & mask;
+         if (((j - home) & mask) >= ((j - i) & mask)) {
+             slots_[i] = slots_[j];
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL shard_matches_reference_map: assertion 'shard replies match the reference map' failed: ok at <work>/k-erase-without-backward-shift/src/tests/kv_tests.cpp:349
+
+result: CAUGHT

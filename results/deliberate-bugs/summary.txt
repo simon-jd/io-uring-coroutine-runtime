@@ -8,3 +8,6 @@ g-one-msg-ring-per-message: CAUGHT by runtime_tests concurrent_calls_share_messa
 h-drain-cuts-off-replies: CAUGHT by server_tests shutdown_waits_for_requests_in_progress
 i-partial-bulk-string-accepted: CAUGHT by kv_tests split_input_parses_identically
 j-sleep-without-recheck: CAUGHT by runtime_tests sleeping_core_is_woken_for_every_message/doorbell
+k-erase-without-backward-shift: CAUGHT by kv_tests shard_matches_reference_map
+l-number-fast-path-accepts-leading-zero: CAUGHT by kv_tests parser_matches_reference
+m-call-all-resumes-early: CAUGHT by runtime_tests call_all_returns_results_in_call_order

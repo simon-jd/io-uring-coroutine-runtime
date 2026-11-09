@@ -1,0 +1,24 @@
+mutation: m-call-all-resumes-early
+what: Resume a call_all's caller at the first reply instead of the last, so it reads results the other cores have not published yet.
+test: runtime_tests call_all_returns_results_in_call_order
+expected: rol invariant violated: call_all resumed before every reply arrived
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -534,7 +534,7 @@
+     if (s.join) {
+         // One of a call_all's replies. The slot waits for the caller to take
+         // it; the last reply resumes the caller inline, which frees the slots.
+-        if (--s.join->remaining == 0) std::exchange(s.join->parent, {}).resume();
++        if (--s.join->remaining, true) std::exchange(s.join->parent, {}).resume();
+         return;
+     }
+     if (s.waiter) {
+
+baseline (unmutated) exit code: 0
+mutated exit code: -6
+mutated output (last lines):
+rol invariant violated: call_all resumed before every reply arrived [s.primary_done] at <work>/m-call-all-resumes-early/src/include/rol/reactor.hpp:1143
+rol invariant violated: call_all resumed before every reply arrived [s.primary_done] at <work>/m-call-all-resumes-early/src/include/rol/reactor.hpp:1143
+
+result: CAUGHT

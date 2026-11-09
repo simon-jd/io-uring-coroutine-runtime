@@ -5,7 +5,7 @@ expected: assertion 'buffer stays with the operation after cancel-ack' failed
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -686,6 +686,9 @@
+@@ -694,6 +694,9 @@
      // The acknowledgement says nothing about the target's buffers: they are
      // released by the target's own CQE, which may come before or after this.
      cancel_source* reporter = cs.reporter;

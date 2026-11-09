@@ -5,7 +5,7 @@ expected: assertion 'requests received before shutdown are answered' failed
 
 --- server/uring_server.cpp
 +++ server/uring_server.cpp (mutated)
-@@ -73,6 +73,7 @@
+@@ -72,6 +72,7 @@
      cs.draining = true;
      if (cs.accept_cancel) cs.accept_cancel->request();
      cs.recv_cancel->request();
@@ -17,6 +17,6 @@ expected: assertion 'requests received before shutdown are answered' failed
 baseline (unmutated) exit code: 0
 mutated exit code: 1
 mutated output (last lines):
-FAIL shutdown_waits_for_requests_in_progress: assertion 'requests received before shutdown are answered' failed: r1 == "+OK\r\n" && r2 == "+OK\r\n" && r3 == bulk("v") at <work>/h-drain-cuts-off-replies/src/tests/server_tests.cpp:546
+FAIL shutdown_waits_for_requests_in_progress: assertion 'requests received before shutdown are answered' failed: r1 == "+OK\r\n" && r2 == "+OK\r\n" && r3 == bulk("v") at <work>/h-drain-cuts-off-replies/src/tests/server_tests.cpp:548
 
 result: CAUGHT

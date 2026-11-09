@@ -5,7 +5,7 @@ expected: assertion 'zero-copy payload arrives unmodified' failed
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -508,6 +508,7 @@
+@@ -510,6 +510,7 @@
          // The kernel still references the pages: the buffer stays in the slot
          // until the notification CQE.
          ++s.pending;

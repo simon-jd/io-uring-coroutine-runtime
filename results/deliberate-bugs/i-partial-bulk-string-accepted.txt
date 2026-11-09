@@ -5,9 +5,9 @@ expected: assertion 'split input parses to the same commands' failed
 
 --- kv/resp.cpp
 +++ kv/resp.cpp (mutated)
-@@ -116,9 +116,7 @@
-                 return fail("Protocol error: invalid bulk length");
-             const std::size_t start = lcr + 2;
+@@ -156,9 +156,7 @@
+                 start = lcr + 2;
+             }
              const std::size_t ulen = static_cast<std::size_t>(len);
 -            if (d.size() - start < ulen + 2) return parse_status::incomplete;
 -            if (d[start + ulen] != '\r' || d[start + ulen + 1] != '\n')
@@ -20,6 +20,6 @@ expected: assertion 'split input parses to the same commands' failed
 baseline (unmutated) exit code: 0
 mutated exit code: 1
 mutated output (last lines):
-FAIL split_input_parses_identically: assertion 'split input parses to the same commands' failed: parse_chunked(data, {cut}) == whole at <work>/i-partial-bulk-string-accepted/src/tests/kv_tests.cpp:131
+FAIL split_input_parses_identically: assertion 'split input parses to the same commands' failed: parse_chunked(data, {cut}) == whole at <work>/i-partial-bulk-string-accepted/src/tests/kv_tests.cpp:188
 
 result: CAUGHT

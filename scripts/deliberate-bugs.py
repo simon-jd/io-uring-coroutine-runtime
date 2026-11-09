@@ -166,7 +166,7 @@ MUTATIONS = [
         "expect": "assertion 'parser matches the reference parser' failed",
     },
     {
-        "name": "n-call-all-resumes-early",
+        "name": "m-call-all-resumes-early",
         "what": "Resume a call_all's caller at the first reply instead of the last, so it "
                 "reads results the other cores have not published yet.",
         "file": "src/reactor.cpp",

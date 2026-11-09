@@ -5,7 +5,7 @@ expected: assertion 'stale direct descriptor does not reach the new connection' 
 
 --- include/rol/reactor.hpp
 +++ include/rol/reactor.hpp (mutated)
-@@ -679,7 +679,7 @@
+@@ -687,7 +687,7 @@
  detail::slot_ref reactor::start(std::coroutine_handle<> h, const op_options& o,
                                  detail::op_kind kind, Prep& prep, file_ref file) {
      check_thread();

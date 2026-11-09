@@ -5,9 +5,9 @@ expected: assertion 'a new lease holder's bytes are not overwritten by the kerne
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -428,6 +428,7 @@
-     auto& s = slot_at(ref);
+@@ -430,6 +430,7 @@
      s.waiter = {};
+     s.join = nullptr;
      s.detached = true;
 +    s.lease.reset();
      ++stats_.detached;
