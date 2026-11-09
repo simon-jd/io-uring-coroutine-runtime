@@ -29,6 +29,7 @@ were committed before it ran (`RULES.md` in its directory).
 | [profile/](profile) | `scripts/callgrind-profile.sh`, `scripts/callgrind-summary.py` | main, 3796efd, 5d86cbd, the window-1 candidates | user-space instructions per request by module (`summary.md`) |
 | [kv-bench/perf-session-a/](kv-bench/perf-session-a) | `scripts/kv-bench.py --suite main --reps 7 --cores 1,2 --max-interference 0.05 --retries 3 --build <5d86cbd build> --arm uring-main=uring@<main build>`, then `--cores 4 --only get_p16,set_p16 --harness-cpu 11 --out .../cores4` | 5d86cbd against main 3eb4121 | the final comparison; 11-09 08:27–09:42 |
 | [kv-bench/perf-session-b/](kv-bench/perf-session-b) | the same | the same | the same comparison, 11-09 10:44–11:58 |
+| [kv-bench/perf-check-c/](kv-bench/perf-check-c) | `scripts/kv-bench.py --suite compare --reps 5 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --kvload <main build>/kvload --arm uring-main=uring@<main build> --arm uring-perf=uring@<perf build> --arm epoll-perf=epoll@<perf build>`, then `--cores 4 --harness-cpu 11 --workloads get_p16,set_p16 --out .../cores4` | fresh clones of main 3eb4121 and perf 932122c, built separately | an independent check of the final comparison; 11-09 13:37–13:50 |
 | [test-matrix/](test-matrix) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 5d86cbd | 10 suites, 151 cases, GCC and clang, each plain, ASan + UBSan and TSan (Debug): 6 of 6 pass |
 | [deliberate-bugs/](deliberate-bugs) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 5d86cbd (script 8d6b3be) | 13 contract violations, each caught by a named assertion |
 | [fuzz/](fuzz) | `taskset -c 10-15,24-31 nice scripts/run-fuzz.sh 600` | 5d86cbd | 600 s per target: IPC validator 302,901,197 executions, RESP parser 1,818,354 (each input now also checked against the reference parser and map); no findings |
@@ -72,7 +73,8 @@ Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
   request at depth 16 on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
   cell), 2–5% at depth 1 for GET. Against epoll, less CPU per request at 1
   core (depth 1 GET and SET, depth 16 GET), more at 2 cores and depth 16
-  (4–8%) and at 4 cores (11–13%, no repetition the other way). Valkey needs
+  (4–8%) and at 4 cores (11–13%, no repetition the other way). Check C
+  (below) did not reproduce the 1-core depth-16 GET result. Valkey needs
   1.7 times (1 core) to 2.7 times (4 cores) the io_uring server's CPU per GET
   at depth 16.
 - **Not consistent or small:** 2 cores, depth 1 (within 2%; GET either sign);
@@ -80,7 +82,8 @@ Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
   (io_uring 2–4% more, 1 of 7 the other way in both). At 2 and 4 cores the
   lower CPU per GET did not raise GET throughput over `main` (cores idle
   more; not investigated), while SET throughput rose (2 cores: 5.72 / 5.84 M
-  against 5.13 / 5.06 M).
+  against 5.13 / 5.06 M). In check C it did rise at 2 cores (1.14, 5 of 5),
+  so this observation is not stable either.
 - The extra io_uring cost is user time: at 4 cores, depth 16, GET 166 / 163 ns
   user against epoll's 123 / 123, system 198 / 204 against 196 / 197 (tables
   "split into user and system time").
@@ -89,6 +92,28 @@ Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
   cell has 7 accepted repetitions. Open-loop medians agree across the front
   ends (1 core, 200 k requests/s: 15–16 µs in both sessions); tails are in
   the summaries without a ranking.
+
+### Check C: fresh clones, one more quiet window
+
+Main and perf were cloned fresh and built separately (perf 932122c has the
+same code as 5d86cbd). All three arms used main's load generator, and the
+build-comparison suite ran at 5 repetitions (13:37–13:50 PST). Its meta file
+says "(uncommitted changes)" because the test matrix, deliberate bugs and a
+60 s fuzz run had just rewritten result logs in that clone; all of them
+passed, with 13 of 13 bugs caught. Server CPU per request, paired by
+repetition (median; repetitions below 1 of 5):
+
+| | io_uring / `main`, GET | io_uring / `main`, SET | io_uring / epoll, GET | io_uring / epoll, SET |
+| --- | ---: | ---: | ---: | ---: |
+| 1 core, depth 1 | 0.964 (3) | | 0.955 (5) | |
+| 1 core, depth 16 | 0.749 (5) | 0.814 (5) | 1.021 (2) | 1.050 (0) |
+| 2 cores, depth 1 | 0.898 (5) | | 0.995 (3) | |
+| 2 cores, depth 16 | 0.823 (5) | 0.814 (5) | 1.083 (0) | 1.103 (0) |
+| 4 cores, depth 16 | 0.842 (5) | 0.810 (5) | 1.172 (0) | 1.130 (0) |
+
+It confirms the gain over the published code and the losses to epoll at 2
+and 4 cores (here somewhat larger), but not the 1-core depth-16 GET result
+(1.02 instead of 0.95), which the README therefore does not claim.
 
 ### Tests at 5d86cbd
 

@@ -770,7 +770,10 @@ at 1 core: 0.950 / 0.936 for GET at depth 1 and 0.948 / 0.943 at depth 16
 (paired by repetition; 6 or 7 of 7 lower in each session). It needs more
 wherever pipelined requests cross cores: 1.036 / 1.059 (GET) and 1.080 / 1.051
 (SET) at 2 cores, depth 16, and 1.117 / 1.114 and 1.133 / 1.123 at 4 cores,
-where no repetition went the other way. The difference is user time (4 cores,
+where no repetition went the other way. A third check from fresh clones
+(`perf-check-c`, 5 repetitions) found the same losses, somewhat larger (1.08
+and 1.10 at 2 cores, 1.17 and 1.13 at 4), and GET at 1 core, depth 16 even
+(1.02) instead of lower. The difference is user time (4 cores,
 GET: 166 / 163 ns of user time per request against 123 / 123; system time
 198 / 204 against 196 / 197) and shows in the instruction counts at 4 cores:
 1,399 against 1,116 per request, of which the runtime is 218 and the
@@ -794,3 +797,5 @@ per GET did not raise GET throughput over `main` (2 cores, depth 16: 5.47 /
 5.22 M against 5.49 / 5.37 M requests/s), while SET throughput rose (5.72 /
 5.84 M against 5.13 / 5.06 M). The cores do the same GET work in less CPU
 time and idle more; why GET leaves that time unused was not investigated.
+In check C, GET throughput at 2 cores did rise over `main` (1.14, 5 of 5), so
+the observation may be session noise rather than a property of the change.

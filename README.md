@@ -14,22 +14,25 @@ one Linux machine over loopback.
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 server core, closed loop, pipeline depth 1: requests/s | 346 k / 351 k | 338 k / 338 k | 327 k / 334 k | 325 k / 325 k | 296 k / 298 k |
 | 1 core, depth 1: server CPU per request, µs | **2.88 / 2.86** | 2.91 / 2.96 | 3.02 / 2.99 | 3.03 / 3.05 | 3.41 / 3.34 |
-| 1 core, depth 16: requests/s | **3.72 M / 3.70 M** | 2.68 M / 2.96 M | 3.56 M / 3.54 M | 3.55 M / 3.48 M | 2.14 M / 2.16 M |
+| 1 core, depth 16: requests/s | 3.72 M / 3.70 M | 2.68 M / 2.96 M | 3.56 M / 3.54 M | 3.55 M / 3.48 M | 2.14 M / 2.16 M |
 | 2 cores (shared-nothing keyspace), depth 16: requests/s | 5.47 M / 5.22 M | 5.49 M / 5.37 M | 4.94 M / 5.07 M | 3.64 M / 3.77 M | 3.16 M / 3.15 M |
 | 2 cores, depth 16: server CPU per request, µs (**loss**) | 0.303 / 0.315 | 0.364 / 0.367 | **0.295 / 0.290** | 0.328 / 0.318 | 0.650 / 0.654 |
 | 4 cores, depth 16: requests/s | 8.92 M / 8.36 M | 8.88 M / 8.80 M | **9.11 M / 8.99 M** | 7.28 M / 7.18 M | 3.99 M / 3.94 M |
 | 4 cores, depth 16: server CPU per request, µs (**loss**) | 0.363 / 0.368 | 0.436 / 0.436 | **0.318 / 0.320** | 0.350 / 0.352 | 0.976 / 0.988 |
 
-What holds in both sessions (paired by repetition, [details](results/README.md)): a
-performance round cut the server's CPU per request at depth 16 by 16–26%
-against the published code on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
-cell), mostly in code every front end shares (a one-pass path for RESP number
-lines, an open-addressing key table, one hash function for both the core and
-the table slot) and, with more than two cores, by awaiting all target cores
-from one awaiter. Against epoll, io_uring needs 4–6% less CPU per request at 1
-core (depth 1, and depth 16 for GET) but 2–4% more for SET at depth 16 (1 of 7
-repetitions the other way), and at depth 16 4–8% more at 2 cores (at most 1 of
-7) and 11–13% more at 4 cores (none). The extra is user time: about 130
+What holds in both sessions and in a third check from fresh clones
+([check C](results/kv-bench/perf-check-c/summary.md), 5 repetitions; paired by
+repetition, [details](results/README.md)): a performance round cut the
+server's CPU per request at depth 16 by 16–26% against the published code on
+1, 2 and 4 cores (lower in 6 or 7 of 7 repetitions in every cell, 5 of 5 in
+the check), mostly in code every front end shares (a one-pass path for RESP
+number lines, an open-addressing key table, one hash function for both the
+core and the table slot) and, with more than two cores, by awaiting all target
+cores from one awaiter. Against epoll, io_uring needs 4–6% less CPU per
+request at 1 core and depth 1; at depth 16 it needs 2–5% more for SET at 1
+core, 4–10% more at 2 cores and 11–17% more at 4 cores (at most 1 repetition
+the other way). GET at 1 core and depth 16 was 5% less in sessions A and B but
+even in the check (1.02, 2 of 5 lower), so it is not claimed. The extra is user time: about 130
 instructions per request more than epoll's loop at 2 cores and 280 at 4
 (callgrind), in the runtime's operation slots, message nodes and coroutine
 resumptions. Tried and dropped, each

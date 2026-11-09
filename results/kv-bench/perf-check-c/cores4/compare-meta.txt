@@ -1,0 +1,18 @@
+date: 2026-11-09T21:47:34Z
+commit: 932122c (uncommitted changes)
+kernel: 7.0.0-42-generic
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+compiler: g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+kv_server/kvload build: /home/postedism/.cache/coord-verify-runtime-perf/repo/build-release (CMAKE_BUILD_TYPE=Release)
+valkey: unavailable
+asio: 1.36.0
+suite: compare, reps 5, cores 4, measured window 5.0 s (closed loop, after 1 s warm-up; open loop 8.0 s after 2 s)
+server cpus: first <cores> of 2,4,6,8; client cpus: 16-23 (8 kvload threads); both under taskset at nice 0
+kvload: /home/postedism/.cache/coord-verify-runtime-perf/main/build-release/kvload
+keys: 100000 preloaded, values 64 bytes; connections: 50 per server core
+loadavg at start: 8.16 6.81 5.41
+rejection rule: interference fraction > 0.05 in closed-loop runs on <= 1 server core(s), up to 3 repeats per run
+harness cpu: 11; frequency sampled every 0.1 s (scaling_cur_freq, cpuinfo_avg_freq)
+arm uring-main: --io uring  from /home/postedism/.cache/coord-verify-runtime-perf/main/build-release
+arm uring-perf: --io uring  from /home/postedism/.cache/coord-verify-runtime-perf/repo/build-release
+arm epoll-perf: --io epoll  from /home/postedism/.cache/coord-verify-runtime-perf/repo/build-release
