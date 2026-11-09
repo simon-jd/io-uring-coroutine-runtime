@@ -1,24 +1,24 @@
-date: 2026-11-07T20:16:10Z
-commit: df7ae97
+date: 2026-11-09T17:54:03Z
+commit: 5d86cbd
 clang: Ubuntu clang version 21.1.8 (6ubuntu1)
 command: resp_parser_fuzz -max_total_time=600 -print_final_stats=1 <corpus>
 
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 2573698851
-INFO: Loaded 1 modules   (374 inline 8-bit counters): 374 [0x5d9e1fe1a4f0, 0x5d9e1fe1a666), 
-INFO: Loaded 1 PC tables (374 PCs): 374 [0x5d9e1fe1a668,0x5d9e1fe1bdc8), 
-INFO:      140 files found in ./.cache/fuzz-corpus-resp
+INFO: Seed: 1593118894
+INFO: Loaded 1 modules   (1095 inline 8-bit counters): 1095 [0x64263a4c6c60, 0x64263a4c70a7), 
+INFO: Loaded 1 PC tables (1095 PCs): 1095 [0x64263a4c70a8,0x64263a4cb518), 
+INFO:      904 files found in ./.cache/fuzz-corpus-resp
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
-INFO: seed corpus: files: 140 min: 1b max: 1571b total: 20742b rss: 33Mb
-#141	INITED cov: 165 ft: 643 corp: 106/14911b exec/s: 0 rss: 42Mb
-#15946	NEW    cov: 165 ft: 645 corp: 107/14988b lim: 1661 exec/s: 0 rss: 411Mb L: 133/1571 MS: 2 CopyPart-CopyPart-
-#16475	NEW    cov: 165 ft: 646 corp: 108/15512b lim: 1661 exec/s: 0 rss: 412Mb L: 524/1571 MS: 4 ChangeBinInt-InsertByte-CrossOver-CopyPart-
-#18859	NEW    cov: 165 ft: 648 corp: 109/16Kb lim: 1681 exec/s: 18859 rss: 414Mb L: 1011/1571 MS: 3 ChangeBinInt-InsertRepeatedBytes-CopyPart-
-#65536	pulse  cov: 165 ft: 651 corp: 111/16Kb lim: 2001 exec/s: 21845 rss: 435Mb
-Done 10346156 runs in 601 second(s)
-stat::number_of_executed_units: 10346156
-stat::average_exec_per_sec:     17214
-stat::new_units_added:          1023
+INFO: seed corpus: files: 904 min: 1b max: 2042b total: 294548b rss: 34Mb
+#905	INITED cov: 422 ft: 1716 corp: 211/36Kb exec/s: 0 rss: 97Mb
+#928	NEW    cov: 423 ft: 1717 corp: 212/36Kb lim: 2042 exec/s: 0 rss: 99Mb L: 255/2042 MS: 3 CopyPart-ChangeByte-InsertRepeatedBytes-
+#974	NEW    cov: 423 ft: 1719 corp: 213/36Kb lim: 2042 exec/s: 0 rss: 101Mb L: 264/2042 MS: 1 ChangeASCIIInt-
+#1152	NEW    cov: 423 ft: 1721 corp: 214/37Kb lim: 2042 exec/s: 0 rss: 106Mb L: 367/2042 MS: 5 CrossOver-InsertRepeatedBytes-InsertRepeatedBytes-ChangeASCIIInt-InsertRepeatedBytes-
+#1232	NEW    cov: 424 ft: 1722 corp: 215/37Kb lim: 2042 exec/s: 0 rss: 108Mb L: 8/2042 MS: 2 ChangeBit-ShuffleBytes-
+Done 1818354 runs in 601 second(s)
+stat::number_of_executed_units: 1818354
+stat::average_exec_per_sec:     3025
+stat::new_units_added:          5324
 stat::slowest_unit_time_sec:    0
-stat::peak_rss_mb:              509
+stat::peak_rss_mb:              540
 exit code: 0
