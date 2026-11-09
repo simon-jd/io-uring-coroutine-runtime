@@ -1,5 +1,6 @@
 // RESP parser and routing plan, without I/O.
 #include "kv/engine.hpp"
+#include "kv_reference.hpp"
 #include "test.hpp"
 #include <limits>
 #include <random>
@@ -96,6 +97,62 @@ struct cluster {
     }
 };
 
+
+// Random byte streams made of RESP fragments, biased towards the number lines
+// the parser's fast path handles: lone zeros, leading zeros, signs, 17 to 21
+// digits, a CR without LF, lines cut short.
+std::string random_stream(std::mt19937& rng) {
+    static const char* const frags[] = {
+        "*", "$", "\r\n", "\r", "\n", "0", "00", "01", "1", "2", "3", "9", "12", "-", "-1", "+",
+        "x", "GET", "SET", "k", " ", "999999999999999999", "1000000000000000000",
+        "99999999999999999999", "123456789012345678", "*2\r\n$3\r\nGET\r\n$1\r\nk\r\n",
+        "*1\r\n$0\r\n\r\n", "*0\r\n", "*-1\r\n", "PING\r\n"};
+    std::string s;
+    const int parts = 1 + static_cast<int>(rng() % 24);
+    for (int i = 0; i < parts; ++i) s += frags[rng() % (sizeof(frags) / sizeof(frags[0]))];
+    return s;
+}
+
+struct parse_trace {
+    std::vector<std::vector<std::string>> commands;
+    parse_status last = parse_status::incomplete;
+    std::string error;
+    std::size_t pos = 0;
+    bool operator==(const parse_trace&) const = default;
+};
+
+parse_trace trace_fast(std::string_view d, const limits& l) {
+    parser p(l);
+    command c;
+    parse_trace t;
+    for (;;) {
+        t.last = p.next(d, t.pos, c);
+        if (t.last != parse_status::complete) break;
+        t.commands.emplace_back(c.args.begin(), c.args.end());
+    }
+    if (t.last == parse_status::error) t.error = p.error();
+    return t;
+}
+
+parse_trace trace_reference(std::string_view d, const limits& l) {
+    command c;
+    parse_trace t;
+    for (;;) {
+        t.last = reference::next(l, d, t.pos, c, t.error);
+        if (t.last != parse_status::complete) break;
+        t.commands.emplace_back(c.args.begin(), c.args.end());
+    }
+    if (t.last != parse_status::error) t.error.clear();
+    return t;
+}
+
+// Executes one shard command on both tables and compares the replies.
+bool same_reply(shard& fast, reference::shard& ref, cmd_id id, std::vector<std::string_view> args) {
+    std::string a, b;
+    fast.execute(id, args, a);
+    ref.execute(id, args, b);
+    return a == b && fast.size() == ref.size();
+}
 } // namespace
 
 int main(int argc, char** argv) {
@@ -227,6 +284,93 @@ int main(int argc, char** argv) {
                  CHECK(cl.run(p, resp({"EXISTS", keys[4], keys[4], keys[0]})) == ":2\r\n");
                  CHECK(cl.run(p, resp({"FLUSHALL"})) == "+OK\r\n");
                  CHECK(cl.run(p, resp({"DBSIZE"})) == ":0\r\n");
+             }},
+            {"parser_matches_reference",
+             [] {
+                 std::mt19937 rng(11);
+                 limits small;
+                 small.max_bulk = 64;
+                 small.max_args = 8;
+                 small.max_inline = 48;
+                 for (int round = 0; round < 40000; ++round) {
+                     const std::string d = random_stream(rng);
+                     const limits& l = round % 2 ? small : limits{};
+                     REQUIRE("parser matches the reference parser", trace_fast(d, l) == trace_reference(d, l));
+                     // Every prefix too: a line cut short must wait, not fail early.
+                     const std::size_t cut = rng() % (d.size() + 1);
+                     const std::string_view head(d.data(), cut);
+                     REQUIRE("parser matches the reference parser",
+                             trace_fast(head, l) == trace_reference(head, l));
+                 }
+             }},
+            {"shard_matches_reference_map",
+             [] {
+                 std::mt19937 rng(5);
+                 shard fast;
+                 reference::shard ref;
+                 // A small keyspace: probe runs collide and wrap, DEL shifts entries back.
+                 std::vector<std::string> keys;
+                 for (int i = 0; i < 96; ++i) keys.push_back("k" + std::to_string(i * 7919 % 1000));
+                 keys.push_back("");
+                 keys.push_back(std::string(40, 'z'));
+                 std::vector<std::string> values = {"", "v", std::string(7, 'a'), std::string(8, 'b'),
+                                                    std::string(9, 'c'), std::string(300, 'd')};
+                 for (int step = 0; step < 60000; ++step) {
+                     const std::string& k = keys[rng() % keys.size()];
+                     const std::string& k2 = keys[rng() % keys.size()];
+                     const std::string& v = values[rng() % values.size()];
+                     bool ok = true;
+                     switch (rng() % 16) {
+                     case 0: case 1: case 2: case 3: case 4:
+                         ok = same_reply(fast, ref, cmd_id::set, {"SET", k, v});
+                         break;
+                     case 5:
+                         ok = same_reply(fast, ref, cmd_id::set, {"SET", k, v, "NX"});
+                         break;
+                     case 6:
+                         ok = same_reply(fast, ref, cmd_id::set, {"SET", k, v, "xx"});
+                         break;
+                     case 7: case 8: case 9:
+                         ok = same_reply(fast, ref, cmd_id::del, {"DEL", k, k2});
+                         break;
+                     case 10:
+                         ok = same_reply(fast, ref, cmd_id::exists, {"EXISTS", k, k2, k});
+                         break;
+                     case 11:
+                         ok = same_reply(fast, ref, cmd_id::dbsize, {"DBSIZE"});
+                         break;
+                     case 12:
+                         if (rng() % 400 == 0) ok = same_reply(fast, ref, cmd_id::flushall, {"FLUSHALL"});
+                         break;
+                     default:
+                         ok = same_reply(fast, ref, cmd_id::get, {"GET", k});
+                         break;
+                     }
+                     REQUIRE("shard replies match the reference map", ok);
+                     if (step % 64 == 0) REQUIRE("shard table invariants hold", fast.consistent());
+                 }
+                 for (const auto& k : keys)
+                     REQUIRE("shard replies match the reference map",
+                             same_reply(fast, ref, cmd_id::get, {"GET", k}));
+                 REQUIRE("shard table invariants hold", fast.consistent());
+                 // Growth keeps every key.
+                 shard big;
+                 reference::shard bigref;
+                 for (int i = 0; i < 20000; ++i) {
+                     const std::string key = "key:" + std::to_string(i);
+                     REQUIRE("shard replies match the reference map",
+                             same_reply(big, bigref, cmd_id::set, {"SET", key, key}));
+                 }
+                 REQUIRE("shard table invariants hold", big.consistent() && big.size() == 20000);
+                 for (int i = 0; i < 20000; i += 3)
+                     REQUIRE("shard replies match the reference map",
+                             same_reply(big, bigref, cmd_id::del, {"DEL", "key:" + std::to_string(i)}));
+                 REQUIRE("shard table invariants hold", big.consistent());
+                 for (int i = 0; i < 20000; ++i)
+                     REQUIRE("shard replies match the reference map",
+                             same_reply(big, bigref, cmd_id::get, {"GET", "key:" + std::to_string(i)}));
+                 shard moved(std::move(big));
+                 REQUIRE("shard table invariants hold", moved.consistent() && big.size() == 0);
              }},
             {"protocol_error_ends_the_read_with_a_reply",
              [] {

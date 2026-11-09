@@ -1,17 +1,61 @@
 #include "kv/engine.hpp"
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
+#include <new>
 #include <string>
+#include <utility>
 
 namespace kv {
 
-unsigned owner(std::string_view key, unsigned cores) noexcept {
-    std::uint64_t h = 1469598103934665603ull;
-    for (const char ch : key) {
-        h ^= static_cast<unsigned char>(ch);
-        h *= 1099511628211ull;
+namespace {
+
+__extension__ typedef unsigned __int128 u128;
+
+std::uint64_t load64(const unsigned char* p) noexcept {
+    std::uint64_t v;
+    std::memcpy(&v, p, 8);
+    return v;
+}
+std::uint64_t load32(const unsigned char* p) noexcept {
+    std::uint32_t v;
+    std::memcpy(&v, p, 4);
+    return v;
+}
+// 64 x 64 -> 128-bit multiply, folded.
+std::uint64_t fold(std::uint64_t a, std::uint64_t b) noexcept {
+    const u128 r = static_cast<u128>(a) * b;
+    return static_cast<std::uint64_t>(r) ^ static_cast<std::uint64_t>(r >> 64);
+}
+constexpr std::uint64_t k0 = 0xa0761d6478bd642full, k1 = 0xe7037ed1a0b428dbull,
+                        k2 = 0x8ebc6af09c88c6e3ull;
+
+} // namespace
+
+// Multiply-fold hash in the style of wyhash: keys up to 16 bytes take two
+// (possibly overlapping) loads and two multiplies.
+std::uint64_t key_hash(std::string_view key) noexcept {
+    const auto* p = reinterpret_cast<const unsigned char*>(key.data());
+    const std::size_t n = key.size();
+    std::uint64_t seed = k0 ^ static_cast<std::uint64_t>(n);
+    std::uint64_t a = 0, b = 0;
+    if (n <= 16) {
+        if (n >= 8) {
+            a = load64(p);
+            b = load64(p + n - 8);
+        } else if (n >= 4) {
+            a = load32(p);
+            b = load32(p + n - 4);
+        } else if (n > 0) {
+            a = (std::uint64_t{p[0]} << 16) | (std::uint64_t{p[n >> 1]} << 8) | p[n - 1];
+        }
+    } else {
+        std::size_t i = 0;
+        for (; n - i > 16; i += 16) seed = fold(load64(p + i) ^ k1, load64(p + i + 8) ^ seed);
+        a = load64(p + n - 16);
+        b = load64(p + n - 8);
     }
-    return static_cast<unsigned>((h ^ (h >> 32)) % cores);
+    return fold(k1 ^ static_cast<std::uint64_t>(n), fold(a ^ k1, b ^ seed) ^ k2);
 }
 
 namespace {
@@ -92,12 +136,114 @@ void wrong_arity(std::string& out, std::string_view name) {
 
 // ---------------------------------------------------------------- shard
 
+// One heap block per key: this header, the key bytes, then the value bytes
+// (capacity cap; a SET that fits overwrites in place).
+struct shard::entry {
+    std::size_t key_len;
+    std::size_t val_len;
+    std::size_t val_cap;
+    char* key() noexcept { return reinterpret_cast<char*>(this + 1); }
+    char* val() noexcept { return key() + key_len; }
+    std::string_view key_view() noexcept { return {key(), key_len}; }
+    std::string_view val_view() noexcept { return {val(), val_len}; }
+
+    static entry* make(std::string_view k, std::string_view v) {
+        const std::size_t cap = (v.size() + 7) & ~std::size_t{7};
+        void* mem = ::operator new(sizeof(entry) + k.size() + cap);
+        auto* e = static_cast<entry*>(mem);
+        e->key_len = k.size();
+        e->val_len = v.size();
+        e->val_cap = cap;
+        if (!k.empty()) std::memcpy(e->key(), k.data(), k.size());
+        if (!v.empty()) std::memcpy(e->val(), v.data(), v.size());
+        return e;
+    }
+    static void destroy(entry* e) noexcept { ::operator delete(static_cast<void*>(e)); }
+};
+
+shard::shard(shard&& o) noexcept : slots_(std::move(o.slots_)), size_(std::exchange(o.size_, 0)) {
+    o.slots_.clear();
+}
+
+shard& shard::operator=(shard&& o) noexcept {
+    if (this != &o) {
+        clear();
+        slots_ = std::move(o.slots_);
+        size_ = std::exchange(o.size_, 0);
+        o.slots_.clear();
+    }
+    return *this;
+}
+
+shard::~shard() { clear(); }
+
+void shard::clear() noexcept {
+    for (auto& s : slots_)
+        if (s.e) entry::destroy(std::exchange(s.e, nullptr));
+    slots_.clear();
+    size_ = 0;
+}
+
+std::size_t shard::probe(std::string_view key, std::uint64_t h) const noexcept {
+    const std::size_t mask = slots_.size() - 1;
+    for (std::size_t i = static_cast<std::size_t>(h) & mask;; i = (i + 1) & mask) {
+        const slot& s = slots_[i];
+        if (!s.e) return i;
+        if (s.hash == h && s.e->key_view() == key) return i;
+    }
+}
+
+void shard::grow() {
+    std::vector<slot> bigger(slots_.empty() ? 16 : slots_.size() * 2);
+    const std::size_t mask = bigger.size() - 1;
+    for (const auto& s : slots_) {
+        if (!s.e) continue;
+        std::size_t i = static_cast<std::size_t>(s.hash) & mask;
+        while (bigger[i].e) i = (i + 1) & mask;
+        bigger[i] = s;
+    }
+    slots_.swap(bigger);
+}
+
+void shard::erase_at(std::size_t i) noexcept {
+    entry::destroy(slots_[i].e);
+    --size_;
+    // Backward shift: pull later members of the probe run into the hole when
+    // the hole lies between their home slot and where they are now.
+    const std::size_t mask = slots_.size() - 1;
+    for (std::size_t j = (i + 1) & mask; slots_[j].e; j = (j + 1) & mask) {
+        const std::size_t home = static_cast<std::size_t>(slots_[j].hash) & mask;
+        if (((j - home) & mask) >= ((j - i) & mask)) {
+            slots_[i] = slots_[j];
+            i = j;
+        }
+    }
+    slots_[i] = slot{};
+}
+
+bool shard::consistent() const {
+    std::size_t n = 0;
+    const std::size_t mask = slots_.empty() ? 0 : slots_.size() - 1;
+    for (std::size_t i = 0; i < slots_.size(); ++i) {
+        if (!slots_[i].e) continue;
+        ++n;
+        if (slots_[i].hash != key_hash(slots_[i].e->key_view())) return false;
+        for (std::size_t j = static_cast<std::size_t>(slots_[i].hash) & mask; j != i; j = (j + 1) & mask)
+            if (!slots_[j].e) return false; // an empty slot between home and entry
+    }
+    return n == size_ && size_ * 2 <= slots_.size();
+}
+
 void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string& out) {
     switch (id) {
     case cmd_id::get: {
-        auto it = map_.find(a[1]);
-        if (it == map_.end()) reply_nil(out);
-        else reply_bulk(out, it->second);
+        if (size_ == 0) {
+            reply_nil(out);
+            return;
+        }
+        const slot& s = slots_[probe(a[1], key_hash(a[1]))];
+        if (!s.e) reply_nil(out);
+        else reply_bulk(out, s.e->val_view());
         return;
     }
     case cmd_id::set: {
@@ -114,22 +260,34 @@ void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string&
             reply_error(out, "ERR syntax error");
             return;
         }
-        auto it = map_.find(a[1]);
-        if ((nx && it != map_.end()) || (xx && it == map_.end())) {
+        if ((size_ + 1) * 2 > slots_.size()) grow();
+        const std::uint64_t h = key_hash(a[1]);
+        slot& s = slots_[probe(a[1], h)];
+        if ((nx && s.e) || (xx && !s.e)) {
             reply_nil(out);
             return;
         }
-        if (it != map_.end()) it->second.assign(a[2]);
-        else map_.emplace(std::string(a[1]), std::string(a[2]));
+        const std::string_view v = a[2];
+        if (!s.e) {
+            s.e = entry::make(a[1], v);
+            s.hash = h;
+            ++size_;
+        } else if (v.size() <= s.e->val_cap) {
+            if (!v.empty()) std::memmove(s.e->val(), v.data(), v.size());
+            s.e->val_len = v.size();
+        } else {
+            entry* bigger = entry::make(a[1], v);
+            entry::destroy(std::exchange(s.e, bigger));
+        }
         reply_simple(out, "OK");
         return;
     }
     case cmd_id::del: {
         long long n = 0;
-        for (std::size_t i = 1; i < a.size(); ++i) {
-            auto it = map_.find(a[i]);
-            if (it != map_.end()) {
-                map_.erase(it);
+        for (std::size_t i = 1; i < a.size() && size_ > 0; ++i) {
+            const std::size_t at = probe(a[i], key_hash(a[i]));
+            if (slots_[at].e) {
+                erase_at(at);
                 ++n;
             }
         }
@@ -138,15 +296,16 @@ void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string&
     }
     case cmd_id::exists: {
         long long n = 0;
-        for (std::size_t i = 1; i < a.size(); ++i) n += map_.find(a[i]) != map_.end();
+        for (std::size_t i = 1; i < a.size() && size_ > 0; ++i)
+            n += slots_[probe(a[i], key_hash(a[i]))].e != nullptr;
         reply_int(out, n);
         return;
     }
     case cmd_id::dbsize:
-        reply_int(out, static_cast<long long>(map_.size()));
+        reply_int(out, static_cast<long long>(size_));
         return;
     case cmd_id::flushall:
-        map_.clear();
+        clear();
         reply_simple(out, "OK");
         return;
     default:

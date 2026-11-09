@@ -141,6 +141,29 @@ MUTATIONS = [
         "case": "sleeping_core_is_woken_for_every_message/doorbell",
         "expect": "assertion 'a sleeping core is woken for every message' failed",
     },
+    {
+        "name": "k-erase-without-backward-shift",
+        "what": "Delete a key from the open-addressing shard table by emptying its slot, "
+                "without moving later members of the probe run back: keys behind the hole "
+                "become unreachable.",
+        "file": "kv/engine.cpp",
+        "old": "    for (std::size_t j = (i + 1) & mask; slots_[j].e; j = (j + 1) & mask) {\n",
+        "new": "    for (std::size_t j = (i + 1) & mask; false && slots_[j].e; j = (j + 1) & mask) {\n",
+        "suite": "kv",
+        "case": "shard_matches_reference_map",
+        "expect": "assertion 'shard replies match the reference map' failed",
+    },
+    {
+        "name": "l-number-fast-path-accepts-leading-zero",
+        "what": "Let the parser's one-pass number path accept a leading zero ($01), which "
+                "the strict path rejects as an invalid length.",
+        "file": "kv/resp.cpp",
+        "old": "    if (digit != 0) {\n",
+        "new": "    if (true) {\n",
+        "suite": "kv",
+        "case": "parser_matches_reference",
+        "expect": "assertion 'parser matches the reference parser' failed",
+    },
 ]
 
 COPY = ["CMakeLists.txt", "include", "src", "kv", "server", "tests", "bench", "fuzz"]

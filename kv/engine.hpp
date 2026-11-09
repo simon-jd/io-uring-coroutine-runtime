@@ -14,7 +14,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 namespace kv {
@@ -23,25 +22,54 @@ enum class cmd_id : std::uint8_t {
     ping, echo, get, set, del, exists, dbsize, flushall, config, command, info, quit, debug, unknown
 };
 
-// Which core owns `key` (FNV-1a, independent of the shard's own hash table).
-unsigned owner(std::string_view key, unsigned cores) noexcept;
+// 64-bit hash of a key, computed once per key and used twice: its upper half
+// picks the owning core, its lower bits the slot in that core's table.
+std::uint64_t key_hash(std::string_view key) noexcept;
 
-// One core's part of the keyspace.
+// Which core owns `key`.
+inline unsigned owner_of_hash(std::uint64_t h, unsigned cores) noexcept {
+    return static_cast<unsigned>(((h >> 32) * cores) >> 32);
+}
+inline unsigned owner(std::string_view key, unsigned cores) noexcept {
+    return owner_of_hash(key_hash(key), cores);
+}
+
+// One core's part of the keyspace: an open-addressing table (linear probing,
+// at most half full, deletion by backward shift, no tombstones). A slot holds
+// the key's hash and a pointer to one heap block with the key and the value,
+// so a lookup that hits reads the slot array once and that block once.
 class shard {
 public:
+    shard() = default;
+    shard(shard&& o) noexcept;
+    shard& operator=(shard&& o) noexcept;
+    shard(const shard&) = delete;
+    shard& operator=(const shard&) = delete;
+    ~shard();
+
     // Runs a shard command (get, set, del, exists, dbsize, flushall) on keys
     // this shard owns and appends the reply.
     void execute(cmd_id id, std::span<const std::string_view> args, std::string& out);
-    std::size_t size() const noexcept { return map_.size(); }
+    std::size_t size() const noexcept { return size_; }
+    std::size_t capacity() const noexcept { return slots_.size(); }
+    // Checks the table's invariants (tests): every entry is reachable from its
+    // home slot without crossing an empty slot, and the count matches.
+    bool consistent() const;
 
 private:
-    struct hash {
-        using is_transparent = void;
-        std::size_t operator()(std::string_view s) const noexcept {
-            return std::hash<std::string_view>{}(s);
-        }
+    struct entry; // header, then the key bytes, then the value bytes
+    struct slot {
+        std::uint64_t hash = 0;
+        entry* e = nullptr; // nullptr: empty
     };
-    std::unordered_map<std::string, std::string, hash, std::equal_to<>> map_;
+    // The slot holding `key`, or the empty slot where it would go.
+    std::size_t probe(std::string_view key, std::uint64_t h) const noexcept;
+    void grow();
+    void erase_at(std::size_t i) noexcept;
+    void clear() noexcept;
+
+    std::vector<slot> slots_; // size 0 or a power of two
+    std::size_t size_ = 0;
 };
 
 // Commands for one other core, with their argument bytes copied (the input
