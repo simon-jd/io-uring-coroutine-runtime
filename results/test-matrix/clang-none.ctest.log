@@ -35,8 +35,8 @@ test 2
 2: PASS destroyed_coroutine_keeps_fixed_buffer_until_cqe
 2: cancel-ack before target CQE in 100/100 rounds
 2: PASS cancel_ack_does_not_release_buffer
-2: defer ring: 6249 cancelled, 3751 completed
-2: plain ring: 5607 cancelled, 4393 completed
+2: defer ring: 5426 cancelled, 4574 completed
+2: plain ring: 5077 cancelled, 4923 completed
 2: PASS cancel_vs_complete_race
 2: PASS cancel_before_submit_short_circuits
 2: 1 MiB over a 4 KiB socket buffer: 256 send submissions
@@ -52,7 +52,7 @@ test 2
 2: PASS direct_index_reserved_while_operation_in_flight
 2: PASS stale_and_foreign_leases_rejected
 2: Passed 19 cases
- 2/10 Test  #2: reactor ..........................   Passed    0.81 sec
+ 2/10 Test  #2: reactor ..........................   Passed    0.89 sec
 test 3
       Start  3: buffer
 
@@ -83,6 +83,21 @@ test 4
 4: PASS call_every_core_with_payloads/busy_poll
 4: PASS call_every_core_with_payloads/doorbell
 4: PASS call_every_core_with_payloads/doorbell_busy_poll
+4: PASS call_all_returns_results_in_call_order
+4: PASS call_all_returns_results_in_call_order/unbatched
+4: PASS call_all_returns_results_in_call_order/busy_poll
+4: PASS call_all_returns_results_in_call_order/doorbell
+4: PASS call_all_returns_results_in_call_order/doorbell_busy_poll
+4: PASS call_all_rethrows_after_every_reply
+4: PASS call_all_rethrows_after_every_reply/unbatched
+4: PASS call_all_rethrows_after_every_reply/busy_poll
+4: PASS call_all_rethrows_after_every_reply/doorbell
+4: PASS call_all_rethrows_after_every_reply/doorbell_busy_poll
+4: PASS destroyed_call_all_leaves_slots_to_replies
+4: PASS destroyed_call_all_leaves_slots_to_replies/unbatched
+4: PASS destroyed_call_all_leaves_slots_to_replies/busy_poll
+4: PASS destroyed_call_all_leaves_slots_to_replies/doorbell
+4: PASS destroyed_call_all_leaves_slots_to_replies/doorbell_busy_poll
 4: PASS posts_are_delivered_before_rings_close
 4: PASS posts_are_delivered_before_rings_close/unbatched
 4: PASS posts_are_delivered_before_rings_close/busy_poll
@@ -93,15 +108,15 @@ test 4
 4: PASS ping_pong_token_ring/busy_poll
 4: PASS ping_pong_token_ring/doorbell
 4: PASS ping_pong_token_ring/doorbell_busy_poll
-4: calls answered 46448, refused after shutdown began 32
+4: calls answered 41152, refused after shutdown began 32
 4: PASS shutdown_with_calls_in_flight
-4: calls answered 38585, refused after shutdown began 32
+4: calls answered 35484, refused after shutdown began 32
 4: PASS shutdown_with_calls_in_flight/unbatched
-4: calls answered 41326, refused after shutdown began 32
+4: calls answered 50400, refused after shutdown began 32
 4: PASS shutdown_with_calls_in_flight/busy_poll
-4: calls answered 32216, refused after shutdown began 32
+4: calls answered 34112, refused after shutdown began 32
 4: PASS shutdown_with_calls_in_flight/doorbell
-4: calls answered 48463, refused after shutdown began 32
+4: calls answered 53838, refused after shutdown began 32
 4: PASS shutdown_with_calls_in_flight/doorbell_busy_poll
 4: MSG_RINGs for 64 concurrent calls: 1
 4: PASS concurrent_calls_share_message_rings
@@ -119,7 +134,7 @@ test 4
 4: PASS sleeping_core_is_woken_for_every_message/unbatched
 4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
 4: PASS sleeping_core_is_woken_for_every_message/busy_poll
-4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 1380, core 0 doorbells 6381
+4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 1313, core 0 doorbells 6611
 4: PASS sleeping_core_is_woken_for_every_message/doorbell
 4: rounds 4000 of 4000, stalls 0, core 1 waits aborted by the re-check 0, core 0 doorbells 0
 4: PASS sleeping_core_is_woken_for_every_message/doorbell_busy_poll
@@ -134,8 +149,8 @@ test 4
 4: PASS refused_reply_is_sent_again
 4: doorbells 3, rung again 2
 4: PASS refused_doorbell_is_rung_again
-4: Passed 39 cases
- 4/10 Test  #4: runtime ..........................   Passed    0.57 sec
+4: Passed 54 cases
+ 4/10 Test  #4: runtime ..........................   Passed    0.69 sec
 test 5
       Start  5: ipc
 
@@ -167,9 +182,11 @@ test 6
 6: PASS protocol_errors
 6: PASS local_commands_and_errors
 6: PASS routes_keys_to_their_cores
+6: PASS parser_matches_reference
+6: PASS shard_matches_reference_map
 6: PASS protocol_error_ends_the_read_with_a_reply
-6: Passed 7 cases
- 6/10 Test  #6: kv ...............................   Passed    0.54 sec
+6: Passed 9 cases
+ 6/10 Test  #6: kv ...............................   Passed    0.76 sec
 test 7
       Start  7: server_uring
 
@@ -185,13 +202,13 @@ test 7
 7: PASS many_clients_match_a_sequential_model
 7: answered 2265 of 20000 pipelined requests before the connection closed
 7: PASS shutdown_answers_received_requests
-7: shutdown took 1566 ms (drain limit 1500 ms)
+7: shutdown took 1575 ms (drain limit 1500 ms)
 7: PASS shutdown_completes_when_a_peer_never_reads
 7: PASS shutdown_waits_for_requests_in_progress
 7: PASS direct_descriptors
 7: PASS fixed_buffer_replies
 7: Passed 12 cases
- 7/10 Test  #7: server_uring .....................   Passed    2.98 sec
+ 7/10 Test  #7: server_uring .....................   Passed    3.04 sec
 test 8
       Start  8: server_epoll
 
@@ -205,12 +222,12 @@ test 8
 8: PASS slow_reader_does_not_block_other_connections
 8: PASS abrupt_disconnects_are_cleaned_up
 8: PASS many_clients_match_a_sequential_model
-8: answered 11302 of 20000 pipelined requests before the connection closed
+8: answered 5102 of 20000 pipelined requests before the connection closed
 8: PASS shutdown_answers_received_requests
-8: shutdown took 1525 ms (drain limit 1500 ms)
+8: shutdown took 1522 ms (drain limit 1500 ms)
 8: PASS shutdown_completes_when_a_peer_never_reads
 8: Passed 9 cases
- 8/10 Test  #8: server_epoll .....................   Passed    2.41 sec
+ 8/10 Test  #8: server_epoll .....................   Passed    2.34 sec
 test 9
       Start  9: server_asio
 
@@ -224,12 +241,12 @@ test 9
 9: PASS slow_reader_does_not_block_other_connections
 9: PASS abrupt_disconnects_are_cleaned_up
 9: PASS many_clients_match_a_sequential_model
-9: answered 6766 of 20000 pipelined requests before the connection closed
+9: answered 7333 of 20000 pipelined requests before the connection closed
 9: PASS shutdown_answers_received_requests
-9: shutdown took 1523 ms (drain limit 1500 ms)
+9: shutdown took 1512 ms (drain limit 1500 ms)
 9: PASS shutdown_completes_when_a_peer_never_reads
 9: Passed 9 cases
- 9/10 Test  #9: server_asio ......................   Passed    2.58 sec
+ 9/10 Test  #9: server_asio ......................   Passed    2.45 sec
 test 10
       Start 10: server_uring_doorbell
 
@@ -243,16 +260,16 @@ test 10
 10: PASS slow_reader_does_not_block_other_connections
 10: PASS abrupt_disconnects_are_cleaned_up
 10: PASS many_clients_match_a_sequential_model
-10: answered 2265 of 20000 pipelined requests before the connection closed
+10: answered 4677 of 20000 pipelined requests before the connection closed
 10: PASS shutdown_answers_received_requests
-10: shutdown took 1568 ms (drain limit 1500 ms)
+10: shutdown took 1597 ms (drain limit 1500 ms)
 10: PASS shutdown_completes_when_a_peer_never_reads
 10: PASS shutdown_waits_for_requests_in_progress
 10: PASS direct_descriptors
 10: PASS fixed_buffer_replies
 10: Passed 12 cases
-10/10 Test #10: server_uring_doorbell ............   Passed    3.09 sec
+10/10 Test #10: server_uring_doorbell ............   Passed    3.01 sec
 
 100% tests passed, 0 tests failed out of 10
 
-Total Test time (real) =  13.14 sec
+Total Test time (real) =  13.36 sec
