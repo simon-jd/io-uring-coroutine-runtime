@@ -1,0 +1,20 @@
+date: 2026-11-10T15:11:27Z
+commit: 9a07e32
+kernel: 7.0.0-42-generic
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+compiler: g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+kv_server/kvload build: /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/build-release (CMAKE_BUILD_TYPE=Release)
+valkey: Valkey server v=9.1.3 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=54e3e69bdccc7660
+asio: 1.36.0
+suite: compare, reps 7, cores 4, measured window 5.0 s (closed loop, after 1 s warm-up; open loop 8.0 s after 2 s)
+server cpus: first <cores> of 2,4,6,8; client cpus: 16-23 (8 kvload threads); both under taskset at nice 0
+kvload: .cache/imp/main/build-release/kvload
+keys: 100000 preloaded, values 64 bytes; connections: 50 per server core
+loadavg at start: 5.78 5.26 5.3
+rejection rule: none
+harness cpu: 11; frequency sampled every 0.1 s (scaling_cur_freq, cpuinfo_avg_freq)
+arm uring-main: --io uring  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/main/build-release (main a48c76c)
+arm uring-c2: --io uring  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/c2/build-release (c2 cand-c2 f020b31)
+arm uring-c3: --io uring  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/c3/build-release (c3 cand-c3 2846ac9)
+arm epoll-main: --io epoll  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/main/build-release (main a48c76c)
+arm epoll-c3: --io epoll  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/c3/build-release (c3 cand-c3 2846ac9)
