@@ -801,3 +801,227 @@ per GET did not raise GET throughput over `main` (2 cores, depth 16: 5.47 /
 time and idle more; why GET leaves that time unused was not investigated.
 In check C, GET throughput at 2 cores did rise over `main` (1.14, 5 of 5), so
 the observation may be session noise rather than a property of the change.
+
+# Part 4: the improvement round
+
+The question Part 3 left: io_uring needed more CPU per request than epoll
+whenever pipelined requests crossed cores (4–10% at 2 cores, 11–17% at 4,
+depth 16), and callgrind put the difference in user space, about 130
+instructions per request more than epoll's loop at 2 cores and 280 at 4.
+The method is Part 3's: every candidate was built from its own source tree,
+measured against the published `main` (a48c76c) and against the step before
+it, interleaved in one quiet window under rules committed before the run
+(`results/improve/w*/RULES.md`), and kept only if its rule held; an effect
+under 3% needed a second session at least an hour later. Candidates: c1
+(call nodes in their slots), c2 (c1 plus a chunked slot table), c3 (c2 plus
+one hash per key), c4 (c3 plus an inline receive path).
+
+## Why Part 3's leaner bookkeeping did not show
+
+That candidate removed 41 instructions per request (1,551 to 1,510, 2.6%;
+GET, 2 cores, depth 16). The server spends about half its CPU time in the
+kernel (204 ns user and 196 ns system per request in that window, from the
+per-thread ticks in `results/perf/w1/compare.jsonl`), so 2.6% of the
+user-space instructions is about 1% of the CPU time, while its paired
+repetitions in that window ranged from 0.85 to 1.11 and wider. Its user time did not move
+either (204 and 206 ns). The change was too small for the instrument; it was
+not shown to be useless. This round therefore aimed at changes large enough
+to resolve, and the measurements below show the relation holding once they
+were: at 4 cores c2 removed 141 instructions per request (1,397 to 1,256)
+and user time per GET fell from 161 to 148 ns (epoll: 124), with system time
+unchanged (199 and 196 ns; window A). That is 0.49 cycles per removed
+instruction at 5.3 GHz, against 0.61 for the server's user code on average,
+consistent with bookkeeping that was cheap per instruction (predictable,
+cache-resident) but plentiful.
+
+## Where the instructions went
+
+GET, depth 16, user-space instructions per request (callgrind,
+`results/improve/profile`):
+
+| | 1 core | 2 cores | 4 cores |
+| --- | ---: | ---: | ---: |
+| `main`, io_uring | 966 | 1,151 | 1,397 |
+| c1: call nodes in their slots | — | 1,139 | 1,321 |
+| c2: c1 + chunked slot table (kept) | 944 | 1,105 | 1,256 |
+| c3: c2 + one hash per key | — | 1,083 | 1,242 |
+| c4: c3 + inline receive path (rejected) | 901 | 1,068 | 1,225 |
+| `main`, epoll | 886 | 1,022 | 1,114 |
+| c3, epoll | 853 | 997 | 1,093 |
+
+At 4 cores c1 took the allocator from 60 to 2 instructions per request and
+c2 the runtime from 199 to 141; c3 takes 16–31 from the engine both front
+ends share. Against epoll built from the same tree the gap went from 129 to
+86 instructions at 2 cores and from 283 to 149 at 4.
+
+## Kept: call nodes in their slots, slots in fixed chunks
+
+*Call nodes.* A call's node (its function, its result and the cross-core
+links) was a heap allocation per call; at 4 cores a read calls three cores,
+and the frees came back in bursts larger than glibc's per-thread cache, so
+the allocator cost 60 instructions per request (epoll: 2–3). The node is now
+built in 128 bytes of storage inside the call's operation slot. Ownership
+does not change: the slot keeps the node until the reply has arrived, also
+when the caller is gone, and a shutdown that abandons a call keeps the whole
+slot table alive (a node is part of it). Larger nodes still go on the heap
+(`stats().call_nodes_on_heap`; test `call_nodes_live_in_their_slots`).
+`call_all` keeps up to eight slot references inline and can fill a results
+vector the caller keeps. Deliberate bug n destroys a node when its caller
+detaches; the reply then trips "cross-core reply for a slot that is not
+waiting for it".
+
+*Slot table.* Slots were a `std::deque` of 264-byte entries, one deque node
+each, and every lookup computed the deque's size for its bounds check: 38
+instructions out of line, 25–40 per request. Slots now live in chunks of 64
+that never move, found with a shift and a mask; the lookup, slot
+acquisition, `finish_take`, `maybe_free`, the SQE reservation's fast path and
+the thread check are inline, and freeing a slot touches only what it holds.
+
+Measured (server CPU per request against `main`, paired, 7 repetitions;
+below 1 is better):
+
+| | window A | window B |
+| --- | ---: | ---: |
+| c2, 4 cores, GET depth 16 | 0.954 (6 of 7) | 0.968 (7 of 7) |
+| c2, 4 cores, SET depth 16 | 0.964 (7 of 7) | 0.968 (7 of 7) |
+| c2, 4 cores, GET requests per second | 1.063 (7 of 7 higher) | 1.050 (7 of 7) |
+| c1 alone, 4 cores, GET / SET | 0.971 (5) / 1.007 (3) | — |
+
+At 1 and 2 cores the medians ranged from 0.955 to 1.034 in the two sessions;
+only 1-core GET depth 1 in window A reached 6 of 7 (0.955), and it did not
+repeat in window B (0.984, 4 of 7), so nothing is claimed there. c1 alone did not pass: no
+cell reached 6 of 7, and its 1-core GET depth 16 came out at 1.061 with 6 of
+7 higher in window A, a path it does not change and that came out at 0.965
+for c2 in window B; c1 is kept only as part of c2, which passed in both
+sessions.
+
+## Kept: one hash per key
+
+GET and SET hashed their key twice: once to pick the owning core, once in
+that core's table. The plan now hashes once, routes on the upper half and
+carries the hash with the command, in the batch or directly to this core's
+table (`shard::execute_hashed`). `routes_keys_to_their_cores` now also checks
+each table's invariants after routed SETs, and deliberate bug o (carry the
+command name's hash instead) fails it. Callgrind: 16–31 fewer instructions
+per request on both front ends (about 2%).
+
+Measured (server CPU per request, paired, 7 repetitions; the best cells and
+the 4-core cells):
+
+| | window B | window C |
+| --- | ---: | ---: |
+| epoll, c3 / `main`, 1 core GET depth 16 | 0.965 (5 of 7) | 0.935 (6 of 7) |
+| epoll, c3 / `main`, 4 cores SET | 0.947 (7 of 7) | 0.986 (6 of 7) |
+| io_uring, c3 / c2, 4 cores GET | 0.989 (5 of 7) | 0.969 (5 of 7) |
+| io_uring, c3 / c2, 4 cores SET | 0.991 (6 of 7) | 0.987 (4 of 7) |
+
+It passed its rule in both sessions (a depth-16 cell at 6 of 7 or better,
+no cell worse), so it is kept. The size of the effect is about what the
+instruction count predicts, 1–2%; the 5–6% of the best single cells is not
+claimed.
+
+## Rejected: an inline receive path
+
+c4 made the receive path's out-of-line calls inline (the multishot result
+queue became a ring instead of a `std::deque`; `recv_stream::pop`, the
+provided-buffer ring's bookkeeping and the call-target check moved into the
+header; the slot helpers were forced inline). It ran 17 fewer instructions
+per request at 4 cores, and callgrind's cache and branch simulation (`--cache-sim=yes
+--branch-sim=yes`, `results/improve/profile/sim-*`) found fewer data-cache
+misses and mispredicts than c3 (D1 read misses 14.7 against 15.0,
+mispredicted branches 5.9 against 6.0 per request; instruction-cache misses
+0.06 against 0.03). Measured, it needed more CPU: 4 cores GET 1.040 against
+c3 with 6 of 7 higher, user time 162 against 143 ns (window B), so it was
+reverted. The simulator models neither the micro-op cache nor code alignment,
+and hardware counters are not available here, so the cause is not known;
+the forced inlining grew the connection coroutine, the most likely suspect.
+The diff is in `results/improve/candidates/`.
+
+## Not done
+
+- Not waiting for the send CQE before the next receive. In the closed loop a
+  connection's next request cannot arrive before its replies have left, so
+  this saves one coroutine resumption per read, about 3 instructions per
+  request at depth 16; it needs a second send buffer and ordering between
+  sends. Not worth a measurement it could not resolve.
+- One slot for all calls of a read. At 4 cores the three calls of a read
+  cost 60 instructions per request (table below); a shared slot would need
+  room for several nodes or nodes outside the slot, and would save the two
+  extra acquire/release pairs (about 10 per request).
+- Faster single calls to the target: the function runs through a virtual
+  call, a moved `std::unique_ptr<batch>` and an `std::optional` result.
+
+## What is left and why
+
+With c3 the io_uring build still runs more user-space instructions than the
+epoll loop built from the same tree: 60 more per request at 1 core, 86 at 2
+and 149 at 4 (GET, depth 16; the engine, parser and encoders are the same
+code and cost the same in both). Nearly all of it is the front end's own
+work, grouped by job (`scripts/callgrind-jobs.py`, `results/improve/profile`;
+the 1-core column is c2, whose runtime and front end are c3's):
+
+| instructions per request | io_uring, 1 core | 2 cores | 4 cores | epoll, 1 core | 2 cores | 4 cores |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| send submission | 13 | 13 | 14 | — | — | — |
+| completions: reap, dispatch, resume | 35 | 36 | 39 | — | — | — |
+| slot acquire and release | 9 | 19 | 27 | — | — | — |
+| cross-core calls | 0 | 14 | 60 | — | — | — |
+| the connection coroutine / epoll's loop | 22 | 32 | 54 | 15 | 26 | 47 |
+| **total** | **79** | **116** | **195** | **15** | **26** | **47** |
+
+At depth 16 a read carries 16 requests, so per read the io_uring connection
+spends about 1,000 instructions more than epoll's loop at 1 core and 2,400
+more at 4, on things the loop does not do: it builds an SQE for the send and gets a CQE back for it
+and for the receive, gives each operation and each cross-core call its own
+slot with a generation (so that a late CQE or reply can never reach a reused
+slot, and a destroyed coroutine never loses a buffer), resumes the coroutine
+three times (receive, reply, send), and sends every call through a node that
+the other core runs and returns. The epoll loop calls `read` and `send`
+directly and hands batches over through a locked vector; it keeps no
+in-flight state because nothing is in flight. That is the price of the
+ownership contract, not of io_uring's system calls: system time per request
+is the same for both front ends in every window (for example 195–204 ns at
+4 cores, window B).
+
+In CPU time, in the two final sessions (`results/kv-bench/imp-session-1`
+and `imp-session-2`, 07:44–08:58 and 11:13–12:28 PST, the build of c3 against
+`main`, epoll, Asio and Valkey; paired by repetition):
+
+| server CPU per request | this round / epoll | `main` / epoll | this round / `main` |
+| --- | ---: | ---: | ---: |
+| 1 core, GET depth 1 | 0.959 (7) / 0.924 (7) | 0.937 (7) / 0.937 (6) | 1.013 (3) / 0.985 (5) |
+| 1 core, SET depth 16 | 1.075 (1) / 1.033 (1) | 1.031 (0) / 1.064 (0) | 1.006 (2) / 0.976 (5) |
+| 2 cores, GET depth 16 | 1.030 (0) / 1.091 (2) | 1.103 (0) / 1.020 (2) | 0.926 (6) / 1.070 (3) |
+| 2 cores, SET depth 16 | 1.082 (1) / 1.075 (3) | 1.102 (1) / 1.093 (3) | 0.961 (6) / 0.984 (4) |
+| 4 cores, GET depth 16 | 1.116 (1) / 1.073 (1) | 1.131 (1) / 1.153 (0) | 0.989 (5) / 0.972 (4) |
+| 4 cores, SET depth 16 | 1.085 (2) / 1.108 (0) | 1.124 (2) / 1.130 (0) | 0.966 (6) / 0.967 (5) |
+
+(medians, repetitions below 1 of 7 in brackets). Within each session the gap
+to epoll at 4 cores is smaller than `main`'s (7–12% against 12–15%). The
+difference to `main` itself was 1–4% at 4 cores in both sessions (4–6 of 7)
+and changed sign between the sessions at 2 cores; the decision windows, with
+fewer arms and no open-loop runs between them, resolved it at 3–5%. Session 1's 4-core runs
+shared the server CPUs' SMT siblings with another project's job (interference
+median 0.87 of the window, against 0.05 in session 2). The extra time is
+user time: at 4 cores, GET, 168 / 148 ns per request against epoll's 135 /
+121, system time 222 / 201 against 213 / 203.
+
+## GET throughput at 2 cores
+
+Part 3 saw GET throughput at 2 cores, depth 16, stay flat against `main`
+while CPU per request fell, and check C saw it rise. This round's windows
+show why one should not read much into it: at 2 cores neither the server
+nor the load generator is saturated (server cores busy 67–81% of the time
+for GET and 85–90% for SET, the generator's 8 CPUs 33–40%), and throughput
+moves with how often the server's threads go to sleep. Across the runs of each window, requests per
+second correlated with voluntary context switches per 1,000 requests at
+−0.67 to −0.89 for the io_uring builds (Spearman, 21–28 runs per cell, GET
+and SET, windows A and B); with CPU per request it correlated at −0.70 and
+−0.84 in window A but only −0.02 and −0.31 in window B. Builds with the same 2-core code path differed as much as different
+front ends did: c2 and c3 served 5.72 and 5.10 M GETs per second in window
+B. A cheaper request lets a core run out of work and sleep sooner, and a
+GET that crosses cores then waits for the other core to wake. Where the
+change was large enough, the saving did show as throughput: at 4 cores c2
+served 5–6% more GETs per second than `main` in both windows (7 of 7).
+What sets the 2-core figure in detail (wake-up latency, the other core's
+loop iteration) needs scheduler tracing, which this machine does not allow.

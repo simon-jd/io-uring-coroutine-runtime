@@ -13,6 +13,57 @@ training job that takes one full CPU and is not pinned, container services,
 another project's builds and VMs). Numbers from different sessions are never
 put in one comparison.
 
+## Improvement round (2026-11-09 and 11-10)
+
+What was changed, what was dropped and why: [design-tradeoffs.md, Part
+4](../docs/design-tradeoffs.md). Each candidate was built from its own
+source tree (`.cache/imp/<name>` on the build machine; `SOURCE` in it names
+the branch and commit) and interleaved with the published `main` (a48c76c)
+in one quiet window; each window's rules were committed before it ran.
+Candidates: c1 (call nodes in their slots), c2 (c1 + chunked slot table),
+c3 (c2 + one hash per key), c4 (c3 + inline receive path).
+
+| Directory | Command | Builds | What it shows |
+| --- | --- | --- | --- |
+| [improve/wA/](improve/wA) | `scripts/kv-bench.py --suite compare --reps 7 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --kvload <main>/kvload --arm NAME=IO@BUILD ...`, then `--cores 4 --workloads get_p16,set_p16 --harness-cpu 11 --out .../cores4` | main; c1; c2; epoll of main | c2 kept, c1 alone not; 2026-11-09 23:50 – 11-10 00:16 PST |
+| [improve/wB/](improve/wB) | the same | main; c2; c3; c4; epoll of main and of c3 | c2 held a second time, c3 passed, c4 rejected; 04:52–05:30 |
+| [improve/wC/](improve/wC) | the same | main; c2; c3; epoll of main and of c3 | c3 passed a second time; 06:48–07:19 |
+| [improve/profile/](improve/profile) | `scripts/callgrind-profile.sh <build> <io> <cores> 16 8 <dir>`, `scripts/callgrind-summary.py`, `scripts/callgrind-jobs.py` | main, c1–c4, epoll of main and of c3 | user-space instructions per request by module and by job (GET depth 16, 1, 2 and 4 cores); `sim-*`: c3 and c4 with callgrind's cache and branch simulation |
+| [improve/candidates/](improve/candidates) | `git diff` against the build it was compared with | | the rejected c4 |
+| [kv-bench/imp-session-1/](kv-bench/imp-session-1) | `scripts/kv-bench.py --suite main --reps 7 --cores 1,2 --max-interference 0.05 --retries 3 --build <final> --arm uring-main=uring@<main>`, then `--cores 4 --only get_p16,set_p16 --harness-cpu 11 --out .../cores4` (`.cache/imp/final-session.sh`) | c9bf7bb (`git archive`) against main a48c76c, epoll, Asio, Valkey | the final comparison; 2026-11-10 07:44–08:58 PST |
+| [kv-bench/imp-session-2/](kv-bench/imp-session-2) | the same | the same | the same comparison, 11:13–12:28 |
+| [test-matrix/](test-matrix) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 660d3d7 (code of c9bf7bb) | 10 suites, 156 cases, GCC and clang, each plain, ASan + UBSan and TSan: 6 of 6 pass |
+| [deliberate-bugs/](deliberate-bugs) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 660d3d7 | 15 contract violations (new: n, a call node destroyed at detach; o, the wrong hash carried to the owner), each caught by its named assertion |
+| [fuzz/](fuzz) | `scripts/run-fuzz.sh 600` | the c9bf7bb sources (`fuzz/SOURCE.txt`) | IPC validator 512,780,559 executions, RESP parser 4,511,062; no findings |
+
+### Final comparison: imp-session-1 / imp-session-2
+
+Server CPU per request, paired by repetition (median; repetitions below 1
+of 7), the io_uring build of this round against epoll and against the
+published `main`:
+
+| | io_uring / epoll, GET | io_uring / epoll, SET | io_uring / `main`, GET | io_uring / `main`, SET |
+| --- | ---: | ---: | ---: | ---: |
+| 1 core, depth 1 | 0.959 (7) / 0.924 (7) | 0.964 (7) / 0.962 (6) | 1.013 (3) / 0.985 (5) | 0.986 (6) / 0.997 (4) |
+| 1 core, depth 16 | 0.972 (5) / 0.970 (5) | 1.075 (1) / 1.033 (1) | 0.990 (5) / 0.957 (6) | 1.006 (2) / 0.976 (5) |
+| 2 cores, depth 1 | 0.974 (4) / 0.975 (6) | 1.005 (2) / 0.995 (4) | 0.999 (4) / 1.003 (3) | 1.007 (3) / 1.000 (3) |
+| 2 cores, depth 16 | 1.030 (0) / 1.091 (2) | 1.082 (1) / 1.075 (3) | 0.926 (6) / 1.070 (3) | 0.961 (6) / 0.984 (4) |
+| 4 cores, depth 16 | 1.116 (1) / 1.073 (1) | 1.085 (2) / 1.108 (0) | 0.989 (5) / 0.972 (4) | 0.966 (6) / 0.967 (5) |
+
+- **Holds in both sessions:** against epoll, 4–8% less CPU per request at 1
+  core and depth 1, and more at depth 16 wherever requests cross cores (3–9%
+  at 2 cores, 7–12% at 4) and for SET at 1 core (3–8%). In the same sessions
+  `main` / epoll was 1.131 / 1.153 (GET) and 1.124 / 1.130 (SET) at 4 cores.
+- **Not resolved here:** the change against `main`. At 4 cores it was 1–4%
+  less in both sessions (4–6 of 7); at 2 cores it changed sign. The decision
+  windows above measured 3–5% at 4 cores with 7 of 7 in at least one cell
+  each.
+- Session 1's 4-core runs had another project's job on the server CPUs' SMT
+  siblings (interference median 0.87 of the window; session 2: 0.05; the
+  recorded bystander was a process named `auto-app`). At 1 and 2 cores the
+  rejection rule repeated 5 runs in session 1 and 13 in session 2.
+
+
 ## Performance round (2026-11-08 and 11-09)
 
 What was optimized, what was dropped and why: [design-tradeoffs.md, Part
