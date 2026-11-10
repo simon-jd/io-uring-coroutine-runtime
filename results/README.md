@@ -81,9 +81,9 @@ were committed before it ran (`RULES.md` in its directory).
 | [kv-bench/perf-session-a/](kv-bench/perf-session-a) | `scripts/kv-bench.py --suite main --reps 7 --cores 1,2 --max-interference 0.05 --retries 3 --build <5d86cbd build> --arm uring-main=uring@<main build>`, then `--cores 4 --only get_p16,set_p16 --harness-cpu 11 --out .../cores4` | 5d86cbd against main 3eb4121 | the final comparison; 11-09 08:27–09:42 |
 | [kv-bench/perf-session-b/](kv-bench/perf-session-b) | the same | the same | the same comparison, 11-09 10:44–11:58 |
 | [kv-bench/perf-check-c/](kv-bench/perf-check-c) | `scripts/kv-bench.py --suite compare --reps 5 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --kvload <main build>/kvload --arm uring-main=uring@<main build> --arm uring-perf=uring@<perf build> --arm epoll-perf=epoll@<perf build>`, then `--cores 4 --harness-cpu 11 --workloads get_p16,set_p16 --out .../cores4` | fresh clones of main 3eb4121 and perf 932122c, built separately | an independent check of the final comparison; 11-09 13:37–13:50 |
-| [test-matrix/](test-matrix) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 5d86cbd | 10 suites, 151 cases, GCC and clang, each plain, ASan + UBSan and TSan (Debug): 6 of 6 pass |
-| [deliberate-bugs/](deliberate-bugs) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 5d86cbd (script 8d6b3be) | 13 contract violations, each caught by a named assertion |
-| [fuzz/](fuzz) | `taskset -c 10-15,24-31 nice scripts/run-fuzz.sh 600` | 5d86cbd | 600 s per target: IPC validator 302,901,197 executions, RESP parser 1,818,354 (each input now also checked against the reference parser and map); no findings |
+| test-matrix/ (in git history at a48c76c; the directory now holds the improvement round's run) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 5d86cbd | 10 suites, 151 cases, GCC and clang, each plain, ASan + UBSan and TSan (Debug): 6 of 6 pass |
+| deliberate-bugs/ (git history at a48c76c) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 5d86cbd (script 8d6b3be) | 13 contract violations, each caught by a named assertion |
+| fuzz/ (git history at a48c76c) | `taskset -c 10-15,24-31 nice scripts/run-fuzz.sh 600` | 5d86cbd | 600 s per target: IPC validator 302,901,197 executions, RESP parser 1,818,354 (each input now also checked against the reference parser and map); no findings |
 
 Both final sessions ran the servers built from an archive of 5d86cbd
 (`.cache/final-5d86cbd` on the build machine). Session A's meta file says
@@ -167,6 +167,9 @@ and 4 cores (here somewhat larger), but not the 1-core depth-16 GET result
 (1.02 instead of 0.95), which the README therefore does not claim.
 
 ### Tests at 5d86cbd
+
+The improvement round added 5 cases (`call_nodes_live_in_their_slots` on
+each of the 5 transports; 156 in all) and mutations n and o (above).
 
 | Suite | Cases | Covers |
 | --- | ---: | --- |
