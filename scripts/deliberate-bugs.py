@@ -189,6 +189,17 @@ MUTATIONS = [
         "case": "destroyed_call_all_leaves_slots_to_replies",
         "expect": "rol invariant violated: cross-core reply for a slot that is not waiting for it",
     },
+    {
+        "name": "o-batch-carries-wrong-hash",
+        "what": "Carry the hash of the command name instead of the key's hash to the owning "
+                "core's table, so a key is stored and looked up under a hash that is not its own.",
+        "file": "kv/engine.cpp",
+        "old": "    parts_.push_back({core, b.add(id, args, h)});\n",
+        "new": "    parts_.push_back({core, b.add(id, args, key_hash(args[0]))});\n",
+        "suite": "kv",
+        "case": "routes_keys_to_their_cores",
+        "expect": "assertion 'keys routed through the plan are found on their owner' failed",
+    },
 ]
 
 COPY = ["CMakeLists.txt", "include", "src", "kv", "server", "tests", "bench", "fuzz"]

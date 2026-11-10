@@ -271,12 +271,17 @@ int main(int argc, char** argv) {
                      in += resp({"GET", k});
                      expect += "$" + std::to_string(2 + k.size()) + "\r\nv-" + k + "\r\n";
                  }
-                 CHECK(cl.run(p, in) == expect);
+                 // GET and SET carry the hash computed at routing to the
+                 // owner's table: the owner must find what it stored, under
+                 // the key's own hash.
+                 REQUIRE("keys routed through the plan are found on their owner", cl.run(p, in) == expect);
                  std::vector<unsigned> seen(cores, 0);
                  for (auto& k : keys) ++seen[owner(k, cores)];
                  for (unsigned c = 0; c < cores; ++c) {
                      CHECK(seen[c] > 0);
                      CHECK(cl.shards[c].size() == seen[c]); // each key stored on its owner only
+                     REQUIRE("keys routed through the plan are found on their owner",
+                             cl.shards[c].consistent());
                  }
                  // Multi-key DEL across cores sums the parts; DBSIZE sums every shard.
                  CHECK(cl.run(p, resp({"DBSIZE"})) == ":16\r\n");

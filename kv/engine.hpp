@@ -23,7 +23,8 @@ enum class cmd_id : std::uint8_t {
 };
 
 // 64-bit hash of a key. Its upper half picks the owning core, its lower bits
-// the slot in that core's table; routing and the table lookup each compute it.
+// the slot in that core's table. GET and SET compute it once, when the
+// command is routed, and carry it to the owning core's table.
 std::uint64_t key_hash(std::string_view key) noexcept;
 
 // Which core owns `key`.
@@ -50,6 +51,9 @@ public:
     // Runs a shard command (get, set, del, exists, dbsize, flushall) on keys
     // this shard owns and appends the reply.
     void execute(cmd_id id, std::span<const std::string_view> args, std::string& out);
+    // The same for GET and SET with h == key_hash(args[1]) already computed.
+    void execute_hashed(cmd_id id, std::span<const std::string_view> args, std::uint64_t h,
+                        std::string& out);
     std::size_t size() const noexcept { return size_; }
     std::size_t capacity() const noexcept { return slots_.size(); }
     // Checks the table's invariants (tests): every entry is reachable from its
@@ -64,6 +68,7 @@ private:
     };
     // The slot holding `key`, or the empty slot where it would go.
     std::size_t probe(std::string_view key, std::uint64_t h) const noexcept;
+    void execute_other(cmd_id id, std::span<const std::string_view> args, std::string& out);
     void grow();
     void erase_at(std::size_t i) noexcept;
     void clear() noexcept;
@@ -79,12 +84,14 @@ class batch {
 public:
     void clear() noexcept;
     std::size_t size() const noexcept { return ids_.size(); }
-    std::uint32_t add(cmd_id id, std::span<const std::string_view> args);
+    // h: key_hash(args[1]) for GET and SET (ignored for other commands).
+    std::uint32_t add(cmd_id id, std::span<const std::string_view> args, std::uint64_t h = 0);
     void execute(shard& s); // on the owning core
     std::string_view reply(std::uint32_t i) const noexcept;
 
 private:
     std::vector<cmd_id> ids_;
+    std::vector<std::uint64_t> hashes_; // per command; meaningful for GET and SET
     std::vector<std::uint32_t> argc_;
     std::vector<std::size_t> arg_ends_;
     std::string bytes_;
@@ -137,6 +144,7 @@ private:
         std::uint32_t count;
     };
     void route(cmd_id id, unsigned core, std::span<const std::string_view> args);
+    void route_hashed(cmd_id id, std::uint64_t h, std::span<const std::string_view> args);
     std::string& local_begin() noexcept { return local_; }
     void local_end(); // closes one local reply as a single-part entry
     std::string_view part_reply(const part& p) const noexcept;

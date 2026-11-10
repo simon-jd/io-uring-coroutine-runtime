@@ -235,13 +235,19 @@ bool shard::consistent() const {
 }
 
 void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string& out) {
+    if (id == cmd_id::get || id == cmd_id::set) execute_hashed(id, a, key_hash(a[1]), out);
+    else execute_other(id, a, out);
+}
+
+void shard::execute_hashed(cmd_id id, std::span<const std::string_view> a, std::uint64_t h,
+                           std::string& out) {
     switch (id) {
     case cmd_id::get: {
         if (size_ == 0) {
             reply_nil(out);
             return;
         }
-        const slot& s = slots_[probe(a[1], key_hash(a[1]))];
+        const slot& s = slots_[probe(a[1], h)];
         if (!s.e) reply_nil(out);
         else reply_bulk(out, s.e->val_view());
         return;
@@ -261,7 +267,6 @@ void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string&
             return;
         }
         if ((size_ + 1) * 2 > slots_.size()) grow();
-        const std::uint64_t h = key_hash(a[1]);
         slot& s = slots_[probe(a[1], h)];
         if ((nx && s.e) || (xx && !s.e)) {
             reply_nil(out);
@@ -282,6 +287,14 @@ void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string&
         reply_simple(out, "OK");
         return;
     }
+    default:
+        execute_other(id, a, out);
+        return;
+    }
+}
+
+void shard::execute_other(cmd_id id, std::span<const std::string_view> a, std::string& out) {
+    switch (id) {
     case cmd_id::del: {
         long long n = 0;
         for (std::size_t i = 1; i < a.size() && size_ > 0; ++i) {
@@ -318,6 +331,7 @@ void shard::execute(cmd_id id, std::span<const std::string_view> a, std::string&
 
 void batch::clear() noexcept {
     ids_.clear();
+    hashes_.clear();
     argc_.clear();
     arg_ends_.clear();
     bytes_.clear();
@@ -325,8 +339,9 @@ void batch::clear() noexcept {
     reply_ends_.clear();
 }
 
-std::uint32_t batch::add(cmd_id id, std::span<const std::string_view> args) {
+std::uint32_t batch::add(cmd_id id, std::span<const std::string_view> args, std::uint64_t h) {
     ids_.push_back(id);
+    hashes_.push_back(h);
     argc_.push_back(static_cast<std::uint32_t>(args.size()));
     for (auto a : args) {
         bytes_.append(a);
@@ -347,7 +362,10 @@ void batch::execute(shard& s) {
             scratch_.push_back(all.substr(off, end - off));
             off = end;
         }
-        s.execute(ids_[i], scratch_, replies_);
+        if (ids_[i] == cmd_id::get || ids_[i] == cmd_id::set)
+            s.execute_hashed(ids_[i], scratch_, hashes_[i], replies_);
+        else
+            s.execute(ids_[i], scratch_, replies_);
         reply_ends_.push_back(replies_.size());
     }
 }
@@ -388,6 +406,19 @@ void plan::route(cmd_id id, unsigned core, std::span<const std::string_view> arg
     parts_.push_back({core, b.add(id, args)});
 }
 
+void plan::route_hashed(cmd_id id, std::uint64_t h, std::span<const std::string_view> args) {
+    const unsigned core = owner_of_hash(h, cores_);
+    if (core == core_) {
+        own_->execute_hashed(id, args, h, local_);
+        local_ends_.push_back(local_.size());
+        parts_.push_back({core_, static_cast<std::uint32_t>(local_ends_.size() - 1)});
+        return;
+    }
+    batch& b = *batches_[core];
+    if (b.size() == 0) targets_.push_back(core);
+    parts_.push_back({core, b.add(id, args, h)});
+}
+
 void plan::local_end() {
     local_ends_.push_back(local_.size());
     const auto first = static_cast<std::uint32_t>(parts_.size());
@@ -416,7 +447,7 @@ void plan::add(const command& cmd) {
     switch (id) {
     case cmd_id::get:
     case cmd_id::set:
-        route(id, owner(a[1], cores_), a);
+        route_hashed(id, key_hash(a[1]), a);
         entries_.push_back({combine::copy, first, 1});
         return;
     case cmd_id::del:
