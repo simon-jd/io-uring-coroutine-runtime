@@ -1,0 +1,336 @@
+diff --git a/include/rol/buffers.hpp b/include/rol/buffers.hpp
+index d85e818..bce86c8 100644
+--- a/include/rol/buffers.hpp
++++ b/include/rol/buffers.hpp
+@@ -1,6 +1,7 @@
+ #pragma once
+ #include "rol/detail/ready.hpp"
+ #include "rol/error.hpp"
++#include <liburing.h>
+ #include <coroutine>
+ #include <cstddef>
+ #include <cstdint>
+@@ -9,9 +10,6 @@
+ #include <utility>
+ #include <vector>
+ 
+-struct io_uring;
+-struct io_uring_buf_ring;
+-
+ namespace rol {
+ 
+ class reactor;
+@@ -215,4 +213,37 @@ private:
+     unsigned held_count_ = 0;
+ };
+ 
++// ---- the receive path's fast paths ----
++
++inline std::span<std::byte> provided_buffer::data() const noexcept {
++    if (!ring_) return {};
++    return {ring_->address(bid_), len_};
++}
++
++inline void provided_buffer::release() noexcept {
++    if (ring_) std::exchange(ring_, nullptr)->recycle(bid_);
++}
++
++inline void provided_buffer_ring::kernel_returned(std::uint16_t bid) noexcept {
++    ROL_INVARIANT(bid < entries_ && !held_[bid],
++                  "kernel returned a provided buffer that was not in the ring");
++    held_[bid] = 1;
++    ++held_count_;
++}
++
++inline provided_buffer provided_buffer_ring::wrap(std::uint16_t bid, std::uint32_t len) noexcept {
++    ROL_INVARIANT(bid < entries_ && held_[bid], "wrapping a provided buffer the kernel still owns");
++    return provided_buffer(this, bid, len);
++}
++
++inline void provided_buffer_ring::recycle(std::uint16_t bid) noexcept {
++    ROL_INVARIANT(bid < entries_ && held_[bid], "provided buffer returned twice");
++    held_[bid] = 0;
++    --held_count_;
++    if (orphaned_ || !br_) return;
++    io_uring_buf_ring_add(br_, address(bid), static_cast<unsigned>(size_), bid,
++                          io_uring_buf_ring_mask(entries_), 0);
++    io_uring_buf_ring_advance(br_, 1);
++}
++
+ } // namespace rol
+diff --git a/include/rol/detail/op_slot.hpp b/include/rol/detail/op_slot.hpp
+index 1ea7e2a..a99adff 100644
+--- a/include/rol/detail/op_slot.hpp
++++ b/include/rol/detail/op_slot.hpp
+@@ -5,7 +5,6 @@
+ #include <coroutine>
+ #include <cstddef>
+ #include <cstdint>
+-#include <deque>
+ #include <memory>
+ #include <vector>
+ #include <linux/time_types.h>
+@@ -84,6 +83,44 @@ struct xnode {
+     virtual void run(reactor& target) noexcept = 0;
+ };
+ 
++// Multishot results waiting to be consumed, in arrival order: a ring that
++// doubles when full and keeps its storage when the slot is reused.
++class result_queue {
++public:
++    bool empty() const noexcept { return count_ == 0; }
++    std::size_t size() const noexcept { return count_; }
++    void push_back(io_result r) {
++        if (count_ == cap_) grow();
++        buf_[(head_ + count_) & (cap_ - 1)] = r;
++        ++count_;
++    }
++    io_result pop_front() noexcept {
++        const io_result r = buf_[head_];
++        head_ = (head_ + 1) & (cap_ - 1);
++        --count_;
++        return r;
++    }
++    void clear() noexcept { head_ = count_ = 0; }
++    template <class Fn>
++    void for_each(Fn&& fn) const {
++        for (std::uint32_t i = 0; i < count_; ++i) fn(buf_[(head_ + i) & (cap_ - 1)]);
++    }
++
++private:
++    void grow() {
++        const std::uint32_t cap = cap_ ? cap_ * 2 : 8;
++        std::unique_ptr<io_result[]> bigger(new io_result[cap]);
++        for (std::uint32_t i = 0; i < count_; ++i) bigger[i] = buf_[(head_ + i) & (cap_ - 1)];
++        buf_ = std::move(bigger);
++        cap_ = cap;
++        head_ = 0;
++    }
++    std::unique_ptr<io_result[]> buf_;
++    std::uint32_t cap_ = 0; // 0 or a power of two
++    std::uint32_t head_ = 0;
++    std::uint32_t count_ = 0;
++};
++
+ // Shared by the slots of one reactor::call_all: the last reply resumes the
+ // caller.
+ struct call_join {
+@@ -118,7 +155,7 @@ struct op_slot {
+     owned_buffer owned;
+     fixed_lease lease;
+     provided_buffer_ring* pring = nullptr;
+-    std::deque<io_result> queue;
++    result_queue queue;
+     std::unique_ptr<msg_storage> msg;
+     std::vector<unique_fd> fds;
+     // A call's message node. It is built in node_space when it fits, so a call
+diff --git a/include/rol/reactor.hpp b/include/rol/reactor.hpp
+index 97f2b76..8fc78cd 100644
+--- a/include/rol/reactor.hpp
++++ b/include/rol/reactor.hpp
+@@ -497,7 +497,12 @@ public:
+     // has checked with check_call_target.
+     template <class Node, class F>
+     detail::slot_ref start_call(std::coroutine_handle<> h, unsigned target, F&& fn);
+-    void check_call_target(unsigned target) const; // what start_call would refuse
++    // What start_call would refuse: throws Failure.
++    void check_call_target(unsigned target) const {
++        if (!accepting_ || target >= core_count_ || !accepting_->load()) [[unlikely]]
++            refuse_call(target);
++    }
++    [[noreturn]] void refuse_call(unsigned target) const;
+     void send_post(unsigned target, std::unique_ptr<detail::xnode> node);
+     void on_spawn_done(detail::spawn_promise* p) noexcept;
+     void record_task_error(std::exception_ptr e) noexcept;
+@@ -576,6 +581,8 @@ private:
+     std::thread::id thread_;
+     runtime* rt_ = nullptr;
+     unsigned core_ = 0;
++    unsigned core_count_ = 0;                    // rt_->size(), 0 without a runtime
++    const std::atomic<bool>* accepting_ = nullptr; // the runtime's accepting flag
+     // Operation slots in chunks of 64 that never move (the kernel and other
+     // cores hold their addresses); an index names one for its whole life.
+     static constexpr unsigned slot_chunk_bits = 6;
+@@ -616,14 +623,14 @@ private:
+ 
+ // ---- slot bookkeeping on the hot path ----
+ 
+-inline detail::op_slot& reactor::slot_at(detail::slot_ref ref) noexcept {
++[[gnu::always_inline]] inline detail::op_slot& reactor::slot_at(detail::slot_ref ref) noexcept {
+     ROL_INVARIANT(ref.index < slot_count_, "slot index out of range");
+     auto& s = slot_entry(ref.index);
+     ROL_INVARIANT(s.active && s.gen == ref.gen, "CQE or awaiter refers to a slot that is not in flight");
+     return s;
+ }
+ 
+-inline detail::slot_ref reactor::acquire_slot(detail::op_kind kind) {
++[[gnu::always_inline]] inline detail::slot_ref reactor::acquire_slot(detail::op_kind kind) {
+     if (free_slots_.empty()) add_slots();
+     const std::uint32_t index = free_slots_.back();
+     free_slots_.pop_back();
+@@ -636,13 +643,13 @@ inline detail::slot_ref reactor::acquire_slot(detail::op_kind kind) {
+     return {index, s.gen};
+ }
+ 
+-inline void reactor::maybe_free(detail::op_slot& s, detail::slot_ref ref) noexcept {
++[[gnu::always_inline]] inline void reactor::maybe_free(detail::op_slot& s, detail::slot_ref ref) noexcept {
+     if (s.pending != 0 || !(s.detached || s.taken)) return;
+     if (s.detached) ++stats_.detached_released;
+     free_slot_at(s, ref.index);
+ }
+ 
+-inline void reactor::finish_take(detail::slot_ref ref) noexcept {
++[[gnu::always_inline]] inline void reactor::finish_take(detail::slot_ref ref) noexcept {
+     auto& s = slot_at(ref);
+     s.taken = true;
+     s.waiter = {};
+@@ -739,6 +746,19 @@ private:
+     detail::slot_ref ref_;
+ };
+ 
++inline std::optional<recv_item> recv_stream::pop() {
++    auto& s = r_->slot_at(ref_);
++    if (s.queue.empty()) return std::nullopt;
++    const io_result q = s.queue.pop_front();
++    recv_item item;
++    item.res = q.res;
++    item.more = (q.flags & IORING_CQE_F_MORE) != 0;
++    if (q.flags & IORING_CQE_F_BUFFER)
++        item.buffer = s.pring->wrap(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT),
++                                    q.res > 0 ? static_cast<std::uint32_t>(q.res) : 0u);
++    return item;
++}
++
+ // ---- template implementations ----
+ 
+ namespace detail {
+diff --git a/include/rol/runtime.hpp b/include/rol/runtime.hpp
+index fd560e1..b5a915a 100644
+--- a/include/rol/runtime.hpp
++++ b/include/rol/runtime.hpp
+@@ -39,6 +39,7 @@ public:
+     // Used by reactors.
+     int ring_fd(unsigned core) const noexcept { return ring_fds_[core]; }
+     bool accepting() const noexcept { return accepting_.load(); }
++    const std::atomic<bool>& accepting_flag() const noexcept { return accepting_; }
+     // Shared-memory transport (reactor_config::doorbell): the queue from
+     // `source` to `target` (a stack of chains, newest first; one producer and
+     // one consumer), and each core's announcement that it is about to sleep.
+diff --git a/src/buffers.cpp b/src/buffers.cpp
+index 36847bb..7ad014a 100644
+--- a/src/buffers.cpp
++++ b/src/buffers.cpp
+@@ -205,15 +205,6 @@ void fixed_buffer_pool::acquire_awaiter::await_suspend(std::coroutine_handle<> h
+ 
+ // ---------------------------------------------------------------- provided buffers
+ 
+-std::span<std::byte> provided_buffer::data() const noexcept {
+-    if (!ring_) return {};
+-    return {ring_->address(bid_), len_};
+-}
+-
+-void provided_buffer::release() noexcept {
+-    if (ring_) std::exchange(ring_, nullptr)->recycle(bid_);
+-}
+-
+ provided_buffer_ring::provided_buffer_ring(io_uring* ring, std::uint16_t group, unsigned entries,
+                                            std::size_t size)
+     : ring_(ring), group_(group), entries_(entries), size_(size) {
+@@ -250,26 +241,5 @@ void provided_buffer_ring::unregister() noexcept {
+     br_ = nullptr;
+ }
+ 
+-void provided_buffer_ring::kernel_returned(std::uint16_t bid) noexcept {
+-    ROL_INVARIANT(bid < entries_ && !held_[bid],
+-                  "kernel returned a provided buffer that was not in the ring");
+-    held_[bid] = 1;
+-    ++held_count_;
+-}
+-
+-provided_buffer provided_buffer_ring::wrap(std::uint16_t bid, std::uint32_t len) noexcept {
+-    ROL_INVARIANT(bid < entries_ && held_[bid], "wrapping a provided buffer the kernel still owns");
+-    return provided_buffer(this, bid, len);
+-}
+-
+-void provided_buffer_ring::recycle(std::uint16_t bid) noexcept {
+-    ROL_INVARIANT(bid < entries_ && held_[bid], "provided buffer returned twice");
+-    held_[bid] = 0;
+-    --held_count_;
+-    if (orphaned_ || !br_) return;
+-    io_uring_buf_ring_add(br_, address(bid), static_cast<unsigned>(size_), bid,
+-                          io_uring_buf_ring_mask(entries_), 0);
+-    io_uring_buf_ring_advance(br_, 1);
+-}
+ 
+ } // namespace rol
+diff --git a/src/reactor.cpp b/src/reactor.cpp
+index e37878b..0f6b0b6 100644
+--- a/src/reactor.cpp
++++ b/src/reactor.cpp
+@@ -57,6 +57,8 @@ reactor::reactor(reactor_config cfg, runtime* rt, unsigned core)
+     if (rt_) {
+         outbox_.resize(rt_->size());
+         resend_doorbell_.assign(rt_->size(), 0);
++        core_count_ = rt_->size();
++        accepting_ = &rt_->accepting_flag();
+     }
+     if (!(p.features & IORING_FEAT_NODROP)) {
+         io_uring_queue_exit(&ring_);
+@@ -358,9 +360,10 @@ void reactor::release_resources(op_slot& s) noexcept {
+     if (s.owned) s.owned = owned_buffer{};
+     if (s.lease) s.lease.reset();
+     if (s.pring) {
+-        for (const auto& q : s.queue)
++        s.queue.for_each([&](const io_result& q) {
+             if (q.flags & IORING_CQE_F_BUFFER)
+                 s.pring->recycle(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT));
++        });
+         s.pring = nullptr;
+     }
+     if (!s.queue.empty()) s.queue.clear();
+@@ -553,20 +556,6 @@ void reactor::capture_rights(op_slot& s) noexcept {
+     });
+ }
+ 
+-std::optional<recv_item> recv_stream::pop() {
+-    auto& s = r_->slot_at(ref_);
+-    if (s.queue.empty()) return std::nullopt;
+-    const io_result q = s.queue.front();
+-    s.queue.pop_front();
+-    recv_item item;
+-    item.res = q.res;
+-    item.more = (q.flags & IORING_CQE_F_MORE) != 0;
+-    if (q.flags & IORING_CQE_F_BUFFER)
+-        item.buffer = s.pring->wrap(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT),
+-                                    q.res > 0 ? static_cast<std::uint32_t>(q.res) : 0u);
+-    return item;
+-}
+-
+ void reactor::close_stream(slot_ref ref) noexcept {
+     auto& s = slot_at(ref);
+     s.waiter = {};
+@@ -577,9 +566,10 @@ void reactor::close_stream(slot_ref ref) noexcept {
+     }
+     s.detached = true;
+     ++stats_.detached;
+-    for (const auto& q : s.queue)
++    s.queue.for_each([&](const io_result& q) {
+         if (q.flags & IORING_CQE_F_BUFFER)
+             s.pring->recycle(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT));
++    });
+     s.queue.clear();
+     unregister_source(s, ref);
+     request_cancel(ref, nullptr);
+@@ -882,10 +872,10 @@ void reactor::send_post(unsigned target, std::unique_ptr<detail::xnode> node) {
+     enqueue_message(target, n);
+ }
+ 
+-void reactor::check_call_target(unsigned target) const {
++void reactor::refuse_call(unsigned target) const {
+     if (!rt_) throw Failure(Error::invalid, "call() needs a reactor created by a runtime");
+     if (target >= rt_->size()) throw Failure(Error::invalid, "no such core");
+-    if (!rt_->accepting()) throw Failure(Error::closed, "runtime is shutting down");
++    throw Failure(Error::closed, "runtime is shutting down"); // the accepting flag was clear
+ }
+ 
+ void reactor::launch_call(op_slot& s, slot_ref ref, std::coroutine_handle<> h,
