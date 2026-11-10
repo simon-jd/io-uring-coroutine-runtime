@@ -9,7 +9,8 @@
 # counters, runs a closed-loop GET load with kvload on CPUs 24-31, dumps the
 # counters (out-dir/callgrind.out.1) and stops the server. out-dir/kvload.json
 # has the request count. scripts/callgrind-summary.py turns the dump into
-# instructions per request by module. Build with -g for function names:
+# instructions per request by module. VG_EXTRA adds valgrind options (e.g.
+# "--cache-sim=yes --branch-sim=yes"). Build with -g for function names:
 #   cmake -S . -B build-prof -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG -g"
 set -eu
 B=$(realpath "$1"); IO=$2; CORES=$3; PIPE=$4; SECS=$5; OUT=$6; shift 6
@@ -17,7 +18,7 @@ mkdir -p "$OUT"; OUT=$(realpath "$OUT"); rm -f "$OUT"/callgrind.out*
 PORT=$((18000 + RANDOM % 1000))
 CPUS=$(echo 10,12,14,11 | cut -d, -f1-"$CORES")
 cd "$OUT"
-taskset -c 10-15 valgrind --tool=callgrind --callgrind-out-file="$OUT/callgrind.out" \
+taskset -c 10-15 valgrind --tool=callgrind ${VG_EXTRA:-} --callgrind-out-file="$OUT/callgrind.out" \
     "$B/kv_server" --io "$IO" --cores "$CORES" --cpus "$CPUS" --port "$PORT" "$@" 2> "$OUT/server.stderr" &
 VPID=$!
 for _ in $(seq 1 200); do
