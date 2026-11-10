@@ -1,0 +1,16 @@
+date: 2026-11-10T16:50:51Z
+commit: b216985
+kernel: 7.0.0-42-generic
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+compiler: g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+kv_server/kvload build: .cache/imp/final/build-release (CMAKE_BUILD_TYPE=Release)
+valkey: Valkey server v=9.1.3 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=54e3e69bdccc7660
+asio: 1.36.0
+suite: main, reps 7, cores 4, measured window 5.0 s (closed loop, after 1 s warm-up; open loop 8.0 s after 2 s)
+server cpus: first <cores> of 2,4,6,8; client cpus: 16-23 (8 kvload threads); both under taskset at nice 0
+kvload: .cache/imp/final/build-release/kvload
+keys: 100000 preloaded, values 64 bytes; connections: 50 per server core
+loadavg at start: 10.07 8.68 8.07
+rejection rule: none
+harness cpu: 11; frequency sampled every 0.1 s (scaling_cur_freq, cpuinfo_avg_freq)
+arm uring-main: --io uring  from /home/postedism/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/imp/main/build-release (main a48c76c)
