@@ -24,7 +24,9 @@ check `c-release-on-coroutine-destroy` shows the second half concretely: a new
 lease holder's bytes are overwritten by the kernel.
 
 *Cost:* one extra indirection per completion and a slot table that never
-shrinks (slots are reused; the table is sized by peak concurrency).
+shrinks (slots are reused; the table is sized by peak concurrency). The table
+is a list of fixed chunks of 64 slots, so a slot never moves and a lookup is a
+shift, a mask and the generation check (Part 4).
 
 ## Buffers move into operations
 
@@ -105,8 +107,8 @@ brings nothing over loopback; whether it pays off needs a non-loopback path.
 
 ## Cross-core messages: MSG_RING with node pointers
 
-*Chosen:* `IORING_OP_MSG_RING` carrying a heap node pointer in the target CQE's
-`user_data`, sent with `IOSQE_CQE_SKIP_SUCCESS` so only failures produce a sender
+*Chosen:* `IORING_OP_MSG_RING` carrying a node pointer in the target CQE's
+`user_data` (a call's node lives in the call's slot, a post's on the heap), sent with `IOSQE_CQE_SKIP_SUCCESS` so only failures produce a sender
 CQE. Since round 2 the pointer is the head of a chain of nodes (see Part 2); a
 call's reply travels back in the target's chain for the calling core.
 

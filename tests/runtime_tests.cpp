@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <span>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <memory>
 #include <numeric>
@@ -143,6 +144,7 @@ std::vector<std::pair<std::string, std::function<void(runtime_config)>>> cases()
                      };
                      using call = decltype(make(0, nullptr));
                      std::vector<call> calls;
+                     std::vector<std::pair<unsigned, std::uint64_t>> kept;
                      for (int i = 0; i < rounds; ++i) {
                          calls.clear();
                          std::vector<std::uint64_t> sums;
@@ -155,7 +157,12 @@ std::vector<std::pair<std::string, std::function<void(runtime_config)>>> cases()
                              sums.push_back(std::accumulate(p->begin(), p->end(), std::uint64_t{0}));
                              calls.push_back(make(t, std::move(p)));
                          }
-                         const auto got = co_await r.call_all(std::span(calls));
+                         // Even rounds return a new vector; odd rounds fill
+                         // one the caller keeps.
+                         std::vector<std::pair<unsigned, std::uint64_t>> got;
+                         if (i % 2 == 0) got = co_await r.call_all(std::span(calls));
+                         else co_await r.call_all(std::span(calls), kept);
+                         if (i % 2 == 1) got = kept;
                          bool ok = got.size() == order.size();
                          for (std::size_t k = 0; ok && k < got.size(); ++k)
                              ok = got[k].first == order[k] && got[k].second == sums[k];
@@ -166,6 +173,35 @@ std::vector<std::pair<std::string, std::function<void(runtime_config)>>> cases()
                  CHECK(verified.load() == static_cast<int>(cores) * rounds);
                  CHECK(std::accumulate(served.begin(), served.end(), std::uint64_t{0}) ==
                        std::uint64_t{cores} * rounds * (cores - 1));
+                 CHECK(rt.outstanding() == 0);
+             }},
+            {"call_nodes_live_in_their_slots",
+             [](runtime_config base) {
+                 // A call whose node fits the slot's storage allocates
+                 // nothing; a larger one goes on the heap. Both return the
+                 // right result, also when the slot is reused right away.
+                 constexpr int calls = 300;
+                 runtime rt(with_cores(base, 2));
+                 bool ok = true;
+                 std::uint64_t small_heap = 1, large_heap = 0;
+                 rt.run([&](reactor& r) -> task<void> {
+                     if (r.core() != 0) co_return;
+                     const auto before = r.stats().call_nodes_on_heap;
+                     for (int i = 0; i < calls; ++i)
+                         ok &= co_await r.call(1, [i](reactor& t) { return i + int(t.core()); }) == i + 1;
+                     small_heap = r.stats().call_nodes_on_heap - before;
+                     for (int i = 0; i < calls; ++i) {
+                         std::array<std::uint8_t, 256> big{};
+                         for (std::size_t k = 0; k < big.size(); ++k) big[k] = std::uint8_t(i + k);
+                         const auto sum = co_await r.call(1, [big](reactor&) {
+                             return std::accumulate(big.begin(), big.end(), 0);
+                         });
+                         ok &= sum == std::accumulate(big.begin(), big.end(), 0);
+                     }
+                     large_heap = r.stats().call_nodes_on_heap - before - small_heap;
+                 });
+                 REQUIRE("small call nodes stay in their slots", ok && small_heap == 0);
+                 REQUIRE("large call nodes go on the heap", large_heap == calls);
                  CHECK(rt.outstanding() == 0);
              }},
             {"call_all_rethrows_after_every_reply",

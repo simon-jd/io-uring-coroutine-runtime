@@ -15,6 +15,7 @@
 #include <exception>
 #include <functional>
 #include <memory>
+#include <new>
 #include <optional>
 #include <span>
 #include <thread>
@@ -131,6 +132,7 @@ struct reactor_stats {
     std::uint64_t messages_sent = 0;     // posts and calls started here
     std::uint64_t messages_received = 0; // posts and calls run here
     std::uint64_t messages_failed = 0;
+    std::uint64_t call_nodes_on_heap = 0; // call nodes too large for their slot's storage
     std::uint64_t replies_sent = 0;
     std::uint64_t message_rings = 0;     // MSG_RING SQEs carrying message chains
     std::uint64_t queue_pushes = 0;      // chains pushed onto shared-memory queues
@@ -437,9 +439,14 @@ public:
     // (functions are moved out of `calls`). Resumes once every reply is back
     // and returns the results in the order of `calls`. If calls fail, every
     // slot is still released first; then the first failure in that order is
-    // thrown. One slot and one message node per call; no coroutine frames.
+    // thrown. One slot per call, its node built in the slot; no coroutine
+    // frames. The second form puts the results into `results` (cleared
+    // first; its contents are unspecified after a failure), so a caller that
+    // keeps the vector allocates nothing per call_all.
     template <class F>
     auto call_all(std::span<std::pair<unsigned, F>> calls);
+    template <class F, class Res>
+    auto call_all(std::span<std::pair<unsigned, F>> calls, std::vector<Res>& results);
 
     // ---- operations ----
     template <class Prep, class Take>
@@ -485,8 +492,11 @@ public:
     bool request_cancel(detail::slot_ref ref, cancel_source* reporter) noexcept;
     void forget_source(cancel_source* s) noexcept;
     void close_stream(detail::slot_ref ref) noexcept;
-    detail::slot_ref start_call(std::coroutine_handle<> h, unsigned target,
-                                std::unique_ptr<detail::xnode> node);
+    // Builds a call node of type Node from `fn` in a new slot (in the slot's
+    // own storage when it fits) and queues it for `target`, which the caller
+    // has checked with check_call_target.
+    template <class Node, class F>
+    detail::slot_ref start_call(std::coroutine_handle<> h, unsigned target, F&& fn);
     void check_call_target(unsigned target) const; // what start_call would refuse
     void send_post(unsigned target, std::unique_ptr<detail::xnode> node);
     void on_spawn_done(detail::spawn_promise* p) noexcept;
@@ -511,14 +521,25 @@ private:
     void complete(detail::op_slot& s, detail::slot_ref ref) noexcept;
     void maybe_free(detail::op_slot& s, detail::slot_ref ref) noexcept;
     void free_slot(detail::slot_ref ref) noexcept;
+    void free_slot_at(detail::op_slot& s, std::uint32_t index) noexcept;
     void release_resources(detail::op_slot& s) noexcept;
-    void unregister_source(detail::op_slot& s, detail::slot_ref ref) noexcept;
+    void launch_call(detail::op_slot& s, detail::slot_ref ref, std::coroutine_handle<> h,
+                     unsigned target) noexcept;
+    void unregister_source(detail::op_slot& s, detail::slot_ref ref) noexcept {
+        if (s.source) remove_from_source(s, ref);
+    }
+    void remove_from_source(detail::op_slot& s, detail::slot_ref ref) noexcept;
     void capture_rights(detail::op_slot& s) noexcept;
     bool direct_live(const file_ref& f) const noexcept;
     void unpin_direct(unsigned index) noexcept;
     void release_direct_if_unused(unsigned index) noexcept;
     detail::slot_ref acquire_slot(detail::op_kind kind);
-    io_uring_sqe* reserve_sqes(unsigned n);
+    void add_slots(); // one more chunk of free slots
+    io_uring_sqe* reserve_sqes(unsigned n) {
+        if (io_uring_sq_space_left(&ring_) >= n) return io_uring_get_sqe(&ring_);
+        return reserve_sqes_slow(n);
+    }
+    io_uring_sqe* reserve_sqes_slow(unsigned n);
     io_uring_sqe* reserve_sqes_noexcept(unsigned n) noexcept;
     void enqueue_message(unsigned target, detail::xnode* n) noexcept;
     void flush_messages() noexcept;
@@ -533,7 +554,10 @@ private:
     void on_request(detail::xnode* n) noexcept;
     void on_reply(detail::xnode* n) noexcept;
     void on_chain_failed(detail::xnode* head, int res) noexcept;
-    void check_thread() const noexcept;
+    void check_thread() const noexcept {
+        ROL_INVARIANT(std::this_thread::get_id() == thread_,
+                      "reactor used from a thread other than the one that created its ring");
+    }
     void cancel_all() noexcept;
     void destroy_tasks() noexcept;
     void begin_shutdown() noexcept;
@@ -552,8 +576,16 @@ private:
     std::thread::id thread_;
     runtime* rt_ = nullptr;
     unsigned core_ = 0;
-    std::deque<detail::op_slot> slots_;
-    std::vector<std::uint32_t> free_slots_;
+    // Operation slots in chunks of 64 that never move (the kernel and other
+    // cores hold their addresses); an index names one for its whole life.
+    static constexpr unsigned slot_chunk_bits = 6;
+    static constexpr std::uint32_t slot_chunk_mask = (1u << slot_chunk_bits) - 1;
+    detail::op_slot& slot_entry(std::uint32_t index) noexcept {
+        return slot_chunks_[index >> slot_chunk_bits][index & slot_chunk_mask];
+    }
+    std::vector<std::unique_ptr<detail::op_slot[]>> slot_chunks_;
+    std::uint32_t slot_count_ = 0;
+    std::vector<std::uint32_t> free_slots_; // capacity always >= slot_count_
     detail::ready_list ready_;
     detail::spawn_promise* spawned_ = nullptr;
     std::unique_ptr<fixed_buffer_pool> fixed_;
@@ -581,6 +613,41 @@ private:
     std::vector<unsigned> direct_free_;
     reactor_stats stats_;
 };
+
+// ---- slot bookkeeping on the hot path ----
+
+inline detail::op_slot& reactor::slot_at(detail::slot_ref ref) noexcept {
+    ROL_INVARIANT(ref.index < slot_count_, "slot index out of range");
+    auto& s = slot_entry(ref.index);
+    ROL_INVARIANT(s.active && s.gen == ref.gen, "CQE or awaiter refers to a slot that is not in flight");
+    return s;
+}
+
+inline detail::slot_ref reactor::acquire_slot(detail::op_kind kind) {
+    if (free_slots_.empty()) add_slots();
+    const std::uint32_t index = free_slots_.back();
+    free_slots_.pop_back();
+    auto& s = slot_entry(index);
+    s.gen = (s.gen + 1) & detail::gen_mask;
+    if (s.gen == 0) s.gen = 1;
+    s.kind = kind;
+    s.active = true;
+    if (++stats_.in_flight > stats_.peak_in_flight) stats_.peak_in_flight = stats_.in_flight;
+    return {index, s.gen};
+}
+
+inline void reactor::maybe_free(detail::op_slot& s, detail::slot_ref ref) noexcept {
+    if (s.pending != 0 || !(s.detached || s.taken)) return;
+    if (s.detached) ++stats_.detached_released;
+    free_slot_at(s, ref.index);
+}
+
+inline void reactor::finish_take(detail::slot_ref ref) noexcept {
+    auto& s = slot_at(ref);
+    s.taken = true;
+    s.waiter = {};
+    maybe_free(s, ref);
+}
 
 // ---- the awaitable for single-result operations ----
 
@@ -1073,8 +1140,8 @@ public:
     }
     bool await_ready() const noexcept { return false; }
     bool await_suspend(std::coroutine_handle<> h) {
-        auto node = std::make_unique<detail::call_node<F, R>>(std::move(fn_));
-        ref_ = r_->start_call(h, target_, std::move(node));
+        r_->check_call_target(target_);
+        ref_ = r_->template start_call<detail::call_node<F, R>>(h, target_, std::move(fn_));
         return !r_->slot_at(ref_).primary_done;
     }
     R await_resume() {
@@ -1086,7 +1153,7 @@ public:
             ~release() { r->finish_take(ref); }
         } guard{r_, ref};
         if (s.res < 0) throw Failure(Error::closed, "cross-core call could not be delivered", -s.res);
-        auto* node = static_cast<detail::call_node<F, R>*>(s.xcall.get());
+        auto* node = static_cast<detail::call_node<F, R>*>(s.xcall);
         ROL_INVARIANT(node->stage.load(std::memory_order_acquire) == 2,
                       "cross-core reply arrived before the result was published");
         if (node->error) std::rethrow_exception(node->error);
@@ -1107,41 +1174,61 @@ auto reactor::call(unsigned target, F fn) {
     return call_awaiter<F, R>(*this, target, std::move(fn));
 }
 
-template <class F, class R>
+// Into: the results go into a vector the caller owns instead of a new one.
+template <class F, class R, bool Into>
 class call_all_awaiter {
+    using Res = std::conditional_t<std::is_void_v<R>, detail::unit, R>;
+
 public:
-    call_all_awaiter(reactor& r, std::span<std::pair<unsigned, F>> calls) : r_(&r), calls_(calls) {}
+    call_all_awaiter(reactor& r, std::span<std::pair<unsigned, F>> calls,
+                     std::vector<Res>* into = nullptr)
+        : r_(&r), calls_(calls), into_(into) {}
     call_all_awaiter(const call_all_awaiter&) = delete;
     call_all_awaiter& operator=(const call_all_awaiter&) = delete;
     ~call_all_awaiter() {
         // Destroyed with replies outstanding: each slot keeps its node until
         // its reply arrives, and no longer counts down `join_`.
-        for (auto ref : refs_)
-            if (ref) r_->detach(ref);
+        for (std::size_t i = 0; i < count_; ++i)
+            if (refs_[i]) r_->detach(refs_[i]);
     }
     bool await_ready() const noexcept { return calls_.empty(); }
     bool await_suspend(std::coroutine_handle<> h) {
         for (auto& c : calls_) r_->check_call_target(c.first); // throws before anything starts
         join_.parent = h;
         join_.remaining = calls_.size();
-        refs_.reserve(calls_.size());
+        if (calls_.size() > inline_refs) {
+            big_.resize(calls_.size());
+            refs_ = big_.data();
+        }
         for (auto& c : calls_) {
-            auto node = std::make_unique<detail::call_node<F, R>>(std::move(c.second));
-            const auto ref = r_->start_call({}, c.first, std::move(node));
+            const auto ref = r_->template start_call<detail::call_node<F, R>>({}, c.first,
+                                                                            std::move(c.second));
             r_->slot_at(ref).join = &join_;
-            refs_.push_back(ref);
+            refs_[count_++] = ref;
         }
         return true; // a reply always arrives in a later loop iteration
     }
     auto await_resume() {
+        if constexpr (Into) {
+            into_->clear();
+            collect(*into_);
+        } else {
+            std::vector<Res> out;
+            out.reserve(count_);
+            collect(out);
+            if constexpr (!std::is_void_v<R>) return out;
+        }
+    }
+
+private:
+    void collect(std::vector<Res>& out) {
         int failure = 0;
         std::exception_ptr error;
-        std::vector<std::conditional_t<std::is_void_v<R>, detail::unit, R>> out;
-        out.reserve(refs_.size());
-        for (auto& ref : refs_) {
+        for (std::size_t i = 0; i < count_; ++i) {
+            auto& ref = refs_[i];
             auto& s = r_->slot_at(ref);
             ROL_INVARIANT(s.primary_done, "call_all resumed before every reply arrived");
-            auto* node = static_cast<detail::call_node<F, R>*>(s.xcall.get());
+            auto* node = static_cast<detail::call_node<F, R>*>(s.xcall);
             if (s.res < 0) {
                 if (!failure && !error) failure = s.res;
             } else {
@@ -1155,24 +1242,56 @@ public:
             }
             r_->finish_take(std::exchange(ref, {}));
         }
-        refs_.clear();
+        count_ = 0;
         if (failure) throw Failure(Error::closed, "cross-core call could not be delivered", -failure);
         if (error) std::rethrow_exception(error);
-        if constexpr (std::is_void_v<R>) return;
-        else return out;
     }
 
-private:
+    static constexpr std::size_t inline_refs = 8;
     reactor* r_;
     std::span<std::pair<unsigned, F>> calls_;
-    std::vector<detail::slot_ref> refs_;
+    std::vector<Res>* into_;
+    detail::slot_ref small_[inline_refs]{};
+    detail::slot_ref* refs_ = small_;
+    std::size_t count_ = 0; // slots started and not yet taken
+    std::vector<detail::slot_ref> big_; // more than inline_refs calls
     detail::call_join join_;
 };
 
 template <class F>
 auto reactor::call_all(std::span<std::pair<unsigned, F>> calls) {
     using R = std::invoke_result_t<F&, reactor&>;
-    return call_all_awaiter<F, R>(*this, calls);
+    return call_all_awaiter<F, R, false>(*this, calls);
+}
+
+template <class F, class Res>
+auto reactor::call_all(std::span<std::pair<unsigned, F>> calls, std::vector<Res>& results) {
+    using R = std::invoke_result_t<F&, reactor&>;
+    static_assert(std::is_same_v<Res, std::conditional_t<std::is_void_v<R>, detail::unit, R>>,
+                  "results must hold what the functions return");
+    return call_all_awaiter<F, R, true>(*this, calls, &results);
+}
+
+template <class Node, class F>
+detail::slot_ref reactor::start_call(std::coroutine_handle<> h, unsigned target, F&& fn) {
+    check_thread();
+    const auto ref = acquire_slot(detail::op_kind::xcall);
+    auto& s = slot_at(ref);
+    try {
+        if constexpr (sizeof(Node) <= detail::op_slot::node_space_size &&
+                      alignof(Node) <= alignof(std::max_align_t)) {
+            s.xcall = ::new (static_cast<void*>(s.node_space)) Node(std::forward<F>(fn));
+            s.xcall_inline = true;
+        } else {
+            s.xcall = new Node(std::forward<F>(fn));
+            ++stats_.call_nodes_on_heap;
+        }
+    } catch (...) {
+        free_slot(ref);
+        throw;
+    }
+    launch_call(s, ref, h, target);
+    return ref;
 }
 
 template <class F>

@@ -3,6 +3,7 @@
 #include "rol/buffers.hpp"
 #include <atomic>
 #include <coroutine>
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <memory>
@@ -120,12 +121,19 @@ struct op_slot {
     std::deque<io_result> queue;
     std::unique_ptr<msg_storage> msg;
     std::vector<unique_fd> fds;
-    std::unique_ptr<xnode> xcall;
+    // A call's message node. It is built in node_space when it fits, so a call
+    // allocates nothing; a larger node goes on the heap. Either way it belongs
+    // to this slot until the slot is freed.
+    xnode* xcall = nullptr;
+    bool xcall_inline = false;
     call_join* join = nullptr; // xcall started by call_all: count down instead of resuming
     __kernel_timespec ts{};
 
     slot_ref target;                // cancel operations: what they cancel
     cancel_source* reporter = nullptr;
+
+    static constexpr std::size_t node_space_size = 128;
+    alignas(std::max_align_t) std::byte node_space[node_space_size];
 };
 
 } // namespace detail

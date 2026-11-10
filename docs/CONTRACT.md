@@ -26,8 +26,8 @@ kernel a pointer whose lifetime the runtime does not control.
 
 ## Operation slots
 
-An operation lives in a slot in the reactor's slot table. The coroutine's
-awaiter holds only `{slot index, generation}`. The SQE's `user_data` encodes
+An operation lives in a slot in the reactor's slot table (chunks of 64 slots
+that never move). The coroutine's awaiter holds only `{slot index, generation}`. The SQE's `user_data` encodes
 `[tag:8][generation:24][index:32]`, so a CQE (or an `ASYNC_CANCEL` aimed at an
 old operation) can never be applied to a slot that was reused.
 
@@ -141,8 +141,11 @@ generation of the `direct_fd` that opened it.
 
 ## Cross-core messages
 
-`reactor::post(core, fn)` and `co_await reactor::call(core, fn)` append a heap
-node to the reactor's outbox for the target core. Before each loop iteration
+`reactor::post(core, fn)` and `co_await reactor::call(core, fn)` append a node
+to the reactor's outbox for the target core: a post's node is on the heap; a
+call's node is built inside the call's operation slot (on the heap only when it
+is larger than the slot's 128 bytes of node storage, counted in
+`stats().call_nodes_on_heap`). Before each loop iteration
 submits, every non-empty outbox goes out as one chain (nodes linked through
 `next`). With `reactor_config::batch_messages = false` every node is sent on
 its own. Two transports carry the chains:
@@ -244,7 +247,8 @@ call completes.
 Step 5 waits for SEND_ZC notifications too (`shutdown_waits_for_zc_notification`).
 If `shutdown_timeout` expires first, the remaining slots are **abandoned**: their
 memory is parked in a process-lifetime list instead of being freed, because the
-kernel may still use it (`stats().abandoned`).
+kernel may still use it (`stats().abandoned`). A call node inside an abandoned
+slot keeps the whole slot table alive, since another core may still write it.
 
 The thread-per-core `runtime` keeps every ring alive and serving messages until
 all root tasks have returned, then refuses new messages, lets each core cancel

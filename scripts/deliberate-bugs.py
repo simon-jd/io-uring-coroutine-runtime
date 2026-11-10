@@ -26,9 +26,9 @@ MUTATIONS = [
         "file": "src/reactor.cpp",
         "old": "    cancel_source* reporter = cs.reporter;\n    --cs.pending;\n",
         "new": "    cancel_source* reporter = cs.reporter;\n"
-               "    if (res == 0 && slots_[cs.target.index].active &&\n"
-               "        slots_[cs.target.index].gen == cs.target.gen)\n"
-               "        slots_[cs.target.index].lease.reset();\n"
+               "    if (res == 0 && slot_entry(cs.target.index).active &&\n"
+               "        slot_entry(cs.target.index).gen == cs.target.gen)\n"
+               "        slot_entry(cs.target.index).lease.reset();\n"
                "    --cs.pending;\n",
         "suite": "reactor",
         "case": "cancel_ack_does_not_release_buffer",
@@ -175,6 +175,19 @@ MUTATIONS = [
         "suite": "runtime",
         "case": "call_all_returns_results_in_call_order",
         "expect": "rol invariant violated: call_all resumed before every reply arrived",
+    },
+    {
+        "name": "n-call-node-released-at-detach",
+        "what": "Destroy a call's node, which lives in its slot, as soon as the awaiting "
+                "coroutine is destroyed, while the target core may still run it and will "
+                "send it back.",
+        "file": "src/reactor.cpp",
+        "old": "    s.join = nullptr;\n    s.detached = true;\n",
+        "new": "    s.join = nullptr;\n    s.detached = true;\n"
+               "    if (s.kind == op_kind::xcall) release_resources(s);\n",
+        "suite": "runtime",
+        "case": "destroyed_call_all_leaves_slots_to_replies",
+        "expect": "rol invariant violated: cross-core reply for a slot that is not waiting for it",
     },
 ]
 

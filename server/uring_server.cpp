@@ -107,6 +107,7 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
     kv::plan plan(r.core(), cfg.cores, cs.store, sh.info);
     std::string in, out;
     std::vector<std::pair<unsigned, run_batch>> calls; // reused for every read
+    std::vector<std::unique_ptr<kv::batch>> back;      // the batches coming home; reused
     owned_buffer sendbuf = owned_buffer::allocate(16 * 1024);
     const bool use_fixed = cfg.send == "fixed";
     bool open = true;
@@ -159,7 +160,7 @@ task<void> connection(reactor& r, shared& sh, core_state& cs, int raw_fd) {
                 } else if (targets.size() > 1) {
                     calls.clear();
                     for (unsigned t : targets) calls.push_back({t, run_batch{plan.take(t), &sh}});
-                    auto back = co_await r.call_all(std::span(calls));
+                    co_await r.call_all(std::span(calls), back);
                     for (std::size_t i = 0; i < targets.size(); ++i)
                         plan.give_back(targets[i], std::move(back[i]));
                 }

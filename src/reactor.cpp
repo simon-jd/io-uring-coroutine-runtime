@@ -85,11 +85,6 @@ reactor::reactor(reactor_config cfg, runtime* rt, unsigned core)
 
 reactor::~reactor() { shutdown(); }
 
-void reactor::check_thread() const noexcept {
-    ROL_INVARIANT(std::this_thread::get_id() == thread_,
-                  "reactor used from a thread other than the one that created its ring");
-}
-
 unsigned reactor::cores() const noexcept { return rt_ ? rt_->size() : 1; }
 
 fixed_buffer_pool& reactor::fixed_buffers() {
@@ -159,7 +154,7 @@ void reactor::close_direct(unsigned index, std::uint32_t gen) noexcept {
     } catch (...) {
         ROL_INVARIANT(false, "out of memory while allocating a close slot");
     }
-    auto& s = slots_[ref.index];
+    auto& s = slot_entry(ref.index);
     s.detached = true;
     s.pending = 1;
     s.closes_file = static_cast<std::int32_t>(index);
@@ -345,57 +340,48 @@ void reactor::dispatch(const io_uring_cqe& c) noexcept {
 
 // ---------------------------------------------------------------- slots
 
-detail::op_slot& reactor::slot_at(slot_ref ref) noexcept {
-    ROL_INVARIANT(ref.index < slots_.size(), "slot index out of range");
-    auto& s = slots_[ref.index];
-    ROL_INVARIANT(s.active && s.gen == ref.gen, "CQE or awaiter refers to a slot that is not in flight");
-    return s;
-}
-
-slot_ref reactor::acquire_slot(op_kind kind) {
-    std::uint32_t index;
-    if (!free_slots_.empty()) {
-        index = free_slots_.back();
-        free_slots_.pop_back();
-    } else {
-        if (slots_.size() >= std::numeric_limits<std::uint32_t>::max())
-            throw Failure(Error::full, "operation slot table exhausted");
-        free_slots_.reserve(slots_.size() + 1);
-        slots_.emplace_back();
-        index = static_cast<std::uint32_t>(slots_.size() - 1);
-    }
-    auto& s = slots_[index];
-    s.gen = (s.gen + 1) & detail::gen_mask;
-    if (s.gen == 0) s.gen = 1;
-    s.kind = kind;
-    s.active = true;
-    ++stats_.in_flight;
-    if (stats_.in_flight > stats_.peak_in_flight) stats_.peak_in_flight = stats_.in_flight;
-    return {index, s.gen};
+void reactor::add_slots() {
+    if (slot_count_ > std::numeric_limits<std::uint32_t>::max() - slot_chunk_mask - 1)
+        throw Failure(Error::full, "operation slot table exhausted");
+    const std::uint32_t first = slot_count_;
+    const std::uint32_t n = slot_chunk_mask + 1;
+    // Reserve first, so that freeing a slot never allocates.
+    free_slots_.reserve(std::size_t{first} + n);
+    slot_chunks_.reserve(slot_chunks_.size() + 1);
+    slot_chunks_.emplace_back(new op_slot[n]);
+    slot_count_ += n;
+    for (std::uint32_t i = n; i > 0; --i) free_slots_.push_back(first + i - 1); // lowest first
 }
 
 void reactor::release_resources(op_slot& s) noexcept {
-    s.owned = owned_buffer{};
-    s.lease.reset();
+    // Only what the slot holds: most operations hold one thing or nothing.
+    if (s.owned) s.owned = owned_buffer{};
+    if (s.lease) s.lease.reset();
     if (s.pring) {
         for (const auto& q : s.queue)
             if (q.flags & IORING_CQE_F_BUFFER)
                 s.pring->recycle(static_cast<std::uint16_t>(q.flags >> IORING_CQE_BUFFER_SHIFT));
+        s.pring = nullptr;
     }
-    s.queue.clear();
-    s.pring = nullptr;
-    s.fds.clear();
-    s.xcall.reset();
+    if (!s.queue.empty()) s.queue.clear();
+    if (!s.fds.empty()) s.fds.clear();
+    if (s.xcall) {
+        if (s.xcall_inline) s.xcall->~xnode();
+        else delete s.xcall;
+        s.xcall = nullptr;
+        s.xcall_inline = false;
+    }
 }
 
-void reactor::free_slot(slot_ref ref) noexcept {
-    auto& s = slot_at(ref);
+void reactor::free_slot(slot_ref ref) noexcept { free_slot_at(slot_at(ref), ref.index); }
+
+void reactor::free_slot_at(op_slot& s, std::uint32_t index) noexcept {
     release_resources(s);
     if (s.pinned_file >= 0) unpin_direct(static_cast<unsigned>(std::exchange(s.pinned_file, -1)));
     if (s.closes_file >= 0) {
-        const auto index = static_cast<unsigned>(std::exchange(s.closes_file, -1));
-        direct_[index].close_pending = false;
-        release_direct_if_unused(index);
+        const auto di = static_cast<unsigned>(std::exchange(s.closes_file, -1));
+        direct_[di].close_pending = false;
+        release_direct_if_unused(di);
     }
     s.active = false;
     s.primary_done = s.timeout_pending = s.detached = s.taken = s.cancel_sent = s.ended = false;
@@ -408,21 +394,8 @@ void reactor::free_slot(slot_ref ref) noexcept {
     s.source = nullptr;
     s.reporter = nullptr;
     s.target = {};
-    free_slots_.push_back(ref.index);
+    free_slots_.push_back(index); // capacity reserved in add_slots
     --stats_.in_flight;
-}
-
-void reactor::maybe_free(op_slot& s, slot_ref ref) noexcept {
-    if (s.pending != 0 || !(s.detached || s.taken)) return;
-    if (s.detached) ++stats_.detached_released;
-    free_slot(ref);
-}
-
-void reactor::finish_take(slot_ref ref) noexcept {
-    auto& s = slot_at(ref);
-    s.taken = true;
-    s.waiter = {};
-    maybe_free(s, ref);
 }
 
 void reactor::detach(slot_ref ref) noexcept {
@@ -441,8 +414,7 @@ void reactor::detach(slot_ref ref) noexcept {
     if (!s.primary_done) request_cancel(ref, nullptr);
 }
 
-void reactor::unregister_source(op_slot& s, slot_ref ref) noexcept {
-    if (!s.source) return;
+void reactor::remove_from_source(op_slot& s, slot_ref ref) noexcept {
     auto& ops = s.source->ops_;
     for (std::size_t i = 0; i < ops.size(); ++i) {
         if (ops[i].index == ref.index && ops[i].gen == ref.gen) {
@@ -456,22 +428,22 @@ void reactor::unregister_source(op_slot& s, slot_ref ref) noexcept {
 
 void reactor::forget_source(cancel_source* src) noexcept {
     for (auto ref : src->ops_) {
-        if (ref.index < slots_.size() && slots_[ref.index].active && slots_[ref.index].gen == ref.gen)
-            slots_[ref.index].source = nullptr;
+        if (ref.index < slot_count_ && slot_entry(ref.index).active && slot_entry(ref.index).gen == ref.gen)
+            slot_entry(ref.index).source = nullptr;
     }
     src->ops_.clear();
-    for (auto& s : slots_)
+    for (std::uint32_t i = 0; i < slot_count_; ++i) {
+        auto& s = slot_entry(i);
         if (s.active && s.kind == op_kind::cancel && s.reporter == src) s.reporter = nullptr;
+    }
 }
 
-io_uring_sqe* reactor::reserve_sqes(unsigned n) {
-    if (io_uring_sq_space_left(&ring_) < n) {
-        const int rc = io_uring_submit(&ring_);
-        if (rc < 0 && rc != -EBUSY && rc != -EAGAIN && rc != -EINTR)
-            throw Failure(Error::system, "io_uring_submit failed", -rc);
-        if (io_uring_sq_space_left(&ring_) < n)
-            throw Failure(Error::busy, "submission queue is full", EBUSY);
-    }
+io_uring_sqe* reactor::reserve_sqes_slow(unsigned n) {
+    const int rc = io_uring_submit(&ring_);
+    if (rc < 0 && rc != -EBUSY && rc != -EAGAIN && rc != -EINTR)
+        throw Failure(Error::system, "io_uring_submit failed", -rc);
+    if (io_uring_sq_space_left(&ring_) < n)
+        throw Failure(Error::busy, "submission queue is full", EBUSY);
     return io_uring_get_sqe(&ring_);
 }
 
@@ -656,8 +628,8 @@ task<send_all_result> reactor::send_all(file_ref fd, owned_buffer buf, op_option
 // ---------------------------------------------------------------- cancellation
 
 bool reactor::request_cancel(slot_ref ref, cancel_source* reporter) noexcept {
-    if (ref.index >= slots_.size()) return false;
-    auto& s = slots_[ref.index];
+    if (ref.index >= slot_count_) return false;
+    auto& s = slot_entry(ref.index);
     if (!s.active || s.gen != ref.gen) return false;
     if (s.kind == op_kind::cancel || s.kind == op_kind::xcall) return false;
     if (s.kind == op_kind::multishot ? s.ended : s.primary_done) return false;
@@ -669,7 +641,7 @@ bool reactor::request_cancel(slot_ref ref, cancel_source* reporter) noexcept {
     } catch (...) {
         ROL_INVARIANT(false, "out of memory while allocating a cancel slot");
     }
-    auto& cs = slots_[cref.index];
+    auto& cs = slot_entry(cref.index);
     cs.detached = true;
     cs.target = ref;
     cs.reporter = reporter;
@@ -916,14 +888,9 @@ void reactor::check_call_target(unsigned target) const {
     if (!rt_->accepting()) throw Failure(Error::closed, "runtime is shutting down");
 }
 
-slot_ref reactor::start_call(std::coroutine_handle<> h, unsigned target,
-                             std::unique_ptr<detail::xnode> node) {
-    check_thread();
-    check_call_target(target);
-    const auto ref = acquire_slot(op_kind::xcall);
-    auto& s = slot_at(ref);
-    s.xcall = std::move(node);
-    detail::xnode* n = s.xcall.get();
+void reactor::launch_call(op_slot& s, slot_ref ref, std::coroutine_handle<> h,
+                          unsigned target) noexcept {
+    detail::xnode* n = s.xcall;
     n->is_call = true;
     n->reply = false;
     n->origin = core_;
@@ -934,7 +901,6 @@ slot_ref reactor::start_call(std::coroutine_handle<> h, unsigned target,
     ++stats_.ops_started;
     ++stats_.messages_sent;
     enqueue_message(target, n);
-    return ref;
 }
 
 void reactor::on_message_chain(detail::xnode* head) noexcept {
@@ -981,7 +947,7 @@ void reactor::on_request(detail::xnode* n) noexcept {
 void reactor::on_reply(detail::xnode* n) noexcept {
     const auto ref = detail::decode(n->reply_ud);
     auto& s = slot_at(ref);
-    ROL_INVARIANT(s.kind == op_kind::xcall && !s.primary_done && s.xcall.get() == n,
+    ROL_INVARIANT(s.kind == op_kind::xcall && !s.primary_done && s.xcall == n,
                   "cross-core reply for a slot that is not waiting for it");
     s.res = 0;
     s.primary_done = true;
@@ -1029,8 +995,8 @@ void reactor::on_chain_failed(detail::xnode* head, int res) noexcept {
 // ---------------------------------------------------------------- shutdown
 
 void reactor::cancel_all() noexcept {
-    for (std::uint32_t i = 0; i < slots_.size(); ++i) {
-        auto& s = slots_[i];
+    for (std::uint32_t i = 0; i < slot_count_; ++i) {
+        auto& s = slot_entry(i);
         if (s.active && s.kind != op_kind::cancel && s.kind != op_kind::xcall)
             request_cancel({i, s.gen}, nullptr);
     }
@@ -1088,16 +1054,29 @@ void reactor::close_ring() noexcept {
     if (stats_.in_flight > 0) {
         // The kernel may still read or write these slots' memory. Leak it.
         stats_.abandoned += stats_.in_flight;
-        for (auto& s : slots_) {
+        bool keep_slots = false;
+        for (std::uint32_t i = 0; i < slot_count_; ++i) {
+            auto& s = slot_entry(i);
             if (!s.active) continue;
             if (s.owned) park(std::make_shared<owned_buffer>(std::move(s.owned)));
             if (s.msg) park(std::shared_ptr<detail::msg_storage>(std::move(s.msg)));
-            if (s.xcall) park(std::shared_ptr<detail::xnode>(std::move(s.xcall)));
+            if (s.xcall) {
+                // Another core may still write a call's node. A node inside
+                // the slot keeps the whole slot table alive.
+                if (s.xcall_inline) keep_slots = true;
+                else park(std::shared_ptr<detail::xnode>(s.xcall));
+                s.xcall = nullptr;
+            }
             s.lease.leak();
             s.queue.clear();
             s.pring = nullptr;
             s.waiter = {};
             s.active = false;
+        }
+        if (keep_slots) {
+            // Moving the vector keeps every chunk where it is.
+            park(std::make_shared<std::vector<std::unique_ptr<op_slot[]>>>(std::move(slot_chunks_)));
+            slot_count_ = 0;
         }
     }
     if (fixed_) stats_.leases_at_close = fixed_->outstanding();

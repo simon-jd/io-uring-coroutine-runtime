@@ -25,5 +25,6 @@ public:
 
 #define ROL_INVARIANT(expr, message)                                              \
     do {                                                                          \
-        if (!(expr)) ::rol::invariant_failure(#expr, __FILE__, __LINE__, message); \
+        if (!(expr)) [[unlikely]]                                                 \
+            ::rol::invariant_failure(#expr, __FILE__, __LINE__, message);         \
     } while (0)
