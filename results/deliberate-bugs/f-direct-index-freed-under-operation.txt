@@ -5,7 +5,7 @@ expected: assertion 'an index stays reserved while an operation names it' failed
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -180,7 +180,7 @@
+@@ -175,7 +175,7 @@
  
  void reactor::release_direct_if_unused(unsigned index) noexcept {
      auto& e = direct_[index];

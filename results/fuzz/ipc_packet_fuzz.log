@@ -1,24 +1,24 @@
-date: 2026-11-09T17:44:01Z
-commit: 5d86cbd
+date: 2026-11-10T14:01:39Z
+commit: 9a07e32
 clang: Ubuntu clang version 21.1.8 (6ubuntu1)
 command: ipc_packet_fuzz -max_total_time=600 -print_final_stats=1 <corpus>
 
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1690412663
-INFO: Loaded 1 modules   (62 inline 8-bit counters): 62 [0x61cf80cb5520, 0x61cf80cb555e), 
-INFO: Loaded 1 PC tables (62 PCs): 62 [0x61cf80cb5560,0x61cf80cb5940), 
-INFO:      207 files found in ./.cache/fuzz-corpus
+INFO: Seed: 2014792006
+INFO: Loaded 1 modules   (62 inline 8-bit counters): 62 [0x6228b8096320, 0x6228b809635e), 
+INFO: Loaded 1 PC tables (62 PCs): 62 [0x6228b8096360,0x6228b8096740), 
+INFO:      233 files found in ~/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/fuzz-corpus
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
-INFO: seed corpus: files: 207 min: 1b max: 1002b total: 69233b rss: 33Mb
-#208	INITED cov: 35 ft: 78 corp: 47/6713b exec/s: 0 rss: 37Mb
-#2097152	pulse  cov: 35 ft: 79 corp: 48/6770b lim: 4096 exec/s: 1048576 rss: 444Mb
-#4194304	pulse  cov: 35 ft: 79 corp: 48/6770b lim: 4096 exec/s: 1048576 rss: 452Mb
-#8388608	pulse  cov: 35 ft: 79 corp: 48/6762b lim: 4096 exec/s: 932067 rss: 453Mb
-#16777216	pulse  cov: 35 ft: 79 corp: 48/6762b lim: 4096 exec/s: 932067 rss: 453Mb
-Done 302901197 runs in 601 second(s)
-stat::number_of_executed_units: 302901197
-stat::average_exec_per_sec:     503995
-stat::new_units_added:          15
+INFO: seed corpus: files: 233 min: 1b max: 1002b total: 79938b rss: 33Mb
+#234	INITED cov: 35 ft: 78 corp: 48/6453b exec/s: 0 rss: 37Mb
+#2097152	pulse  cov: 35 ft: 78 corp: 48/6453b lim: 4096 exec/s: 1048576 rss: 446Mb
+#4194304	pulse  cov: 35 ft: 78 corp: 48/6453b lim: 4096 exec/s: 1048576 rss: 452Mb
+#8388608	pulse  cov: 35 ft: 78 corp: 48/6453b lim: 4096 exec/s: 1048576 rss: 454Mb
+#16777216	pulse  cov: 35 ft: 78 corp: 48/6453b lim: 4096 exec/s: 986895 rss: 457Mb
+Done 512780559 runs in 601 second(s)
+stat::number_of_executed_units: 512780559
+stat::average_exec_per_sec:     853212
+stat::new_units_added:          14
 stat::slowest_unit_time_sec:    0
-stat::peak_rss_mb:              467
+stat::peak_rss_mb:              476
 exit code: 0

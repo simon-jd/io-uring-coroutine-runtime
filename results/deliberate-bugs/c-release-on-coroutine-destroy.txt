@@ -5,7 +5,7 @@ expected: assertion 'a new lease holder's bytes are not overwritten by the kerne
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -430,6 +430,7 @@
+@@ -403,6 +403,7 @@
      s.waiter = {};
      s.join = nullptr;
      s.detached = true;

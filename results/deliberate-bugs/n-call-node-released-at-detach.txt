@@ -1,0 +1,22 @@
+mutation: n-call-node-released-at-detach
+what: Destroy a call's node, which lives in its slot, as soon as the awaiting coroutine is destroyed, while the target core may still run it and will send it back.
+test: runtime_tests destroyed_call_all_leaves_slots_to_replies
+expected: rol invariant violated: cross-core reply for a slot that is not waiting for it
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -403,6 +403,7 @@
+     s.waiter = {};
+     s.join = nullptr;
+     s.detached = true;
++    if (s.kind == op_kind::xcall) release_resources(s);
+     ++stats_.detached;
+     unregister_source(s, ref);
+     if (s.pending == 0) {
+
+baseline (unmutated) exit code: 0
+mutated exit code: -6
+mutated output (last lines):
+rol invariant violated: cross-core reply for a slot that is not waiting for it [s.kind == op_kind::xcall && !s.primary_done && s.xcall == n] at <work>/n-call-node-released-at-detach/src/src/reactor.cpp:952
+
+result: CAUGHT

@@ -11,3 +11,5 @@ j-sleep-without-recheck: CAUGHT by runtime_tests sleeping_core_is_woken_for_ever
 k-erase-without-backward-shift: CAUGHT by kv_tests shard_matches_reference_map
 l-number-fast-path-accepts-leading-zero: CAUGHT by kv_tests parser_matches_reference
 m-call-all-resumes-early: CAUGHT by runtime_tests call_all_returns_results_in_call_order
+n-call-node-released-at-detach: CAUGHT by runtime_tests destroyed_call_all_leaves_slots_to_replies
+o-batch-carries-wrong-hash: CAUGHT by kv_tests routes_keys_to_their_cores

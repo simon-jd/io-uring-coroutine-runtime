@@ -18,6 +18,6 @@ expected: assertion 'shard replies match the reference map' failed
 baseline (unmutated) exit code: 0
 mutated exit code: 1
 mutated output (last lines):
-FAIL shard_matches_reference_map: assertion 'shard replies match the reference map' failed: ok at <work>/k-erase-without-backward-shift/src/tests/kv_tests.cpp:349
+FAIL shard_matches_reference_map: assertion 'shard replies match the reference map' failed: ok at <work>/k-erase-without-backward-shift/src/tests/kv_tests.cpp:354
 
 result: CAUGHT

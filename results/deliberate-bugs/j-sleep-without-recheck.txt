@@ -5,7 +5,7 @@ expected: assertion 'a sleeping core is woken for every message' failed
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -270,7 +270,7 @@
+@@ -265,7 +265,7 @@
          }
          auto& flag = rt_->sleeping(core_);
          flag.store(true, std::memory_order_seq_cst);
@@ -18,8 +18,8 @@ expected: assertion 'a sleeping core is woken for every message' failed
 baseline (unmutated) exit code: 0
 mutated exit code: 1
 mutated output (last lines):
-watchdog: no progress for 1000 ms at 7; waking every core
-rounds 8 of 4000, stalls 1, core 1 waits aborted by the re-check 0, core 0 doorbells 12
-FAIL sleeping_core_is_woken_for_every_message/doorbell: assertion 'a sleeping core is woken for every message' failed: stalls == 0 at <work>/j-sleep-without-recheck/src/tests/runtime_tests.cpp:405
+watchdog: no progress for 1000 ms at 1; waking every core
+rounds 2 of 4000, stalls 1, core 1 waits aborted by the re-check 0, core 0 doorbells 4
+FAIL sleeping_core_is_woken_for_every_message/doorbell: assertion 'a sleeping core is woken for every message' failed: stalls == 0 at <work>/j-sleep-without-recheck/src/tests/runtime_tests.cpp:441
 
 result: CAUGHT

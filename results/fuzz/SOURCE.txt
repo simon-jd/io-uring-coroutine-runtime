@@ -1,0 +1,5 @@
+These logs come from `scripts/run-fuzz.sh 600` run in the source tree
+.cache/imp/c3 on the build machine (2026-11-10 06:01-06:21 PST), whose
+sources are identical to c9bf7bb (checked with diff -r against an archive of
+that commit), with the repository's corpora (CORPUS=.cache/fuzz-corpus,
+CORPUS_RESP=.cache/fuzz-corpus-resp).

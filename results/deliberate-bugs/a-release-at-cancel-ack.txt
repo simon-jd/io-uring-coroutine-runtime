@@ -5,13 +5,13 @@ expected: assertion 'buffer stays with the operation after cancel-ack' failed
 
 --- src/reactor.cpp
 +++ src/reactor.cpp (mutated)
-@@ -694,6 +694,9 @@
+@@ -666,6 +666,9 @@
      // The acknowledgement says nothing about the target's buffers: they are
      // released by the target's own CQE, which may come before or after this.
      cancel_source* reporter = cs.reporter;
-+    if (res == 0 && slots_[cs.target.index].active &&
-+        slots_[cs.target.index].gen == cs.target.gen)
-+        slots_[cs.target.index].lease.reset();
++    if (res == 0 && slot_entry(cs.target.index).active &&
++        slot_entry(cs.target.index).gen == cs.target.gen)
++        slot_entry(cs.target.index).lease.reset();
      --cs.pending;
      free_slot(ref);
      if (reporter) reporter->on_ack(res);

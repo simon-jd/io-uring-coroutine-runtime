@@ -18,6 +18,6 @@ expected: assertion 'parser matches the reference parser' failed
 baseline (unmutated) exit code: 0
 mutated exit code: 1
 mutated output (last lines):
-FAIL parser_matches_reference: assertion 'parser matches the reference parser' failed: trace_fast(d, l) == trace_reference(d, l) at <work>/l-number-fast-path-accepts-leading-zero/src/tests/kv_tests.cpp:298
+FAIL parser_matches_reference: assertion 'parser matches the reference parser' failed: trace_fast(d, l) == trace_reference(d, l) at <work>/l-number-fast-path-accepts-leading-zero/src/tests/kv_tests.cpp:303
 
 result: CAUGHT

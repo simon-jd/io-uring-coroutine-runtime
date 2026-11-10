@@ -1,24 +1,24 @@
-date: 2026-11-09T17:54:03Z
-commit: 5d86cbd
+date: 2026-11-10T14:11:40Z
+commit: 9a07e32
 clang: Ubuntu clang version 21.1.8 (6ubuntu1)
 command: resp_parser_fuzz -max_total_time=600 -print_final_stats=1 <corpus>
 
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1593118894
-INFO: Loaded 1 modules   (1095 inline 8-bit counters): 1095 [0x64263a4c6c60, 0x64263a4c70a7), 
-INFO: Loaded 1 PC tables (1095 PCs): 1095 [0x64263a4c70a8,0x64263a4cb518), 
-INFO:      904 files found in ./.cache/fuzz-corpus-resp
+INFO: Seed: 1922415310
+INFO: Loaded 1 modules   (1097 inline 8-bit counters): 1097 [0x5bab6f4f6ce0, 0x5bab6f4f7129), 
+INFO: Loaded 1 PC tables (1097 PCs): 1097 [0x5bab6f4f7130,0x5bab6f4fb5c0), 
+INFO:     2106 files found in ~/Desktop/driver-firnware-runtime/B-runtime-ownership-lab/.cache/fuzz-corpus-resp
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
-INFO: seed corpus: files: 904 min: 1b max: 2042b total: 294548b rss: 34Mb
-#905	INITED cov: 422 ft: 1716 corp: 211/36Kb exec/s: 0 rss: 97Mb
-#928	NEW    cov: 423 ft: 1717 corp: 212/36Kb lim: 2042 exec/s: 0 rss: 99Mb L: 255/2042 MS: 3 CopyPart-ChangeByte-InsertRepeatedBytes-
-#974	NEW    cov: 423 ft: 1719 corp: 213/36Kb lim: 2042 exec/s: 0 rss: 101Mb L: 264/2042 MS: 1 ChangeASCIIInt-
-#1152	NEW    cov: 423 ft: 1721 corp: 214/37Kb lim: 2042 exec/s: 0 rss: 106Mb L: 367/2042 MS: 5 CrossOver-InsertRepeatedBytes-InsertRepeatedBytes-ChangeASCIIInt-InsertRepeatedBytes-
-#1232	NEW    cov: 424 ft: 1722 corp: 215/37Kb lim: 2042 exec/s: 0 rss: 108Mb L: 8/2042 MS: 2 ChangeBit-ShuffleBytes-
-Done 1818354 runs in 601 second(s)
-stat::number_of_executed_units: 1818354
-stat::average_exec_per_sec:     3025
-stat::new_units_added:          5324
+INFO: seed corpus: files: 2106 min: 1b max: 3956b total: 687463b rss: 36Mb
+#2107	INITED cov: 468 ft: 2451 corp: 532/250Kb exec/s: 0 rss: 161Mb
+#5904	NEW    cov: 468 ft: 2453 corp: 533/253Kb lim: 3978 exec/s: 5904 rss: 329Mb L: 3901/3956 MS: 1 CrossOver-
+#16384	pulse  cov: 468 ft: 2453 corp: 533/253Kb lim: 4011 exec/s: 8192 rss: 453Mb
+#32768	pulse  cov: 468 ft: 2453 corp: 533/253Kb lim: 4088 exec/s: 8192 rss: 468Mb
+#65536	pulse  cov: 468 ft: 2453 corp: 533/252Kb lim: 4096 exec/s: 8192 rss: 470Mb
+Done 4511062 runs in 601 second(s)
+stat::number_of_executed_units: 4511062
+stat::average_exec_per_sec:     7505
+stat::new_units_added:          3172
 stat::slowest_unit_time_sec:    0
-stat::peak_rss_mb:              540
+stat::peak_rss_mb:              483
 exit code: 0

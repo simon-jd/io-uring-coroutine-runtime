@@ -1,0 +1,23 @@
+mutation: o-batch-carries-wrong-hash
+what: Carry the hash of the command name instead of the key's hash to the owning core's table, so a key is stored and looked up under a hash that is not its own.
+test: kv_tests routes_keys_to_their_cores
+expected: assertion 'keys routed through the plan are found on their owner' failed
+
+--- kv/engine.cpp
++++ kv/engine.cpp (mutated)
+@@ -416,7 +416,7 @@
+     }
+     batch& b = *batches_[core];
+     if (b.size() == 0) targets_.push_back(core);
+-    parts_.push_back({core, b.add(id, args, h)});
++    parts_.push_back({core, b.add(id, args, key_hash(args[0]))});
+ }
+ 
+ void plan::local_end() {
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL routes_keys_to_their_cores: assertion 'keys routed through the plan are found on their owner' failed: cl.run(p, in) == expect at <work>/o-batch-carries-wrong-hash/src/tests/kv_tests.cpp:277
+
+result: CAUGHT
