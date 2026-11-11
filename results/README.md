@@ -55,6 +55,10 @@ published `main`:
   core and depth 1, and more at depth 16 wherever requests cross cores (3–9%
   at 2 cores, 7–12% at 4) and for SET at 1 core (3–8%). In the same sessions
   `main` / epoll was 1.131 / 1.153 (GET) and 1.124 / 1.130 (SET) at 4 cores.
+  Check D (below) confirmed these except the 2-core GET loss.
+- **Losses in throughput:** GET at 2 cores against `main`, 0.977 / 0.926
+  requests per second (2 and 0 of 7 higher); SET against epoll at depth 16,
+  0.936 / 0.970 at 1 core and 0.876 / 0.871 at 2 cores.
 - **Not resolved here:** the change against `main`. At 4 cores it was 1–4%
   less in both sessions (4–6 of 7); at 2 cores it changed sign. The decision
   windows above measured 3–5% at 4 cores with 7 of 7 in at least one cell
@@ -93,12 +97,14 @@ and 4 cores from sessions 3 / 2:
 It confirms the 1-core depth-1 result, the losses to epoll for SET at
 1 and 2 cores and at 4 cores (5–11% here), and the gain over `main` at 4 cores
 (4–12% here, 6–7 of 7). It does not confirm the 2-core GET loss to epoll
-(0.99 and 1.00). Two losses were missing from the text: GET throughput at 2
-cores against `main`, which was lower in three of the four sessions (0.977,
-0.926, 0.869; 1.017 in check D's session 2), and SET throughput against
-epoll at depth 16, which was lower in all four (1 core 3–7%, 2 cores 9–13%).
-Window C's c2 result was missing too: against `main` at 4 cores it was 0.990
-and 0.972 (5 of 7), with GET throughput 1.005 (4 of 7 higher).
+(0.99 and 1.00). Before check D, two losses were missing from the text: GET
+throughput at 2 cores against `main`, which was lower in three of the four
+sessions (0.977, 0.926, 0.869; 1.017 in check D's session 2), and SET
+throughput against epoll at depth 16, which was lower in all four (1 core
+3–7%, 2 cores 9–13%). Window C's c2 result was missing too: against `main` at
+4 cores it was 0.990 and 0.972 (5 of 7), with GET throughput 1.005 (4 of 7
+higher). The README and design-tradeoffs Part 4 were corrected after check D,
+including the claim that c2's saving showed as GET throughput at 4 cores.
 
 
 ## Performance round (2026-11-08 and 11-09)

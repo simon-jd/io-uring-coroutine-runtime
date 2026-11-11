@@ -20,21 +20,26 @@ one Linux machine over loopback.
 | 4 cores, depth 16: requests/s | 6.84 M / 9.00 M | 7.63 M / 9.03 M | 8.08 M / 8.81 M | 5.55 M / 7.05 M | 3.76 M / 3.96 M |
 | 4 cores, depth 16: server CPU per request, µs (**loss**) | 0.390 / 0.349 | 0.394 / 0.364 | **0.350 / 0.324** | 0.412 / 0.362 | 1.04 / 0.981 |
 
-What holds in both sessions (paired by repetition; [details](results/README.md)):
-against epoll, io_uring needs 4–8% less CPU per request at 1 core and depth 1
-(7 of 7 repetitions for GET in both), and more wherever pipelined requests
-cross cores: 3–9% at 2 cores and 7–12% at 4 cores, depth 16 (at most 3 of 7
-the other way), and 3–8% for SET at 1 core, depth 16. In the same sessions the
-published `main` needed 12–15% more than epoll at 4 cores. This round's
-changes ([design trade-offs](docs/design-tradeoffs.md), Part 4): call nodes
+What holds in both sessions and in two more from fresh clones (check D;
+paired by repetition; [details](results/README.md)): against epoll, io_uring
+needs 3–8% less CPU per GET at 1 core and depth 1 (5–7 of 7 repetitions),
+and more for pipelined requests that cross cores: 7–11% for SET at 2 cores
+and 5–12% at 4 cores, depth 16 (at most 3 of 7 the other way), and 3–8% for
+SET at 1 core, depth 16. GET at 2 cores, depth 16, needed 3% and 9% more in
+the two sessions above but not in check D (0.99 and 1.00 times epoll's). The
+published `main` needed 11–18% more than epoll at 4 cores. SET throughput at
+depth 16 was below epoll's in all four sessions (3–7% at 1 core, 9–13% at
+2; **loss**). This round's changes ([design
+trade-offs](docs/design-tradeoffs.md), Part 4): call nodes
 built inside their operation slots instead of on the heap, a slot table of
 fixed chunks with inline bookkeeping, and one hash per key carried to the
 owning core. They cut user-space instructions per request by 6% at 2 cores and
 11% at 4 (callgrind), and CPU per request at 4 cores by 3–5% in three decision
 windows (a 4-core cell at 7 of 7 in each); in the two sessions above that
 difference was 1–4% (4–6 of 7), and at 1 and 2 cores no difference against
-`main` held in both. What is left is user time (4 cores, GET:
-148–168 ns per request against epoll's 121–135; system time the same): per
+`main` held in both. GET throughput at 2 cores was 2–13% below `main`'s in
+three of the four sessions (1.02 times in the fourth; **loss**). What is
+left is user time (4 cores, GET: 148–168 ns per request against epoll's 121–135; system time the same): per
 read, an operation slot for every send and call, three coroutine
 resumptions and a message node per call, the bookkeeping that makes the
 ownership contract hold. Tried and dropped: an inline receive path that ran

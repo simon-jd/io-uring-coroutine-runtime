@@ -887,6 +887,10 @@ below 1 is better):
 | c2, 4 cores, GET requests per second | 1.063 (7 of 7 higher) | 1.050 (7 of 7) |
 | c1 alone, 4 cores, GET / SET | 0.971 (5) / 1.007 (3) | — |
 
+In window C, which was run for c3, c2 against `main` came out weaker at 4
+cores: 0.990 (5 of 7) for GET and 0.972 (5 of 7) for SET, and 1.005 (4 of 7
+higher) in GET requests per second.
+
 At 1 and 2 cores the medians ranged from 0.955 to 1.034 in the two sessions;
 only 1-core GET depth 1 in window A reached 6 of 7 (0.955), and it did not
 repeat in window B (0.984, 4 of 7), so nothing is claimed there. c1 alone did not pass: no
@@ -1020,8 +1024,12 @@ and SET, windows A and B); with CPU per request it correlated at −0.70 and
 −0.84 in window A but only −0.02 and −0.31 in window B. Builds with the same 2-core code path differed as much as different
 front ends did: c2 and c3 served 5.72 and 5.10 M GETs per second in window
 B. A cheaper request lets a core run out of work and sleep sooner, and a
-GET that crosses cores then waits for the other core to wake. Where the
-change was large enough, the saving did show as throughput: at 4 cores c2
-served 5–6% more GETs per second than `main` in both windows (7 of 7).
-What sets the 2-core figure in detail (wake-up latency, the other core's
+GET that crosses cores then waits for the other core to wake. At 4 cores
+c2 served 5–6% more GETs per second than `main` in windows A and B (7 of 7),
+but not in window C (1.005, 4 of 7), and this round's build did not either
+in the final sessions (0.953 and 0.980, 3 of 7 higher) or in check D (1.021
+and 1.034, 5 and 4 of 7), so no throughput gain is claimed. At 2 cores this
+round's build served fewer GETs per second than `main` in three of four
+sessions: 0.977 and 0.926 in the final sessions (2 and 0 of 7 higher),
+0.869 and 1.017 in check D (1 and 5 of 7). What sets the 2-core figure in detail (wake-up latency, the other core's
 loop iteration) needs scheduler tracing, which this machine does not allow.
