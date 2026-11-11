@@ -891,13 +891,17 @@ In window C, which was run for c3, c2 against `main` came out weaker at 4
 cores: 0.990 (5 of 7) for GET and 0.972 (5 of 7) for SET, and 1.005 (4 of 7
 higher) in GET requests per second.
 
-At 1 and 2 cores the medians ranged from 0.955 to 1.034 in the two sessions;
+At 1 and 2 cores the medians ranged from 0.955 to 1.034 in the two windows;
 only 1-core GET depth 1 in window A reached 6 of 7 (0.955), and it did not
-repeat in window B (0.984, 4 of 7), so nothing is claimed there. c1 alone did not pass: no
-cell reached 6 of 7, and its 1-core GET depth 16 came out at 1.061 with 6 of
-7 higher in window A, a path it does not change and that came out at 0.965
-for c2 in window B; c1 is kept only as part of c2, which passed in both
-sessions.
+repeat in window B (0.984, 4 of 7), so nothing is claimed there. By window
+A's rule c2 did not pass window A: at 2 cores, SET depth 16, its median was
+1.0203 with 5 of 7 higher, a worse cell (the summary prints 1.020). It passed
+window B, where its best cell (0.968) is an effect of 3% or more, which the
+rule keeps without a second session; by the same rule it also passed window
+C (2 cores, GET and SET depth 16, 6 of 7 each), with an effect under 3%. c1
+alone did not pass: no cell reached 6 of 7, and its 1-core GET depth 16 came
+out at 1.061 with 6 of 7 higher in window A, a path it does not change and
+that came out at 0.965 for c2 in window B; c1 is kept only as part of c2.
 
 ## Kept: one hash per key
 
@@ -919,10 +923,12 @@ the 4-core cells):
 | io_uring, c3 / c2, 4 cores GET | 0.989 (5 of 7) | 0.969 (5 of 7) |
 | io_uring, c3 / c2, 4 cores SET | 0.991 (6 of 7) | 0.987 (4 of 7) |
 
-It passed its rule in both sessions (a depth-16 cell at 6 of 7 or better,
-no cell worse), so it is kept. The size of the effect is about what the
-instruction count predicts, 1–2%; the 5–6% of the best single cells is not
-claimed.
+It passed its rule in both sessions (a depth-16 cell at 6 of 7 or better, no
+cell worse), so it is kept. The instruction count predicts an effect of about
+1–2%; that size is an estimate, not a measurement: in check D the epoll build
+came out at 0.93–1.02 of `main`'s epoll build at depth 16, and only one cell
+of twelve was lower in 5 of 7 repetitions. The 5–6% of the best single cells
+is not claimed.
 
 ## Rejected: an inline receive path
 
@@ -1001,35 +1007,44 @@ and `imp-session-2`, 07:44–08:58 and 11:13–12:28 PST, the build of c3 agains
 | 4 cores, SET depth 16 | 1.085 (2) / 1.108 (0) | 1.124 (2) / 1.130 (0) | 0.966 (6) / 0.967 (5) |
 
 (medians, repetitions below 1 of 7 in brackets). Within each session the gap
-to epoll at 4 cores is smaller than `main`'s (7–12% against 12–15%). The
-difference to `main` itself was 1–4% at 4 cores in both sessions (4–6 of 7)
-and changed sign between the sessions at 2 cores; the decision windows, with
-fewer arms and no open-loop runs between them, resolved it at 3–5%. Session 1's 4-core runs
-shared the server CPUs' SMT siblings with another project's job (interference
-median 0.87 of the window, against 0.05 in session 2). The extra time is
-user time: at 4 cores, GET, 168 / 148 ns per request against epoll's 135 /
-121, system time 222 / 201 against 213 / 203.
+to epoll at 4 cores is smaller than `main`'s (7–12% against 12–15%; in check
+D 5–11% against 11–18%). The difference to `main` itself was 1–4% at 4 cores
+in both sessions (4–6 of 7; GET at 4 in session 2) and 4–12% in check D (6–7
+of 7). It changed sign between the sessions at 2 cores, and at 1 core GET
+depth 16 was lower in both (0.990 and 0.957, 5 and 6 of 7) but in check D
+only at 4 of 7 (0.991 and 0.998). The decision windows, with fewer arms and
+no open-loop runs between them, resolved the 4-core difference at 3–5%.
+Session 1's 4-core runs shared the server CPUs' SMT siblings with another
+project's job (interference median 0.87 of the window, against 0.05 in
+session 2). The extra time is user time: at 4 cores, GET, 168 / 148 ns per
+request against epoll's 135 / 121 (check D: 145 / 160 against 135 / 128),
+system time 222 / 201 against 213 / 203 (check D: 202 / 208 against 203 /
+204).
 
 ## GET throughput at 2 cores
 
-Part 3 saw GET throughput at 2 cores, depth 16, stay flat against `main`
-while CPU per request fell, and check C saw it rise. This round's windows
-show why one should not read much into it: at 2 cores neither the server
-nor the load generator is saturated (server cores busy 67–81% of the time
-for GET and 85–90% for SET, the generator's 8 CPUs 33–40%), and throughput
-moves with how often the server's threads go to sleep. Across the runs of each window, requests per
-second correlated with voluntary context switches per 1,000 requests at
-−0.67 to −0.89 for the io_uring builds (Spearman, 21–28 runs per cell, GET
-and SET, windows A and B); with CPU per request it correlated at −0.70 and
-−0.84 in window A but only −0.02 and −0.31 in window B. Builds with the same 2-core code path differed as much as different
-front ends did: c2 and c3 served 5.72 and 5.10 M GETs per second in window
-B. A cheaper request lets a core run out of work and sleep sooner, and a
-GET that crosses cores then waits for the other core to wake. At 4 cores
-c2 served 5–6% more GETs per second than `main` in windows A and B (7 of 7),
-but not in window C (1.005, 4 of 7), and this round's build did not either
-in the final sessions (0.953 and 0.980, 3 of 7 higher) or in check D (1.021
-and 1.034, 5 and 4 of 7), so no throughput gain is claimed. At 2 cores this
-round's build served fewer GETs per second than `main` in three of four
-sessions: 0.977 and 0.926 in the final sessions (2 and 0 of 7 higher),
-0.869 and 1.017 in check D (1 and 5 of 7). What sets the 2-core figure in detail (wake-up latency, the other core's
-loop iteration) needs scheduler tracing, which this machine does not allow.
+Part 3 saw GET throughput at 2 cores, depth 16, stay flat against `main` while
+CPU per request fell, and check C saw it rise. This round's windows show why
+one should not read much into it: at 2 cores neither the server nor the load
+generator is saturated (server cores busy 67–81% of the time for GET and
+85–90% for SET, the generator's 8 CPUs 33–40%), and throughput moves with how
+often the server's threads go to sleep. Across the runs of each window,
+requests per second correlated with voluntary context switches per 1,000
+requests at −0.67 to −0.89 for the io_uring builds (Spearman, 21–28 runs per
+cell, GET and SET, windows A and B); with CPU per request it correlated at
+−0.70 and −0.84 in window A but only −0.02 and −0.31 in window B. Builds with
+the same 2-core code path differed as much as different front ends did: c2 and
+c3 served 5.72 and 5.10 M GETs per second in window B. A cheaper request lets
+a core run out of work and sleep sooner, and a GET that crosses cores then
+waits for the other core to wake. At 4 cores c2 served 5–6% more GETs per
+second than `main` in windows A and B (7 of 7), but not in window C (1.005, 4
+of 7). This round's build served 0.953 and 0.980 times `main`'s GETs per
+second in the final sessions (3 of 7 higher) and 1.021 and 1.034 in check D (5
+and 4 of 7), so no throughput gain is claimed. At 2 cores this round's build
+served fewer GETs per second than `main` in three of four sessions: 0.977 and
+0.926 in the final sessions (2 and 0 of 7 higher), 0.869 and 1.017 in check D
+(1 and 5 of 7). It served fewer SETs per second there by median in all four:
+0.967 and 0.985 in the final sessions (1 and 2 of 7 higher), 0.926 and 0.997
+in check D (2 and 3 of 7). What sets the 2-core figure in detail (wake-up
+latency, the other core's loop iteration) needs scheduler tracing, which this
+machine does not allow.

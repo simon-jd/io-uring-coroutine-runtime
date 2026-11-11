@@ -25,8 +25,8 @@ c3 (c2 + one hash per key), c4 (c3 + inline receive path).
 
 | Directory | Command | Builds | What it shows |
 | --- | --- | --- | --- |
-| [improve/wA/](improve/wA) | `scripts/kv-bench.py --suite compare --reps 7 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --kvload <main>/kvload --arm NAME=IO@BUILD ...`, then `--cores 4 --workloads get_p16,set_p16 --harness-cpu 11 --out .../cores4` | main; c1; c2; epoll of main | c2 kept, c1 alone not; 2026-11-09 23:50 – 11-10 00:16 PST |
-| [improve/wB/](improve/wB) | the same | main; c2; c3; c4; epoll of main and of c3 | c2 held a second time, c3 passed, c4 rejected; 04:52–05:30 |
+| [improve/wA/](improve/wA) | `scripts/kv-bench.py --suite compare --reps 7 --cores 1,2 --workloads get_p1,get_p16,set_p16 --max-interference 0.05 --retries 3 --kvload <main>/kvload --arm NAME=IO@BUILD ...`, then `--cores 4 --workloads get_p16,set_p16 --harness-cpu 11 --out .../cores4` | main; c1; c2; epoll of main | c1 alone did not pass, and neither did c2 (a worse cell: 2 cores, SET depth 16, 1.0203 with 5 of 7 higher, printed as 1.020 in the summary); 2026-11-09 23:50 – 11-10 00:16 PST |
+| [improve/wB/](improve/wB) | the same | main; c2; c3; c4; epoll of main and of c3 | c2 passed and is kept on this window (best cell 0.968), c3 passed, c4 rejected; 04:52–05:30 |
 | [improve/wC/](improve/wC) | the same | main; c2; c3; epoll of main and of c3 | c3 passed a second time; 06:48–07:19 |
 | [improve/profile/](improve/profile) | `scripts/callgrind-profile.sh <build> <io> <cores> 16 8 <dir>`, `scripts/callgrind-summary.py`, `scripts/callgrind-jobs.py` | main, c1–c4, epoll of main and of c3 | user-space instructions per request by module and by job (GET depth 16, 1, 2 and 4 cores); `sim-*`: c3 and c4 with callgrind's cache and branch simulation |
 | [improve/candidates/](improve/candidates) | `git diff` against the build it was compared with | | the rejected c4 |
@@ -52,21 +52,30 @@ published `main`:
 | 4 cores, depth 16 | 1.116 (1) / 1.073 (1) | 1.085 (2) / 1.108 (0) | 0.989 (5) / 0.972 (4) | 0.966 (6) / 0.967 (5) |
 
 - **Holds in both sessions:** against epoll, 4–8% less CPU per request at 1
-  core and depth 1, and more at depth 16 wherever requests cross cores (3–9%
-  at 2 cores, 7–12% at 4) and for SET at 1 core (3–8%). In the same sessions
-  `main` / epoll was 1.131 / 1.153 (GET) and 1.124 / 1.130 (SET) at 4 cores.
-  Check D (below) confirmed these except the 2-core GET loss.
-- **Losses in throughput:** GET at 2 cores against `main`, 0.977 / 0.926
-  requests per second (2 and 0 of 7 higher); SET against epoll at depth 16,
-  0.936 / 0.970 at 1 core and 0.876 / 0.871 at 2 cores.
+  core and depth 1 (GET and SET, 6–7 of 7), and more at depth 16 for GET at 2
+  cores (3% and 9%), at 4 cores (7–12%) and for SET at 1 core (3–8%). SET at 2
+  cores, depth 16, needed more by median in both (1.082 and 1.075) but at only
+  4 of 7 in session 2. In the same sessions `main` / epoll was 1.131 / 1.153
+  (GET) and 1.124 / 1.130 (SET) at 4 cores. Check D (below) did not run SET at
+  depth 1, so the README claims GET only there; it did not confirm the 2-core
+  GET loss, and its 4-core GET in session 3 (5.3%) is outside 7–12% (the
+  four-session ranges are below).
+- **Losses in throughput** (requests per second, paired by repetition from
+  `main.jsonl`; repetitions higher of 7): against `main` at 2 cores, GET
+  0.977 / 0.926 (2 and 0) and SET 0.967 / 0.985 (1 and 2); against epoll at
+  depth 16, SET 0.936 / 0.970 at 1 core (1 and 1) and 0.876 / 0.871 at 2
+  cores (0 and 3).
 - **Not resolved here:** the change against `main`. At 4 cores it was 1–4%
-  less in both sessions (4–6 of 7); at 2 cores it changed sign. The decision
-  windows above measured 3–5% at 4 cores with 7 of 7 in at least one cell
-  each.
+  less in both sessions (4–6 of 7); at 2 cores it changed sign; at 1 core, GET
+  depth 16 was lower in both (0.990 and 0.957, 5 and 6 of 7), in check D only
+  at 4 of 7. The decision windows above measured 3–5% at 4 cores with 7 of 7
+  in at least one cell each.
 - Session 1's 4-core runs had another project's job on the server CPUs' SMT
   siblings (interference median 0.87 of the window; session 2: 0.05; the
-  recorded bystander was a process named `auto-app`). At 1 and 2 cores the
-  rejection rule repeated 5 runs in session 1 and 13 in session 2.
+  recorded bystander was a process named `auto-app`). Check D's test for an
+  unusable part (median above 0.5) would discard them; they are kept, for
+  the reason given in check D's README. At 1 and 2 cores the rejection rule
+  repeated 5 runs in session 1 and 13 in session 2.
 
 ### Check D: fresh clones, three more quiet windows
 
@@ -94,17 +103,35 @@ and 4 cores from sessions 3 / 2:
 | 2 cores, depth 16 | 0.988 (4) / 1.001 (3) | 1.084 (1) / 1.108 (0) | 1.005 (3) / 0.940 (5) | 0.985 (4) / 1.011 (3) |
 | 4 cores, depth 16 | 1.053 (2) / 1.096 (0) | 1.065 (3) / 1.106 (1) | 0.943 (7) / 0.950 (6) | 0.885 (7) / 0.963 (7) |
 
-It confirms the 1-core depth-1 result, the losses to epoll for SET at
-1 and 2 cores and at 4 cores (5–11% here), and the gain over `main` at 4 cores
-(4–12% here, 6–7 of 7). It does not confirm the 2-core GET loss to epoll
-(0.99 and 1.00). Before check D, two losses were missing from the text: GET
-throughput at 2 cores against `main`, which was lower in three of the four
-sessions (0.977, 0.926, 0.869; 1.017 in check D's session 2), and SET
-throughput against epoll at depth 16, which was lower in all four (1 core
-3–7%, 2 cores 9–13%). Window C's c2 result was missing too: against `main` at
-4 cores it was 0.990 and 0.972 (5 of 7), with GET throughput 1.005 (4 of 7
-higher). The README and design-tradeoffs Part 4 were corrected after check D,
-including the claim that c2's saving showed as GET throughput at 4 cores.
+By its rules two claims hold over the four sessions: less CPU per GET than
+epoll at 1 core, depth 1 (3–8%), and more for SET at 1 core, depth 16 (3–8%).
+The losses to epoll at 2 cores for SET and at 4 cores were on the losing side
+by median in all four sessions but do not hold as stated: 2-core SET was 10.8%
+in session 2 (claimed 3–9%; 7–11% over the four) and at 4 of 7 in
+imp-session-2; at 4 cores GET was 5.3% in session 3 (claimed 7–12%; 5–12% over
+the four) and SET at 4 of 7 there. `main`'s 12–15% over epoll at 4 cores was
+18.0% for SET in session 3 (11–18% over the four). The 2-core GET loss to
+epoll does not hold (0.99 and 1.00). The gain over `main` at 4 cores, 1–4% in
+the final sessions (GET at 4 of 7 in imp-session-2), was 4–12% here (6–7 of
+7). At 1 and 2 cores no CPU difference against `main` held in all four
+sessions: 1-core GET depth 16 was lower in both final sessions but at only 4
+of 7 here (0.991, 0.998), and 1-core SET depth 16 was lower here (0.941,
+0.974) and in imp-session-2 (0.976) but not in imp-session-1 (1.006).
+
+Three losses were missing from the text before check D (requests per second,
+paired by repetition): GET at 2 cores against `main`, lower in three of the
+four sessions (0.977, 0.926, 0.869; 1.017 in check D's session 2); SET at 2
+cores against `main`, lower by median in all four (0.967, 0.985, 0.926,
+0.997; 4 of 7 in check D's session 2); and SET against epoll at 1 and 2
+cores, depth 16, lower in all four (1 core 3–7%, 4 of 6 in check D's session
+1; 2 cores 8–13%, 4 of 7 in imp-session-2). Window C's c2 result was missing
+too: against `main` at 4 cores it was 0.990 and 0.972 (5 of 7), with GET
+throughput 1.005 (4 of 7 higher). In window A, c2 failed its rule's test for
+a worse cell (2 cores, SET depth 16: 1.0203 with 5 of 7 higher; the summary
+prints 1.020); it is kept on window B, whose best cell (0.968) is an effect
+of 3% or more. The README and design-tradeoffs Part 4 were corrected after
+check D and its review, including the claim that c2's saving showed as GET
+throughput at 4 cores.
 
 
 ## Performance round (2026-11-08 and 11-09)

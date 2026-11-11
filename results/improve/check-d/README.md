@@ -14,6 +14,7 @@ arm used `main`'s load generator.
 On the build machine, in each clone:
 
 ```sh
+# <out> = ~/.cache/rl-check-d/out on the build machine (local scratch; its small files are copied here)
 # both clones: the README's build commands
 scripts/build-liburing.sh && scripts/fetch-asio.sh
 cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-release
@@ -28,16 +29,17 @@ build-release/kv_server --io uring --cores 2 --cpus 26,28 --port 16379   # then 
 # both clones: callgrind (GET, depth 16, 8 s)
 cmake -S . -B build-prof -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG -g" && cmake --build build-prof -j16
 scripts/callgrind-profile.sh <clone>/build-prof <uring|epoll> <1|2|4> 16 8 <out>/profile/<main|imp>-<io>-<n>c-p16
-scripts/callgrind-summary.py main=<dir> imp=<dir> epoll-main=<dir> epoll-imp=<dir> > profile/summary-<n>c.md
-scripts/callgrind-jobs.py "io_uring 1c=<dir>" ... > profile/jobs.md
+scripts/callgrind-summary.py main=<dir> imp=<dir> epoll-main=<dir> epoll-imp=<dir> > <out>/profile/summary-<n>c.md
+scripts/callgrind-jobs.py "io_uring 1c=<dir>" ... "epoll 4c=<dir>" > <out>/profile/jobs.md
+scripts/callgrind-jobs.py "main io_uring 1c=<dir>" "main io_uring 2c=<dir>" "main io_uring 4c=<dir>" > <out>/profile/jobs-main.md
 # timing, from the improve clone, in a quiet window
 A="--arm uring-main=uring@<main>/build-release --arm uring-imp=uring@<improve>/build-release
    --arm epoll-imp=epoll@<improve>/build-release --arm epoll-main=epoll@<main>/build-release"
 python3 scripts/kv-bench.py --suite compare --reps 7 --cores 1,2 --workloads get_p1,get_p16,set_p16 \
-  --max-interference 0.05 --retries 3 --kvload <main>/build-release/kvload $A --out session-N
+  --max-interference 0.05 --retries 3 --kvload <main>/build-release/kvload $A --out <out>/session-N
 python3 scripts/kv-bench.py --suite compare --reps 7 --cores 4 --harness-cpu 11 --workloads get_p16,set_p16 \
-  --max-interference 0.05 --retries 3 --kvload <main>/build-release/kvload $A --out session-N/cores4
-python3 scripts/kv-summary.py session-N uring-main:epoll-imp      # and session-N/cores4
+  --max-interference 0.05 --retries 3 --kvload <main>/build-release/kvload $A --out <out>/session-N/cores4
+python3 scripts/kv-summary.py <out>/session-N uring-main:epoll-imp      # and <out>/session-N/cores4
 ```
 
 All README commands worked as written. The server command ran on CPUs
@@ -69,7 +71,15 @@ after SIGINT (`logs/smoke.log`).
 In session 1's 4-core part, another project's process (`auto-app`) ran on the
 server CPUs' SMT siblings, for 173 s of the part's runs in all. By
 `RULES.md` that part cannot be used, so it was rerun alone as session 3, more
-than an hour after session 2. Its numbers are shown in brackets below.
+than an hour after session 2. Session 1's unusable 4-core numbers are shown
+in brackets below.
+
+The same test (median interference above 0.5) would also discard the 4-core
+part of the round's own `imp-session-1` (median 0.865,
+`kv-bench/imp-session-1/cores4/summary.md`). `RULES.md` names both final
+sessions, so the claims below still include it. Keeping it makes no claim
+stronger: of the four sessions it has the largest 4-core GET loss to epoll
+(1.116) and the smallest 4-core GET gain over `main` (0.989).
 
 ## Results
 
@@ -120,31 +130,41 @@ Tests in the improve clone:
 
 The rule (`RULES.md`): a claim stays only if it holds in both usable check-D
 sessions and in the round's own final sessions (`imp-session-1`,
-`imp-session-2`). Every number was also checked against its committed file.
-All the numbers in the README table and in Part 4's tables match their summaries.
-Three sets of figures can only be recomputed from the raw lines, because no
-summary prints them:
+`imp-session-2`): its median on the claimed side, within the claimed range
+or 1 point of it, and for "more" or "less" at least 5 of 7 repetitions on
+that side. A claim that fails is marked so below with the range measured
+over the four sessions. A loss is not removed for failing: if it was on the
+losing side by median in every session, the docs give that range and name
+the cells under 5 of 7. A gain or "no difference" claim that fails is
+withdrawn or qualified with the numbers. Every number was also checked
+against its committed file. All the numbers in the README table and in
+Part 4's tables match their summaries. Four sets of figures can only be
+recomputed from the raw lines, because no summary prints them:
 - the final sessions' `main` / epoll ratios;
+- the final sessions' paired requests-per-second ratios (against `main` at
+  2 and 4 cores, against epoll for SET at 1 and 2 cores), from
+  `kv-bench/imp-session-*/main.jsonl`;
 - the correlations, busy shares and throughputs in Part 4's "GET throughput
   at 2 cores";
 - the per-thread user and system time of window 1 in Part 3.
 
 | claim | check D | verdict |
 | --- | --- | --- |
-| io_uring 4–8% less CPU than epoll, 1 core, depth 1 (GET 7 of 7 in both) | 0.951 (7), 0.967 (5) | holds; 3–8% over the four sessions |
-| io_uring 3–9% more than epoll at 2 cores, depth 16 | GET 0.988 (4 below), 1.001 (3); SET 1.084, 1.108 | **GET does not hold**; SET holds (7–11% over the four sessions) |
-| io_uring 7–12% more than epoll at 4 cores | GET 1.053, 1.096; SET 1.065 (4 of 7 above), 1.106 | holds as a loss; 5–12% over the four sessions |
-| io_uring 3–8% more than epoll, SET at 1 core, depth 16 | 1.035, 1.075 | holds |
-| `main` 12–15% more than epoll at 4 cores | 1.110 / 1.180, 1.130 / 1.149 | holds; 11–18% over the four sessions |
-| this round 1–4% below `main` at 4 cores in the final sessions (4–6 of 7) | 0.943 / 0.885, 0.950 / 0.963 (6–7 of 7) | holds; larger here (4–12%) |
-| no difference against `main` held in both final sessions at 1 and 2 cores | 1-core SET depth 16 lower in both check-D sessions (0.941, 0.974), but not in the round's | holds as stated |
-| what is left is user time; system time the same (4 cores) | user 145 vs 135 and 160 vs 128 ns; system 202 vs 203, 208 vs 204 | holds |
+| io_uring 4–8% less CPU than epoll, 1 core, depth 1 (GET 7 of 7 in both) | 0.951 (7), 0.967 (5) | holds for GET (session 2's 3.3% is within 1 point); 3–8% over the four sessions. Check D did not run SET at depth 1 (0.964 and 0.962 in the final sessions), so the README claims GET only |
+| io_uring 3–9% more than epoll at 2 cores, depth 16 | GET 0.988 (4 below), 1.001 (3); SET 1.084 (6 of 7 above), 1.108 (7) | **does not hold as stated.** GET: not more here. SET: more by median in all four sessions, 7–11%, but session 2's 10.8% is outside 3–9% plus 1 point, and `imp-session-2` had only 4 of 7 above (1.075) |
+| io_uring 7–12% more than epoll at 4 cores | GET 1.053 (5 of 7 above), 1.096 (7); SET 1.065 (4), 1.106 (6) | **does not hold as stated.** More by median in all four sessions, 5–12%, but GET in session 3 (5.3%) is outside 7–12% minus 1 point, and SET in session 3 had only 4 of 7 above |
+| io_uring 3–8% more than epoll, SET at 1 core, depth 16 | 1.035 (5 of 6 above), 1.075 (6 of 7) | holds |
+| `main` 12–15% more than epoll at 4 cores | 1.110 / 1.180, 1.130 / 1.149 (6–7 of 7 above) | **does not hold as stated:** SET in session 3 (18.0%) is outside 12–15% plus 1 point; 11–18% over the four sessions, at least 5 of 7 above in each |
+| this round 1–4% below `main` at 4 cores in the final sessions (4–6 of 7) | 0.943 / 0.885, 0.950 / 0.963 (6–7 of 7) | **does not hold as stated:** session 3 is outside 1–4% plus 1 point (GET 5.7%, SET 11.5%), and GET in `imp-session-2` had only 4 of 7 below (0.972). Lower by median in all four sessions: 1–4% in the final sessions, 4–12% here |
+| no difference against `main` held in both final sessions at 1 and 2 cores | 1-core SET depth 16 lower in both sessions (0.941, 7 of 7; 0.974, 5) | **does not hold as stated:** 1-core GET depth 16 was lower in both final sessions (0.990, 5 of 7; 0.957, 6) but only at 4 of 7 here (0.991, 0.998), and 1-core SET depth 16 was lower here and in `imp-session-2` (0.976, 5) but not in `imp-session-1` (1.006). No 1- or 2-core cell met the rule on one side in all four sessions |
+| what is left is user time, 148–168 ns per GET against epoll's 121–135; system time the same (4 cores) | user 145 vs 135 and 160 vs 128 ns; system 202 vs 203, 208 vs 204 | holds in kind; session 3's 145 ns is below the stated range, which is now 145–168 over the four sessions |
 | −6% / −11% user-space instructions at 2 / 4 cores (callgrind) | 6.0% / 11.2% | holds |
 | 60 / 86 / 149 more instructions than epoll at 1 / 2 / 4 cores | 60 / 86 / 147 (the 1-core figure measured here for the first time; the round derived it from c2) | holds |
 | within each session the gap to epoll at 4 cores is smaller than `main`'s | 5–7% against 11–18% (session 3), 10–11% against 13–15% (session 2) | holds |
 | c2 served 5–6% more GETs per second than `main` at 4 cores (windows A and B, 7 of 7) | window C 1.005 (4 of 7); final sessions 0.953, 0.980 (3 of 7 above); check D 1.021, 1.034 (5 and 4 of 7) | **does not hold** outside windows A and B |
-| one hash per key: the epoll build's CPU per request 1–2% lower | epoll / epoll of `main` 0.93–1.02 at depth 16, at most 5 of 7 | not resolved here (the text claims only the window rule and the instruction count) |
+| one hash per key: the epoll build's CPU per request 1–2% lower | epoll / epoll of `main` 0.93–1.02 at depth 16; of the 12 usable depth-16 cells only session 2's 2-core GET (0.989) was lower at 5 of 7 | **not resolved here.** Part 4 gave 1–2% as the size of the effect; it is the instruction count's estimate and is now stated as one, not as measured |
 | left out: 2-core GET requests per second against `main` | 0.869 (1 of 7 above), 1.017 (5); final sessions 0.977 (2), 0.926 (0) | **missing loss**: lower in three of four sessions |
-| left out: SET requests per second against epoll at depth 16 | 1 core 0.974, 0.928; 2 cores 0.915, 0.874; final sessions 0.936, 0.970 and 0.876, 0.871 | **missing loss**: lower in all four |
-| window results (c1, c2, c3, c4 tables, rules) | not rerun (candidate builds) | match their files; window C's c2 result (0.990 and 0.972 at 4 cores, 5 of 7) was not in Part 4 |
+| left out: 2-core SET requests per second against `main` | 0.926 (2 of 7 above), 0.997 (3); final sessions 0.967 (1), 0.985 (2) | **missing loss**: lower by median in all four (0.3–7%), at 4 of 7 in session 2 |
+| left out: SET requests per second against epoll at depth 16 | 1 core 0.974 (4 of 6 below), 0.928 (6 of 7); 2 cores 0.915 (5), 0.874 (6); final sessions 0.936 (6), 0.970 (6) and 0.876 (7), 0.871 (4) | **missing loss**: lower in all four at 1 and 2 cores (3–7% and 8–13%), at 4 of 6 in session 1 at 1 core and 4 of 7 in `imp-session-2` at 2 cores; at 4 cores it was higher here (1.122, 1.029) |
+| window results (c1, c2, c3, c4 tables, rules) | not rerun (candidate builds) | the tables match their files, but c2's verdict in window A does not: by window A's rule c2 failed there (2 cores, SET depth 16: 1.0203 with 5 of 7 higher; the summary prints 1.020). It passed window B, whose best cell (0.968) is an effect of 3% or more, so it is kept on window B; by the same rule it also passed window C (2 cores, GET and SET depth 16, 6 of 7 each). Window C's c2 result at 4 cores (0.990 and 0.972, 5 of 7) was not in Part 4 |
 | 156 cases × 6 configurations, 15 of 15 bugs, both fuzz targets clean | same | holds |
