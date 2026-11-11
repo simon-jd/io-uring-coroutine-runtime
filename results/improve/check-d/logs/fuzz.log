@@ -1,0 +1,2 @@
+ipc_packet_fuzz: exit code 0; log in /home/postedism/.cache/rl-check-d/out/fuzz/ipc_packet_fuzz.log
+resp_parser_fuzz: exit code 0; log in /home/postedism/.cache/rl-check-d/out/fuzz/resp_parser_fuzz.log

@@ -1,0 +1,23 @@
+mutation: l-number-fast-path-accepts-leading-zero
+what: Let the parser's one-pass number path accept a leading zero ($01), which the strict path rejects as an invalid length.
+test: kv_tests parser_matches_reference
+expected: assertion 'parser matches the reference parser' failed
+
+--- kv/resp.cpp
++++ kv/resp.cpp (mutated)
+@@ -66,7 +66,7 @@
+     if (digit > 9) return false;
+     std::uint64_t v = digit;
+     std::size_t i = p + 1;
+-    if (digit != 0) {
++    if (true) {
+         const std::size_t stop = n < p + 18 ? n : p + 18;
+         for (; i < stop; ++i) {
+             digit = static_cast<unsigned char>(d[i]) - unsigned{'0'};
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL parser_matches_reference: assertion 'parser matches the reference parser' failed: trace_fast(d, l) == trace_reference(d, l) at <work>/l-number-fast-path-accepts-leading-zero/src/tests/kv_tests.cpp:303
+
+result: CAUGHT

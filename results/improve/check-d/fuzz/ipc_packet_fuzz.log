@@ -1,0 +1,24 @@
+date: 2026-11-10T23:49:09Z
+commit: 10c00f5
+clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+command: ipc_packet_fuzz -max_total_time=300 -print_final_stats=1 <corpus>
+
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2712629396
+INFO: Loaded 1 modules   (62 inline 8-bit counters): 62 [0x55dc6b0d4320, 0x55dc6b0d435e), 
+INFO: Loaded 1 PC tables (62 PCs): 62 [0x55dc6b0d4360,0x55dc6b0d4740), 
+INFO:        6 files found in ./.cache/fuzz-corpus
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: seed corpus: files: 6 min: 73b max: 82b total: 451b rss: 32Mb
+#7	INITED cov: 19 ft: 20 corp: 6/451b exec/s: 0 rss: 33Mb
+#10	NEW    cov: 25 ft: 28 corp: 7/499b lim: 82 exec/s: 0 rss: 33Mb L: 48/82 MS: 3 ChangeBit-ChangeBit-EraseBytes-
+#19	NEW    cov: 26 ft: 29 corp: 8/572b lim: 82 exec/s: 0 rss: 33Mb L: 73/82 MS: 4 ShuffleBytes-CMP-ChangeBinInt-CopyPart- DE: "\000\000m\211\015~\007\000"-
+#74	NEW    cov: 27 ft: 30 corp: 9/613b lim: 82 exec/s: 0 rss: 33Mb L: 80/82 MS: 4 ShuffleBytes-ChangeBinInt-ChangeBinInt-CopyPart-
+#130	NEW    cov: 30 ft: 33 corp: 11/694b lim: 82 exec/s: 0 rss: 34Mb L: 82/82 MS: 2 CMP-ShuffleBytes- DE: "\377\377"-
+Done 147508500 runs in 301 second(s)
+stat::number_of_executed_units: 147508500
+stat::average_exec_per_sec:     490061
+stat::new_units_added:          433
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              559
+exit code: 0

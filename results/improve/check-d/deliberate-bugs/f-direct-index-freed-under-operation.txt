@@ -1,0 +1,23 @@
+mutation: f-direct-index-freed-under-operation
+what: Hand a direct-descriptor index out again as soon as its close completes, although an operation that names it is still in flight.
+test: reactor_tests direct_index_reserved_while_operation_in_flight
+expected: assertion 'an index stays reserved while an operation names it' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -175,7 +175,7 @@
+ 
+ void reactor::release_direct_if_unused(unsigned index) noexcept {
+     auto& e = direct_[index];
+-    if (e.state != direct_state::closing || e.close_pending || e.pins > 0) return;
++    if (e.state != direct_state::closing || e.close_pending) return;
+     e.state = direct_state::free;
+     direct_free_.push_back(index);
+ }
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL direct_index_reserved_while_operation_in_flight: assertion 'an index stays reserved while an operation names it' failed: refused && re.direct_state_of(0) == reactor::direct_state::closing at <work>/f-direct-index-freed-under-operation/src/tests/reactor_tests.cpp:578
+
+result: CAUGHT

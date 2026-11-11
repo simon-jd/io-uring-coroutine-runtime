@@ -1,0 +1,22 @@
+mutation: b-zc-reuse-at-first-cqe
+what: Give a SEND_ZC buffer back at the first CQE without waiting for the notification CQE.
+test: buffer_tests send_zc_buffer_held_until_notification
+expected: assertion 'zero-copy payload arrives unmodified' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -482,6 +482,7 @@
+         // The kernel still references the pages: the buffer stays in the slot
+         // until the notification CQE.
+         ++s.pending;
++        s.lease.reset();
+     }
+     if (s.kind == op_kind::recvmsg) capture_rights(s);
+     unregister_source(s, ref);
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL send_zc_buffer_held_until_notification: assertion 'zero-copy payload arrives unmodified' failed: intact && got == total at <work>/b-zc-reuse-at-first-cqe/src/tests/buffer_tests.cpp:171
+
+result: CAUGHT

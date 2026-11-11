@@ -1,0 +1,4 @@
+port 18898
+sending command zero to pid 4016679
+sending command dump to pid 4016679
+{"mode":"closed","pipeline":16,"rps":356652.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":3035648,"errors":0,"batches":178326,"rtt_p50_us":1828.5,"rtt_p99_us":3758.0,"rtt_p999_us":4912.8,"client_cpu_s":4.885}

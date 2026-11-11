@@ -1,0 +1,52 @@
+-- The C compiler identification is GNU 15.2.0
+-- The CXX compiler identification is GNU 15.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/postedism/.cache/rl-check-d/improve/build-prof
+[1/34] Building CXX object CMakeFiles/kv_server.dir/server/main.cpp.o
+[2/34] Building CXX object CMakeFiles/kvcore.dir/kv/resp.cpp.o
+[3/34] Building CXX object CMakeFiles/kv_server.dir/server/net.cpp.o
+[4/34] Building CXX object CMakeFiles/kvcore.dir/kv/engine.cpp.o
+[5/34] Linking CXX static library libkvcore.a
+[6/34] Building CXX object CMakeFiles/rol.dir/src/runtime.cpp.o
+[7/34] Building CXX object CMakeFiles/rol.dir/src/buffers.cpp.o
+[8/34] Building CXX object CMakeFiles/kv_server.dir/server/epoll_server.cpp.o
+[9/34] Building CXX object CMakeFiles/rol.dir/src/ipc.cpp.o
+[10/34] Building CXX object CMakeFiles/task_tests.dir/tests/task_tests.cpp.o
+[11/34] Building CXX object CMakeFiles/sanity_bench.dir/bench/sanity_bench.cpp.o
+[12/34] Building CXX object CMakeFiles/kv_server.dir/server/uring_server.cpp.o
+[13/34] Building CXX object CMakeFiles/rol.dir/src/reactor.cpp.o
+[14/34] Linking CXX static library librol.a
+[15/34] Linking CXX executable task_tests
+[16/34] Linking CXX executable sanity_bench
+[17/34] Building CXX object CMakeFiles/buffer_tests.dir/tests/buffer_tests.cpp.o
+[18/34] Linking CXX executable buffer_tests
+[19/34] Building CXX object CMakeFiles/kvload.dir/bench/kvload.cpp.o
+[20/34] Building CXX object CMakeFiles/xcore_bench.dir/bench/xcore_bench.cpp.o
+[21/34] Linking CXX executable kvload
+[22/34] Linking CXX executable xcore_bench
+[23/34] Building CXX object CMakeFiles/ipc_tests.dir/tests/ipc_tests.cpp.o
+[24/34] Linking CXX executable ipc_tests
+[25/34] Building CXX object CMakeFiles/kv_server.dir/server/asio_server.cpp.o
+[26/34] Linking CXX executable kv_server
+[27/34] Building CXX object CMakeFiles/kv_tests.dir/tests/kv_tests.cpp.o
+[28/34] Linking CXX executable kv_tests
+[29/34] Building CXX object CMakeFiles/server_tests.dir/tests/server_tests.cpp.o
+[30/34] Linking CXX executable server_tests
+[31/34] Building CXX object CMakeFiles/runtime_tests.dir/tests/runtime_tests.cpp.o
+[32/34] Linking CXX executable runtime_tests
+[33/34] Building CXX object CMakeFiles/reactor_tests.dir/tests/reactor_tests.cpp.o
+[34/34] Linking CXX executable reactor_tests

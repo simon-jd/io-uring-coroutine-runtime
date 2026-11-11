@@ -1,0 +1,15 @@
+a-release-at-cancel-ack: CAUGHT by reactor_tests cancel_ack_does_not_release_buffer
+b-zc-reuse-at-first-cqe: CAUGHT by buffer_tests send_zc_buffer_held_until_notification
+c-release-on-coroutine-destroy: CAUGHT by reactor_tests destroyed_coroutine_keeps_fixed_buffer_until_cqe
+d-drop-rights-of-detached-recvmsg: CAUGHT by ipc_tests detached_receive_closes_received_descriptor
+e-stale-direct-descriptor: CAUGHT by reactor_tests stale_direct_descriptor_is_refused
+f-direct-index-freed-under-operation: CAUGHT by reactor_tests direct_index_reserved_while_operation_in_flight
+g-one-msg-ring-per-message: CAUGHT by runtime_tests concurrent_calls_share_message_rings
+h-drain-cuts-off-replies: CAUGHT by server_tests shutdown_waits_for_requests_in_progress
+i-partial-bulk-string-accepted: CAUGHT by kv_tests split_input_parses_identically
+j-sleep-without-recheck: CAUGHT by runtime_tests sleeping_core_is_woken_for_every_message/doorbell
+k-erase-without-backward-shift: CAUGHT by kv_tests shard_matches_reference_map
+l-number-fast-path-accepts-leading-zero: CAUGHT by kv_tests parser_matches_reference
+m-call-all-resumes-early: CAUGHT by runtime_tests call_all_returns_results_in_call_order
+n-call-node-released-at-detach: CAUGHT by runtime_tests destroyed_call_all_leaves_slots_to_replies
+o-batch-carries-wrong-hash: CAUGHT by kv_tests routes_keys_to_their_cores

@@ -1,0 +1,6 @@
+gcc none rc=0 100% tests passed, 0 tests failed out of 10
+gcc address rc=0 100% tests passed, 0 tests failed out of 10
+gcc thread rc=0 100% tests passed, 0 tests failed out of 10
+clang none rc=0 100% tests passed, 0 tests failed out of 10
+clang address rc=0 100% tests passed, 0 tests failed out of 10
+clang thread rc=0 100% tests passed, 0 tests failed out of 10

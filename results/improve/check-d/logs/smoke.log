@@ -1,0 +1,5 @@
+port 16379
+client: .cache/valkey-9.1.3/bin/valkey-cli
+OK
+v
+kv_server exit status after SIGINT: 0

@@ -1,0 +1,184 @@
+  rep 0 uring-main             cores=1 get_p1           rps=292,361.8 cpu_us/req=3.149 load=3.68 MHz=5250 intf=0.213 vcsw/1k=1.9 REJECTED
+  rep 0 uring-main             cores=1 get_p1           rps=320,163.6 cpu_us/req=3.118 load=4.05 MHz=5325 intf=0.137 vcsw/1k=0.3 REJECTED
+  rep 0 uring-main             cores=1 get_p1           rps=354,847.8 cpu_us/req=2.856 load=4.04 MHz=5370 intf=0.077 vcsw/1k=0.3 REJECTED
+  rep 0 uring-main             cores=1 get_p1           rps=350,613.8 cpu_us/req=2.861 load=4.28 MHz=5417 intf=0.005 vcsw/1k=0.0
+  rep 0 uring-main             cores=1 get_p16          rps=3,688,624.0 cpu_us/req=0.274 load=4.24 MHz=5438 intf=0.003 vcsw/1k=0.0
+  rep 0 uring-main             cores=1 set_p16          rps=2,973,440.0 cpu_us/req=0.325 load=4.31 MHz=5399 intf=0.009 vcsw/1k=0.0
+  rep 0 uring-imp              cores=1 get_p1           rps=348,784.8 cpu_us/req=2.811 load=4.60 MHz=5409 intf=0.005 vcsw/1k=0.1
+  rep 0 uring-imp              cores=1 get_p16          rps=3,713,315.2 cpu_us/req=0.286 load=4.71 MHz=5408 intf=0.013 vcsw/1k=0.0
+  rep 0 uring-imp              cores=1 set_p16          rps=3,289,417.6 cpu_us/req=0.304 load=4.89 MHz=5402 intf=0.002 vcsw/1k=0.0
+  rep 0 epoll-imp              cores=1 get_p1           rps=330,703.4 cpu_us/req=3.032 load=4.81 MHz=5398 intf=0.007 vcsw/1k=0.0
+  rep 0 epoll-imp              cores=1 get_p16          rps=3,299,974.4 cpu_us/req=0.294 load=4.83 MHz=5394 intf=0.002 vcsw/1k=0.0
+  rep 0 epoll-imp              cores=1 set_p16          rps=3,223,059.2 cpu_us/req=0.304 load=4.47 MHz=5408 intf=0.019 vcsw/1k=0.0
+  rep 0 epoll-main             cores=1 get_p1           rps=300,440.2 cpu_us/req=3.340 load=4.36 MHz=5312 intf=0.318 vcsw/1k=2.1 REJECTED
+  rep 0 epoll-main             cores=1 get_p1           rps=324,584.6 cpu_us/req=3.059 load=4.65 MHz=5364 intf=0.047 vcsw/1k=0.0
+  rep 0 epoll-main             cores=1 get_p16          rps=3,565,232.0 cpu_us/req=0.278 load=4.76 MHz=5411 intf=0.002 vcsw/1k=0.0
+  rep 0 epoll-main             cores=1 set_p16          rps=3,271,276.8 cpu_us/req=0.302 load=4.33 MHz=5410 intf=0.025 vcsw/1k=0.0
+  rep 0 uring-main             cores=2 get_p1           rps=468,385.8 cpu_us/req=3.731 load=4.22 MHz=5203/5200 intf=0.905 vcsw/1k=5.7
+  rep 0 uring-main             cores=2 get_p16          rps=4,047,555.2 cpu_us/req=0.455 load=4.76 MHz=5200/5200 intf=1.029 vcsw/1k=1.0
+  rep 0 uring-main             cores=2 set_p16          rps=5,803,011.2 cpu_us/req=0.334 load=5.34 MHz=5308/5307 intf=0.010 vcsw/1k=0.3
+  rep 0 uring-imp              cores=2 get_p1           rps=474,330.6 cpu_us/req=3.783 load=6.06 MHz=5226/5222 intf=0.719 vcsw/1k=6.2
+  rep 0 uring-imp              cores=2 get_p16          rps=3,292,057.6 cpu_us/req=0.515 load=6.62 MHz=5200/5200 intf=1.062 vcsw/1k=1.7
+  rep 0 uring-imp              cores=2 set_p16          rps=4,687,936.0 cpu_us/req=0.388 load=6.97 MHz=5236/5246 intf=0.605 vcsw/1k=0.9
+  rep 0 epoll-imp              cores=2 get_p1           rps=634,220.2 cpu_us/req=3.132 load=12.98 MHz=5365/5365 intf=0.016 vcsw/1k=2.2
+  rep 0 epoll-imp              cores=2 get_p16          rps=5,069,801.6 cpu_us/req=0.285 load=12.42 MHz=5401/5402 intf=0.016 vcsw/1k=1.3
+  rep 0 epoll-imp              cores=2 set_p16          rps=5,099,798.4 cpu_us/req=0.345 load=11.82 MHz=5289/5294 intf=0.492 vcsw/1k=0.8
+  rep 0 epoll-main             cores=2 get_p1           rps=507,258.6 cpu_us/req=3.941 load=11.50 MHz=5200/5200 intf=0.723 vcsw/1k=7.1
+  rep 0 epoll-main             cores=2 get_p16          rps=4,684,217.6 cpu_us/req=0.343 load=12.18 MHz=5288/5260 intf=0.316 vcsw/1k=1.1
+  rep 0 epoll-main             cores=2 set_p16          rps=6,384,841.6 cpu_us/req=0.298 load=12.17 MHz=5336/5344 intf=0.007 vcsw/1k=0.6
+  rep 1 uring-imp              cores=1 get_p1           rps=339,349.4 cpu_us/req=2.934 load=11.59 MHz=5389 intf=0.024 vcsw/1k=0.0
+  rep 1 uring-imp              cores=1 get_p16          rps=3,563,347.2 cpu_us/req=0.279 load=10.87 MHz=5404 intf=0.002 vcsw/1k=0.0
+  rep 1 uring-imp              cores=1 set_p16          rps=3,303,536.0 cpu_us/req=0.305 load=10.32 MHz=5412 intf=0.027 vcsw/1k=0.0
+  rep 1 epoll-imp              cores=1 get_p1           rps=333,147.8 cpu_us/req=3.001 load=9.65 MHz=5418 intf=0.025 vcsw/1k=0.0
+  rep 1 epoll-imp              cores=1 get_p16          rps=3,549,036.8 cpu_us/req=0.281 load=9.00 MHz=5413 intf=0.002 vcsw/1k=0.0
+  rep 1 epoll-imp              cores=1 set_p16          rps=3,558,048.0 cpu_us/req=0.278 load=8.52 MHz=5416 intf=0.003 vcsw/1k=0.0
+  rep 1 epoll-main             cores=1 get_p1           rps=330,124.4 cpu_us/req=3.034 load=8.00 MHz=5417 intf=0.005 vcsw/1k=0.0
+  rep 1 epoll-main             cores=1 get_p16          rps=3,647,174.4 cpu_us/req=0.275 load=7.60 MHz=5414 intf=0.000 vcsw/1k=0.0
+  rep 1 epoll-main             cores=1 set_p16          rps=3,234,745.6 cpu_us/req=0.303 load=6.81 MHz=5412 intf=0.014 vcsw/1k=0.0
+  rep 1 uring-main             cores=1 get_p1           rps=355,659.2 cpu_us/req=2.831 load=6.75 MHz=5414 intf=0.006 vcsw/1k=0.0
+  rep 1 uring-main             cores=1 get_p16          rps=3,561,804.8 cpu_us/req=0.275 load=6.61 MHz=5399 intf=0.015 vcsw/1k=0.0
+  rep 1 uring-main             cores=1 set_p16          rps=3,383,462.4 cpu_us/req=0.307 load=6.85 MHz=5410 intf=0.019 vcsw/1k=0.0
+  rep 1 uring-imp              cores=2 get_p1           rps=630,778.4 cpu_us/req=3.126 load=6.70 MHz=5382/5382 intf=0.014 vcsw/1k=2.0
+  rep 1 uring-imp              cores=2 get_p16          rps=5,294,179.2 cpu_us/req=0.303 load=6.65 MHz=5399/5393 intf=0.045 vcsw/1k=0.9
+  rep 1 uring-imp              cores=2 set_p16          rps=5,619,459.2 cpu_us/req=0.319 load=6.92 MHz=5395/5393 intf=0.030 vcsw/1k=0.5
+  rep 1 epoll-imp              cores=2 get_p1           rps=621,024.6 cpu_us/req=3.192 load=6.23 MHz=5306/5306 intf=0.044 vcsw/1k=2.2
+  rep 1 epoll-imp              cores=2 get_p16          rps=3,268,409.6 cpu_us/req=0.449 load=6.37 MHz=5200/5200 intf=1.314 vcsw/1k=1.1
+  rep 1 epoll-imp              cores=2 set_p16          rps=3,431,123.2 cpu_us/req=0.501 load=8.67 MHz=5200/5200 intf=1.103 vcsw/1k=1.3
+  rep 1 epoll-main             cores=2 get_p1           rps=596,792.8 cpu_us/req=3.360 load=10.36 MHz=5212/5213 intf=0.251 vcsw/1k=4.1
+  rep 1 epoll-main             cores=2 get_p16          rps=4,626,780.8 cpu_us/req=0.367 load=10.25 MHz=5267/5247 intf=0.564 vcsw/1k=1.0
+  rep 1 epoll-main             cores=2 set_p16          rps=4,840,912.0 cpu_us/req=0.354 load=9.67 MHz=5313/5312 intf=0.493 vcsw/1k=1.0
+  rep 1 uring-main             cores=2 get_p1           rps=607,570.0 cpu_us/req=3.213 load=9.46 MHz=5300/5300 intf=0.023 vcsw/1k=1.9
+  rep 1 uring-main             cores=2 get_p16          rps=5,321,200.0 cpu_us/req=0.309 load=9.07 MHz=5382/5360 intf=0.002 vcsw/1k=0.8
+  rep 1 uring-main             cores=2 set_p16          rps=5,857,964.8 cpu_us/req=0.328 load=8.59 MHz=5342/5346 intf=0.009 vcsw/1k=0.3
+  rep 2 epoll-imp              cores=1 get_p1           rps=332,182.0 cpu_us/req=2.964 load=8.14 MHz=5400 intf=0.005 vcsw/1k=0.0
+  rep 2 epoll-imp              cores=1 get_p16          rps=3,272,624.0 cpu_us/req=0.302 load=7.42 MHz=5394 intf=0.005 vcsw/1k=0.0
+  rep 2 epoll-imp              cores=1 set_p16          rps=3,001,187.2 cpu_us/req=0.329 load=7.22 MHz=5367 intf=0.027 vcsw/1k=0.0
+  rep 2 epoll-main             cores=1 get_p1           rps=319,017.2 cpu_us/req=3.130 load=7.44 MHz=5334 intf=0.009 vcsw/1k=0.0
+  rep 2 epoll-main             cores=1 get_p16          rps=3,234,022.4 cpu_us/req=0.312 load=7.17 MHz=5362 intf=0.021 vcsw/1k=0.0
+  rep 2 epoll-main             cores=1 set_p16          rps=3,013,020.8 cpu_us/req=0.329 load=7.34 MHz=5323 intf=0.060 vcsw/1k=0.0 REJECTED
+  rep 2 epoll-main             cores=1 set_p16          rps=3,178,403.2 cpu_us/req=0.317 load=7.08 MHz=5360 intf=0.049 vcsw/1k=0.0
+  rep 2 uring-main             cores=1 get_p1           rps=333,136.8 cpu_us/req=2.990 load=7.23 MHz=5342 intf=0.008 vcsw/1k=0.0
+  rep 2 uring-main             cores=1 get_p16          rps=2,830,140.8 cpu_us/req=0.356 load=6.73 MHz=5263 intf=0.011 vcsw/1k=0.0
+  rep 2 uring-main             cores=1 set_p16          rps=3,191,782.4 cpu_us/req=0.319 load=6.43 MHz=5346 intf=0.009 vcsw/1k=0.0
+  rep 2 uring-imp              cores=1 get_p1           rps=348,831.4 cpu_us/req=2.868 load=6.56 MHz=5407 intf=0.002 vcsw/1k=0.0
+  rep 2 uring-imp              cores=1 get_p16          rps=3,719,251.2 cpu_us/req=0.265 load=6.19 MHz=5446 intf=0.021 vcsw/1k=0.0
+  rep 2 uring-imp              cores=1 set_p16          rps=3,316,940.8 cpu_us/req=0.298 load=5.78 MHz=5413 intf=0.021 vcsw/1k=0.0
+  rep 2 epoll-imp              cores=2 get_p1           rps=642,687.6 cpu_us/req=3.124 load=5.55 MHz=5377/5377 intf=0.030 vcsw/1k=1.9
+  rep 2 epoll-imp              cores=2 get_p16          rps=5,287,833.6 cpu_us/req=0.310 load=6.39 MHz=5342/5325 intf=0.118 vcsw/1k=1.0
+  rep 2 epoll-imp              cores=2 set_p16          rps=6,036,259.2 cpu_us/req=0.317 load=6.12 MHz=5305/5305 intf=0.105 vcsw/1k=0.6
+  rep 2 epoll-main             cores=2 get_p1           rps=577,307.0 cpu_us/req=3.476 load=6.35 MHz=5284/5284 intf=0.253 vcsw/1k=4.4
+  rep 2 epoll-main             cores=2 get_p16          rps=4,812,214.4 cpu_us/req=0.353 load=6.64 MHz=5288/5287 intf=0.551 vcsw/1k=0.8
+  rep 2 epoll-main             cores=2 set_p16          rps=4,517,840.0 cpu_us/req=0.377 load=6.67 MHz=5210/5215 intf=0.460 vcsw/1k=0.7
+  rep 2 uring-main             cores=2 get_p1           rps=587,975.0 cpu_us/req=3.360 load=7.18 MHz=5300/5300 intf=0.170 vcsw/1k=2.6
+  rep 2 uring-main             cores=2 get_p16          rps=5,369,792.0 cpu_us/req=0.349 load=7.33 MHz=5215/5212 intf=0.160 vcsw/1k=0.7
+  rep 2 uring-main             cores=2 set_p16          rps=5,673,766.4 cpu_us/req=0.349 load=7.22 MHz=5284/5275 intf=0.046 vcsw/1k=0.4
+  rep 2 uring-imp              cores=2 get_p1           rps=604,728.6 cpu_us/req=3.238 load=7.02 MHz=5253/5253 intf=0.072 vcsw/1k=2.7
+  rep 2 uring-imp              cores=2 get_p16          rps=4,468,790.4 cpu_us/req=0.353 load=6.94 MHz=5219/5215 intf=0.378 vcsw/1k=1.0
+  rep 2 uring-imp              cores=2 set_p16          rps=5,251,123.2 cpu_us/req=0.343 load=7.59 MHz=5300/5300 intf=0.192 vcsw/1k=0.5
+  rep 3 epoll-main             cores=1 get_p1           rps=314,746.6 cpu_us/req=3.170 load=7.40 MHz=5305 intf=0.040 vcsw/1k=0.0
+  rep 3 epoll-main             cores=1 get_p16          rps=2,796,041.6 cpu_us/req=0.349 load=7.45 MHz=5296 intf=0.134 vcsw/1k=0.0 REJECTED
+  rep 3 epoll-main             cores=1 get_p16          rps=3,254,035.2 cpu_us/req=0.306 load=7.57 MHz=5318 intf=0.126 vcsw/1k=0.0 REJECTED
+  rep 3 epoll-main             cores=1 get_p16          rps=3,314,966.4 cpu_us/req=0.301 load=7.61 MHz=5355 intf=0.035 vcsw/1k=0.0
+  rep 3 epoll-main             cores=1 set_p16          rps=2,921,648.0 cpu_us/req=0.334 load=7.12 MHz=5300 intf=0.013 vcsw/1k=0.0
+  rep 3 uring-main             cores=1 get_p1           rps=334,496.2 cpu_us/req=3.005 load=7.35 MHz=5355 intf=0.035 vcsw/1k=0.0
+  rep 3 uring-main             cores=1 get_p16          rps=3,427,379.2 cpu_us/req=0.293 load=7.09 MHz=5357 intf=0.038 vcsw/1k=0.0
+  rep 3 uring-main             cores=1 set_p16          rps=3,134,822.4 cpu_us/req=0.319 load=6.84 MHz=5331 intf=0.006 vcsw/1k=0.0
+  rep 3 uring-imp              cores=1 get_p1           rps=340,324.6 cpu_us/req=2.928 load=6.69 MHz=5381 intf=0.013 vcsw/1k=0.0
+  rep 3 uring-imp              cores=1 get_p16          rps=3,566,316.8 cpu_us/req=0.281 load=6.55 MHz=5397 intf=0.003 vcsw/1k=0.0
+  rep 3 uring-imp              cores=1 set_p16          rps=3,325,382.4 cpu_us/req=0.300 load=6.35 MHz=5409 intf=0.005 vcsw/1k=0.0
+  rep 3 epoll-imp              cores=1 get_p1           rps=324,068.0 cpu_us/req=3.083 load=5.69 MHz=5413 intf=0.020 vcsw/1k=0.0
+  rep 3 epoll-imp              cores=1 get_p16          rps=3,306,988.8 cpu_us/req=0.307 load=5.95 MHz=5388 intf=0.008 vcsw/1k=0.0
+  rep 3 epoll-imp              cores=1 set_p16          rps=3,476,838.4 cpu_us/req=0.296 load=5.72 MHz=5406 intf=0.018 vcsw/1k=0.0
+  rep 3 epoll-main             cores=2 get_p1           rps=625,792.4 cpu_us/req=3.155 load=5.50 MHz=5330/5330 intf=0.020 vcsw/1k=2.4
+  rep 3 epoll-main             cores=2 get_p16          rps=5,213,580.8 cpu_us/req=0.326 load=5.88 MHz=5288/5288 intf=0.186 vcsw/1k=0.9
+  rep 3 epoll-main             cores=2 set_p16          rps=6,352,128.0 cpu_us/req=0.302 load=5.73 MHz=5312/5312 intf=0.028 vcsw/1k=0.5
+  rep 3 uring-main             cores=2 get_p1           rps=631,681.6 cpu_us/req=3.147 load=5.67 MHz=5351/5351 intf=0.002 vcsw/1k=1.9
+  rep 3 uring-main             cores=2 get_p16          rps=5,605,360.0 cpu_us/req=0.308 load=6.10 MHz=5402/5400 intf=0.025 vcsw/1k=0.7
+  rep 3 uring-main             cores=2 set_p16          rps=5,940,662.4 cpu_us/req=0.323 load=6.09 MHz=5346/5341 intf=0.013 vcsw/1k=0.4
+  rep 3 uring-imp              cores=2 get_p1           rps=635,596.6 cpu_us/req=3.135 load=6.40 MHz=5360/5352 intf=0.006 vcsw/1k=1.9
+  rep 3 uring-imp              cores=2 get_p16          rps=5,309,856.0 cpu_us/req=0.299 load=6.53 MHz=5427/5427 intf=0.009 vcsw/1k=0.9
+  rep 3 uring-imp              cores=2 set_p16          rps=5,429,692.8 cpu_us/req=0.347 load=6.52 MHz=5307/5306 intf=0.135 vcsw/1k=0.4
+  rep 3 epoll-imp              cores=2 get_p1           rps=587,233.8 cpu_us/req=3.302 load=6.72 MHz=5315/5314 intf=0.155 vcsw/1k=2.6
+  rep 3 epoll-imp              cores=2 get_p16          rps=5,542,688.0 cpu_us/req=0.302 load=6.74 MHz=5318/5316 intf=0.088 vcsw/1k=0.8
+  rep 3 epoll-imp              cores=2 set_p16          rps=5,130,169.6 cpu_us/req=0.340 load=7.41 MHz=5300/5302 intf=0.308 vcsw/1k=0.6
+  rep 4 uring-main             cores=1 get_p1           rps=346,857.0 cpu_us/req=2.925 load=7.29 MHz=5315 intf=0.053 vcsw/1k=0.0 REJECTED
+  rep 4 uring-main             cores=1 get_p1           rps=340,684.8 cpu_us/req=2.908 load=7.27 MHz=5371 intf=0.000 vcsw/1k=0.0
+  rep 4 uring-main             cores=1 get_p16          rps=3,376,534.4 cpu_us/req=0.295 load=7.15 MHz=5326 intf=0.005 vcsw/1k=0.0
+  rep 4 uring-main             cores=1 set_p16          rps=2,959,756.8 cpu_us/req=0.340 load=7.06 MHz=5300 intf=0.018 vcsw/1k=0.0
+  rep 4 uring-imp              cores=1 get_p1           rps=331,546.4 cpu_us/req=2.991 load=7.21 MHz=5300 intf=0.036 vcsw/1k=0.1
+  rep 4 uring-imp              cores=1 get_p16          rps=3,196,048.0 cpu_us/req=0.310 load=7.19 MHz=5300 intf=0.043 vcsw/1k=0.0
+  rep 4 uring-imp              cores=1 set_p16          rps=3,187,948.8 cpu_us/req=0.319 load=7.40 MHz=5332 intf=0.033 vcsw/1k=0.0
+  rep 4 epoll-imp              cores=1 get_p1           rps=327,659.2 cpu_us/req=3.119 load=7.21 MHz=5304 intf=0.045 vcsw/1k=0.2
+  rep 4 epoll-imp              cores=1 get_p16          rps=3,430,243.2 cpu_us/req=0.292 load=7.19 MHz=5400 intf=0.017 vcsw/1k=0.0
+  rep 4 epoll-imp              cores=1 set_p16          rps=3,261,744.0 cpu_us/req=0.302 load=7.01 MHz=5312 intf=0.014 vcsw/1k=0.0
+  rep 4 epoll-main             cores=1 get_p1           rps=299,036.6 cpu_us/req=3.291 load=7.23 MHz=5325 intf=0.141 vcsw/1k=0.0 REJECTED
+  rep 4 epoll-main             cores=1 get_p1           rps=327,795.0 cpu_us/req=3.053 load=7.29 MHz=5403 intf=0.005 vcsw/1k=0.0
+  rep 4 epoll-main             cores=1 get_p16          rps=3,533,209.6 cpu_us/req=0.280 load=7.11 MHz=5412 intf=0.002 vcsw/1k=0.0
+  rep 4 epoll-main             cores=1 set_p16          rps=3,464,790.4 cpu_us/req=0.288 load=6.79 MHz=5399 intf=0.000 vcsw/1k=0.0
+  rep 4 uring-main             cores=2 get_p1           rps=630,502.4 cpu_us/req=3.151 load=6.48 MHz=5356/5356 intf=0.004 vcsw/1k=2.0
+  rep 4 uring-main             cores=2 get_p16          rps=5,063,824.0 cpu_us/req=0.316 load=6.76 MHz=5339/5338 intf=0.038 vcsw/1k=0.8
+  rep 4 uring-main             cores=2 set_p16          rps=5,843,404.8 cpu_us/req=0.325 load=6.94 MHz=5333/5337 intf=0.063 vcsw/1k=0.4
+  rep 4 uring-imp              cores=2 get_p1           rps=616,552.8 cpu_us/req=3.210 load=7.10 MHz=5300/5290 intf=0.020 vcsw/1k=2.0
+  rep 4 uring-imp              cores=2 get_p16          rps=5,264,019.2 cpu_us/req=0.300 load=7.73 MHz=5375/5370 intf=0.013 vcsw/1k=0.8
+  rep 4 uring-imp              cores=2 set_p16          rps=5,843,769.6 cpu_us/req=0.315 load=7.43 MHz=5317/5316 intf=0.011 vcsw/1k=0.4
+  rep 4 epoll-imp              cores=2 get_p1           rps=622,702.6 cpu_us/req=3.168 load=6.97 MHz=5327/5327 intf=0.002 vcsw/1k=2.1
+  rep 4 epoll-imp              cores=2 get_p16          rps=5,016,489.6 cpu_us/req=0.322 load=7.13 MHz=5300/5281 intf=0.046 vcsw/1k=1.0
+  rep 4 epoll-imp              cores=2 set_p16          rps=6,384,524.8 cpu_us/req=0.297 load=8.16 MHz=5317/5316 intf=0.008 vcsw/1k=0.7
+  rep 4 epoll-main             cores=2 get_p1           rps=608,534.2 cpu_us/req=3.268 load=7.82 MHz=5358/5359 intf=0.031 vcsw/1k=2.1
+  rep 4 epoll-main             cores=2 get_p16          rps=5,526,329.6 cpu_us/req=0.295 load=7.91 MHz=5392/5380 intf=0.037 vcsw/1k=1.1
+  rep 4 epoll-main             cores=2 set_p16          rps=5,740,838.4 cpu_us/req=0.317 load=7.44 MHz=5352/5343 intf=0.253 vcsw/1k=0.6
+  rep 5 uring-imp              cores=1 get_p1           rps=344,905.6 cpu_us/req=2.843 load=7.56 MHz=5404 intf=0.004 vcsw/1k=0.0
+  rep 5 uring-imp              cores=1 get_p16          rps=3,539,670.4 cpu_us/req=0.282 load=6.86 MHz=5395 intf=0.003 vcsw/1k=0.0
+  rep 5 uring-imp              cores=1 set_p16          rps=3,341,580.8 cpu_us/req=0.313 load=6.71 MHz=5387 intf=0.049 vcsw/1k=0.0
+  rep 5 epoll-imp              cores=1 get_p1           rps=329,677.4 cpu_us/req=3.041 load=6.81 MHz=5403 intf=0.003 vcsw/1k=0.0
+  rep 5 epoll-imp              cores=1 get_p16          rps=3,436,060.8 cpu_us/req=0.289 load=6.53 MHz=5407 intf=0.004 vcsw/1k=0.0
+  rep 5 epoll-imp              cores=1 set_p16          rps=3,440,931.2 cpu_us/req=0.291 load=6.57 MHz=5395 intf=0.006 vcsw/1k=0.0
+  rep 5 epoll-main             cores=1 get_p1           rps=325,229.2 cpu_us/req=3.076 load=6.44 MHz=5318 intf=0.009 vcsw/1k=0.0
+  rep 5 epoll-main             cores=1 get_p16          rps=3,348,137.6 cpu_us/req=0.295 load=6.33 MHz=5389 intf=0.002 vcsw/1k=0.0
+  rep 5 epoll-main             cores=1 set_p16          rps=3,364,182.4 cpu_us/req=0.295 load=6.12 MHz=5403 intf=0.002 vcsw/1k=0.0
+  rep 5 uring-main             cores=1 get_p1           rps=337,509.2 cpu_us/req=2.933 load=5.95 MHz=5369 intf=0.004 vcsw/1k=0.0
+  rep 5 uring-main             cores=1 get_p16          rps=3,417,804.8 cpu_us/req=0.292 load=6.28 MHz=5363 intf=0.008 vcsw/1k=0.0
+  rep 5 uring-main             cores=1 set_p16          rps=3,065,545.6 cpu_us/req=0.331 load=6.09 MHz=5304 intf=0.006 vcsw/1k=0.0
+  rep 5 uring-imp              cores=2 get_p1           rps=613,973.4 cpu_us/req=3.234 load=6.45 MHz=5300/5282 intf=0.012 vcsw/1k=1.9
+  rep 5 uring-imp              cores=2 get_p16          rps=4,394,675.2 cpu_us/req=0.327 load=7.06 MHz=5330/5330 intf=0.292 vcsw/1k=1.0
+  rep 5 uring-imp              cores=2 set_p16          rps=5,442,489.6 cpu_us/req=0.335 load=6.73 MHz=5297/5296 intf=0.115 vcsw/1k=0.5
+  rep 5 epoll-imp              cores=2 get_p1           rps=624,053.8 cpu_us/req=3.200 load=7.08 MHz=5316/5315 intf=0.015 vcsw/1k=2.2
+  rep 5 epoll-imp              cores=2 get_p16          rps=4,324,713.6 cpu_us/req=0.367 load=7.16 MHz=5251/5238 intf=0.637 vcsw/1k=1.1
+  rep 5 epoll-imp              cores=2 set_p16          rps=6,397,769.6 cpu_us/req=0.306 load=6.90 MHz=5311/5307 intf=0.023 vcsw/1k=0.5
+  rep 5 epoll-main             cores=2 get_p1           rps=593,837.6 cpu_us/req=3.315 load=6.44 MHz=5310/5311 intf=0.122 vcsw/1k=3.5
+  rep 5 epoll-main             cores=2 get_p16          rps=5,803,804.8 cpu_us/req=0.296 load=6.80 MHz=5340/5338 intf=0.014 vcsw/1k=0.8
+  rep 5 epoll-main             cores=2 set_p16          rps=5,006,137.6 cpu_us/req=0.332 load=7.06 MHz=5315/5312 intf=0.427 vcsw/1k=1.0
+  rep 5 uring-main             cores=2 get_p1           rps=632,554.4 cpu_us/req=3.101 load=6.97 MHz=5312/5313 intf=0.031 vcsw/1k=2.1
+  rep 5 uring-main             cores=2 get_p16          rps=5,337,632.0 cpu_us/req=0.325 load=7.29 MHz=5311/5310 intf=0.061 vcsw/1k=0.7
+  rep 5 uring-main             cores=2 set_p16          rps=4,517,228.8 cpu_us/req=0.385 load=7.26 MHz=5284/5266 intf=0.566 vcsw/1k=0.9
+  rep 6 epoll-imp              cores=1 get_p1           rps=304,381.6 cpu_us/req=3.270 load=7.32 MHz=5319 intf=0.195 vcsw/1k=0.0 REJECTED
+  rep 6 epoll-imp              cores=1 get_p1           rps=324,936.6 cpu_us/req=3.079 load=7.13 MHz=5374 intf=0.013 vcsw/1k=0.0
+  rep 6 epoll-imp              cores=1 get_p16          rps=3,379,712.0 cpu_us/req=0.296 load=7.04 MHz=5342 intf=0.008 vcsw/1k=0.0
+  rep 6 epoll-imp              cores=1 set_p16          rps=2,608,864.0 cpu_us/req=0.366 load=7.19 MHz=5306 intf=0.206 vcsw/1k=0.0 REJECTED
+  rep 6 epoll-imp              cores=1 set_p16          rps=3,027,990.4 cpu_us/req=0.327 load=7.50 MHz=5381 intf=0.193 vcsw/1k=0.0 REJECTED
+  rep 6 epoll-imp              cores=1 set_p16          rps=2,923,884.8 cpu_us/req=0.336 load=7.27 MHz=5318 intf=0.182 vcsw/1k=0.0 REJECTED
+  rep 6 epoll-imp              cores=1 set_p16          rps=3,155,209.6 cpu_us/req=0.312 load=7.41 MHz=5326 intf=0.134 vcsw/1k=0.0 REJECTED
+  rep 6 epoll-main             cores=1 get_p1           rps=322,065.6 cpu_us/req=3.111 load=7.13 MHz=5321 intf=0.000 vcsw/1k=0.0
+  rep 6 epoll-main             cores=1 get_p16          rps=3,340,665.6 cpu_us/req=0.298 load=7.04 MHz=5397 intf=0.004 vcsw/1k=0.0
+  rep 6 epoll-main             cores=1 set_p16          rps=2,904,240.0 cpu_us/req=0.336 load=7.02 MHz=5336 intf=0.040 vcsw/1k=0.0
+  rep 6 uring-main             cores=1 get_p1           rps=339,652.2 cpu_us/req=2.933 load=7.34 MHz=5316 intf=0.003 vcsw/1k=0.0
+  rep 6 uring-main             cores=1 get_p16          rps=3,375,238.4 cpu_us/req=0.291 load=7.23 MHz=5346 intf=0.005 vcsw/1k=0.0
+  rep 6 uring-main             cores=1 set_p16          rps=3,016,630.4 cpu_us/req=0.328 load=7.21 MHz=5321 intf=0.110 vcsw/1k=0.0 REJECTED
+  rep 6 uring-main             cores=1 set_p16          rps=2,836,012.8 cpu_us/req=0.349 load=6.88 MHz=5334 intf=0.308 vcsw/1k=0.0 REJECTED
+  rep 6 uring-main             cores=1 set_p16          rps=2,770,796.8 cpu_us/req=0.374 load=6.72 MHz=5300 intf=0.172 vcsw/1k=0.0 REJECTED
+  rep 6 uring-main             cores=1 set_p16          rps=2,966,902.4 cpu_us/req=0.337 load=7.71 MHz=5323 intf=0.016 vcsw/1k=0.0
+  rep 6 uring-imp              cores=1 get_p1           rps=339,857.2 cpu_us/req=2.928 load=7.53 MHz=5361 intf=0.005 vcsw/1k=0.0
+  rep 6 uring-imp              cores=1 get_p16          rps=3,515,974.4 cpu_us/req=0.288 load=7.33 MHz=5323 intf=0.013 vcsw/1k=0.0
+  rep 6 uring-imp              cores=1 set_p16          rps=3,142,035.2 cpu_us/req=0.321 load=7.38 MHz=5312 intf=0.002 vcsw/1k=0.0
+  rep 6 epoll-imp              cores=2 get_p1           rps=611,106.0 cpu_us/req=3.212 load=7.49 MHz=5300/5300 intf=0.094 vcsw/1k=2.1
+  rep 6 epoll-imp              cores=2 get_p16          rps=5,703,132.8 cpu_us/req=0.320 load=7.61 MHz=5300/5293 intf=0.239 vcsw/1k=0.8
+  rep 6 epoll-imp              cores=2 set_p16          rps=5,186,976.0 cpu_us/req=0.337 load=7.32 MHz=5307/5307 intf=0.483 vcsw/1k=0.9
+  rep 6 epoll-main             cores=2 get_p1           rps=568,380.6 cpu_us/req=3.460 load=7.46 MHz=5311/5312 intf=0.572 vcsw/1k=4.9
+  rep 6 epoll-main             cores=2 get_p16          rps=4,138,121.6 cpu_us/req=0.351 load=7.92 MHz=5304/5309 intf=0.819 vcsw/1k=1.2
+  rep 6 epoll-main             cores=2 set_p16          rps=4,192,841.6 cpu_us/req=0.378 load=7.68 MHz=5303/5300 intf=0.725 vcsw/1k=1.2
+  rep 6 uring-main             cores=2 get_p1           rps=622,614.2 cpu_us/req=3.199 load=7.31 MHz=5304/5306 intf=0.015 vcsw/1k=1.9
+  rep 6 uring-main             cores=2 get_p16          rps=5,604,499.2 cpu_us/req=0.314 load=7.57 MHz=5316/5314 intf=0.002 vcsw/1k=0.6
+  rep 6 uring-main             cores=2 set_p16          rps=5,872,723.2 cpu_us/req=0.330 load=7.68 MHz=5313/5312 intf=0.000 vcsw/1k=0.3
+  rep 6 uring-imp              cores=2 get_p1           rps=630,199.0 cpu_us/req=3.149 load=7.39 MHz=5300/5300 intf=0.007 vcsw/1k=2.1
+  rep 6 uring-imp              cores=2 get_p16          rps=4,870,592.0 cpu_us/req=0.325 load=7.52 MHz=5321/5315 intf=0.255 vcsw/1k=0.8
+  rep 6 uring-imp              cores=2 set_p16          rps=4,605,712.0 cpu_us/req=0.393 load=7.58 MHz=5288/5294 intf=0.562 vcsw/1k=0.9

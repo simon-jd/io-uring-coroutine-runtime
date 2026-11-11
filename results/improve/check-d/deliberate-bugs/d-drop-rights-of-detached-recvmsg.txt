@@ -1,0 +1,23 @@
+mutation: d-drop-rights-of-detached-recvmsg
+what: Do not take ownership of descriptors received by a recvmsg whose coroutine was destroyed.
+test: ipc_tests detached_receive_closes_received_descriptor
+expected: assertion 'received descriptor closed by the slot' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -483,7 +483,7 @@
+         // until the notification CQE.
+         ++s.pending;
+     }
+-    if (s.kind == op_kind::recvmsg) capture_rights(s);
++    if (s.kind == op_kind::recvmsg && !s.detached) capture_rights(s);
+     unregister_source(s, ref);
+     ++stats_.ops_completed;
+     complete(s, ref);
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL detached_receive_closes_received_descriptor: assertion 'received descriptor closed by the slot' failed: fd_count() == baseline at <work>/d-drop-rights-of-detached-recvmsg/src/tests/ipc_tests.cpp:265
+
+result: CAUGHT

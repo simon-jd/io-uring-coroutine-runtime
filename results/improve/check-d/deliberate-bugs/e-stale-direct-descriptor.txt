@@ -1,0 +1,23 @@
+mutation: e-stale-direct-descriptor
+what: Submit an operation through a direct-descriptor reference whose direct_fd was closed, without checking its generation.
+test: reactor_tests stale_direct_descriptor_is_refused
+expected: assertion 'stale direct descriptor does not reach the new connection' failed
+
+--- include/rol/reactor.hpp
++++ include/rol/reactor.hpp (mutated)
+@@ -754,7 +754,7 @@
+ detail::slot_ref reactor::start(std::coroutine_handle<> h, const op_options& o,
+                                 detail::op_kind kind, Prep& prep, file_ref file) {
+     check_thread();
+-    const bool stale = file.fixed && !direct_live(file);
++    const bool stale = false;
+     const bool short_circuit = closing_ || (o.cancel && o.cancel->requested()) || stale;
+     const bool linked = o.timeout.count() > 0;
+     // Reserve everything that can fail before any resource moves into the slot.
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL stale_direct_descriptor_is_refused: assertion 'stale direct descriptor does not reach the new connection' failed: s.res == -EBADF && got < 0 at <work>/e-stale-direct-descriptor/src/tests/reactor_tests.cpp:549
+
+result: CAUGHT

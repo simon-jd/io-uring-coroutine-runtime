@@ -1,0 +1,13 @@
+2026-11-10 17:15:08 PST driver done seen; session 3 (4 cores) not before 18:20:08
+2026-11-10 18:20:08 PST marker taken: rl-check-d 2026-11-10T18:20:08-08:00 2026-11-10T18:50:08-08:00
+2026-11-10 18:21:08 PST === s3-cores4 start, load 1.82 2.11 2.41
+2026-11-10 18:27:14 PST === s3-cores4 rc=0, load 9.04 7.04 4.63
+      rep 6 epoll-main             cores=4 get_p16          rps=8,421,836.8 cpu_us/req=0.349 load=8.42 MHz=5214/5214/5213/5219 intf=0.139 vcsw/1k=4.0
+      rep 6 epoll-main             cores=4 set_p16          rps=8,307,635.2 cpu_us/req=0.386 load=8.51 MHz=5203/5202/5204/5203 intf=0.339 vcsw/1k=3.1
+      rep 6 uring-main             cores=4 get_p16          rps=8,914,352.0 cpu_us/req=0.378 load=8.31 MHz=5245/5242/5238/5239 intf=0.108 vcsw/1k=3.2
+      rep 6 uring-main             cores=4 set_p16          rps=9,432,998.4 cpu_us/req=0.397 load=8.37 MHz=5262/5275/5275/5264 intf=0.070 vcsw/1k=2.4
+      rep 6 uring-imp              cores=4 get_p16          rps=8,848,214.4 cpu_us/req=0.357 load=8.77 MHz=5221/5216/5216/5219 intf=0.117 vcsw/1k=3.5
+      rep 6 uring-imp              cores=4 set_p16          rps=9,663,760.0 cpu_us/req=0.366 load=8.78 MHz=5270/5258/5255/5250 intf=0.023 vcsw/1k=2.9
+2026-11-10 18:27:15 PST marker released
+2026-11-10 18:27:15 PST session 3 (4 cores only) done
+2026-11-10 18:27:15 PST after done

@@ -1,0 +1,11 @@
+==4020509== Callgrind, a call-graph generating cache profiler
+==4020509== Copyright (C) 2002-2017, and GNU GPL'd, by Josef Weidendorfer et al.
+==4020509== Using Valgrind-3.26.0 and LibVEX; rerun with -h for copyright info
+==4020509== Command: /home/postedism/.cache/rl-check-d/improve/build-prof/kv_server --io epoll --cores 2 --cpus 10,12 --port 18726
+==4020509== 
+==4020509== For interactive control, run 'callgrind_control -h'.
+==4020509== 
+==4020509== Events    : Ir
+==4020509== Collected : 2041599757
+==4020509== 
+==4020509== I   refs:      2,041,599,757

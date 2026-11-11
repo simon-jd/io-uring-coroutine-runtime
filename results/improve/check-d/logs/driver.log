@@ -1,0 +1,219 @@
+2026-11-10 15:14:05 PST improve HEAD 10c00f5 Point the performance round's check rows at git history
+2026-11-10 15:14:05 PST main HEAD a48c76c Add check C, an independent rerun of the final comparison from fresh clones
+0310a76b27e1854f09f696b30de57dc490b5e1b17faed1eb8c9a2891f956e52b  asio-1-36-0.tar.gz
+5f80964108981c6ad979c735f0b4877d5f49914c2a062f8e88282f26bf61de0c  liburing-2.14.tar.gz
+184e34ed2d9b51879b682b5b15205e2b9d677c60280e3cb453be8f520d04e293  valkey-9.1.3.tar.gz
+57457598 asio-1-36-0.tar.gz
+57457597 liburing-2.14.tar.gz
+57457599 valkey-9.1.3.tar.gz
+2026-11-10 15:14:05 PST waiting for quiet window: kernel-lab 2026-11-10T15:11:41 2026-11-10T15:31:41
+2026-11-10 15:15:05 PST === imp-deps start, load 2.82 4.51 3.70
+2026-11-10 15:15:06 PST === imp-deps rc=0, load 2.82 4.51 3.70
+    /home/postedism/.cache/rl-check-d/improve/.cache/downloads/liburing-2.14.tar.gz: OK
+    ar: creating liburing.a
+    liburing 2.14 built in /home/postedism/.cache/rl-check-d/improve/.cache/liburing-2.14/install
+    /home/postedism/.cache/rl-check-d/improve/.cache/downloads/asio-1-36-0.tar.gz: OK
+    asio 1-36-0 headers in /home/postedism/.cache/rl-check-d/improve/.cache/asio-1-36-0/include
+2026-11-10 15:15:06 PST === imp-debug start, load 2.82 4.51 3.70
+2026-11-10 15:15:28 PST === imp-debug rc=0, load 3.18 4.51 3.71
+          Start 10: server_uring_doorbell
+    10/10 Test #10: server_uring_doorbell ............   Passed    3.41 sec
+    
+    100% tests passed, 0 tests failed out of 10
+    
+    Total Test time (real) =  14.49 sec
+2026-11-10 15:15:28 PST === imp-release start, load 3.18 4.51 3.71
+2026-11-10 15:15:38 PST === imp-release rc=0, load 4.93 4.83 3.83
+    [29/34] Building CXX object CMakeFiles/reactor_tests.dir/tests/reactor_tests.cpp.o
+    [30/34] Linking CXX executable reactor_tests
+    [31/34] Building CXX object CMakeFiles/server_tests.dir/tests/server_tests.cpp.o
+    [32/34] Linking CXX executable server_tests
+    [33/34] Building CXX object CMakeFiles/runtime_tests.dir/tests/runtime_tests.cpp.o
+    [34/34] Linking CXX executable runtime_tests
+2026-11-10 15:15:38 PST === main-deps start, load 4.93 4.83 3.83
+2026-11-10 15:15:39 PST === main-deps rc=0, load 4.77 4.80 3.83
+    /home/postedism/.cache/rl-check-d/main/.cache/downloads/liburing-2.14.tar.gz: OK
+    ar: creating liburing.a
+    liburing 2.14 built in /home/postedism/.cache/rl-check-d/main/.cache/liburing-2.14/install
+    /home/postedism/.cache/rl-check-d/main/.cache/downloads/asio-1-36-0.tar.gz: OK
+    asio 1-36-0 headers in /home/postedism/.cache/rl-check-d/main/.cache/asio-1-36-0/include
+2026-11-10 15:15:39 PST === main-release start, load 4.77 4.80 3.83
+2026-11-10 15:15:48 PST === main-release rc=0, load 5.19 4.89 3.86
+    [29/34] Building CXX object CMakeFiles/reactor_tests.dir/tests/reactor_tests.cpp.o
+    [30/34] Linking CXX executable reactor_tests
+    [31/34] Building CXX object CMakeFiles/server_tests.dir/tests/server_tests.cpp.o
+    [32/34] Linking CXX executable server_tests
+    [33/34] Building CXX object CMakeFiles/runtime_tests.dir/tests/runtime_tests.cpp.o
+    [34/34] Linking CXX executable runtime_tests
+2026-11-10 15:15:48 PST improve: tarballs not replaced (no download)
+2026-11-10 15:15:48 PST main: tarballs not replaced (no download)
+2026-11-10 15:15:48 PST prep done; git status improve: 0 main: 0
+2026-11-10 15:15:48 PST marker taken: rl-check-d 2026-11-10T15:15:48-08:00 2026-11-10T16:30:48-08:00
+2026-11-10 15:16:48 PST === s1-cores12 start, load 3.68 4.44 3.76
+2026-11-10 15:36:32 PST === s1-cores12 rc=0, load 7.45 7.19 6.27
+      rep 6 uring-main             cores=2 get_p1           rps=622,614.2 cpu_us/req=3.199 load=7.31 MHz=5304/5306 intf=0.015 vcsw/1k=1.9
+      rep 6 uring-main             cores=2 get_p16          rps=5,604,499.2 cpu_us/req=0.314 load=7.57 MHz=5316/5314 intf=0.002 vcsw/1k=0.6
+      rep 6 uring-main             cores=2 set_p16          rps=5,872,723.2 cpu_us/req=0.330 load=7.68 MHz=5313/5312 intf=0.000 vcsw/1k=0.3
+      rep 6 uring-imp              cores=2 get_p1           rps=630,199.0 cpu_us/req=3.149 load=7.39 MHz=5300/5300 intf=0.007 vcsw/1k=2.1
+      rep 6 uring-imp              cores=2 get_p16          rps=4,870,592.0 cpu_us/req=0.325 load=7.52 MHz=5321/5315 intf=0.255 vcsw/1k=0.8
+      rep 6 uring-imp              cores=2 set_p16          rps=4,605,712.0 cpu_us/req=0.393 load=7.58 MHz=5288/5294 intf=0.562 vcsw/1k=0.9
+2026-11-10 15:36:32 PST === s1-cores4 start, load 7.45 7.19 6.27
+2026-11-10 15:42:36 PST === s1-cores4 rc=0, load 9.69 9.46 7.68
+      rep 6 epoll-main             cores=4 get_p16          rps=8,891,840.0 cpu_us/req=0.325 load=10.31 MHz=5298/5298/5298/5296 intf=0.068 vcsw/1k=4.0
+      rep 6 epoll-main             cores=4 set_p16          rps=8,478,464.0 cpu_us/req=0.375 load=9.96 MHz=5203/5207/5202/5208 intf=0.347 vcsw/1k=3.1
+      rep 6 uring-main             cores=4 get_p16          rps=8,179,011.2 cpu_us/req=0.377 load=10.05 MHz=5280/5284/5282/5287 intf=0.311 vcsw/1k=3.5
+      rep 6 uring-main             cores=4 set_p16          rps=6,883,107.2 cpu_us/req=0.448 load=9.97 MHz=5247/5243/5229/5232 intf=0.867 vcsw/1k=3.7
+      rep 6 uring-imp              cores=4 get_p16          rps=7,822,054.4 cpu_us/req=0.378 load=9.73 MHz=5234/5249/5243/5255 intf=0.479 vcsw/1k=3.8
+      rep 6 uring-imp              cores=4 set_p16          rps=8,641,740.8 cpu_us/req=0.381 load=9.49 MHz=5245/5274/5255/5246 intf=0.414 vcsw/1k=3.2
+2026-11-10 15:42:36 PST marker released
+2026-11-10 15:42:36 PST session 1 done
+2026-11-10 15:42:36 PST session 1 ended
+2026-11-10 15:42:36 PST === matrix start, load 9.69 9.46 7.68
+2026-11-10 15:46:41 PST === matrix rc=0, load 15.61 12.64 9.34
+    gcc none rc=0 100% tests passed, 0 tests failed out of 10
+    gcc address rc=0 100% tests passed, 0 tests failed out of 10
+    gcc thread rc=0 100% tests passed, 0 tests failed out of 10
+    clang none rc=0 100% tests passed, 0 tests failed out of 10
+    clang address rc=0 100% tests passed, 0 tests failed out of 10
+    clang thread rc=0 100% tests passed, 0 tests failed out of 10
+2026-11-10 15:46:41 PST === bugs start, load 15.61 12.64 9.34
+2026-11-10 15:48:46 PST === bugs rc=0, load 13.84 13.34 10.05
+    j-sleep-without-recheck: CAUGHT by runtime_tests sleeping_core_is_woken_for_every_message/doorbell
+    k-erase-without-backward-shift: CAUGHT by kv_tests shard_matches_reference_map
+    l-number-fast-path-accepts-leading-zero: CAUGHT by kv_tests parser_matches_reference
+    m-call-all-resumes-early: CAUGHT by runtime_tests call_all_returns_results_in_call_order
+    n-call-node-released-at-detach: CAUGHT by runtime_tests destroyed_call_all_leaves_slots_to_replies
+    o-batch-carries-wrong-hash: CAUGHT by kv_tests routes_keys_to_their_cores
+2026-11-10 15:48:46 PST === restored start, load 13.84 13.34 10.05
+2026-11-10 15:49:02 PST === restored rc=0, load 15.97 13.85 10.26
+          Start 10: server_uring_doorbell
+    10/10 Test #10: server_uring_doorbell ............   Passed    3.88 sec
+    
+    100% tests passed, 0 tests failed out of 10
+    
+    Total Test time (real) =  15.97 sec
+2026-11-10 15:49:02 PST === fuzz start, load 15.97 13.85 10.26
+2026-11-10 15:59:11 PST === fuzz rc=0, load 4.07 6.60 8.49
+    ipc_packet_fuzz: exit code 0; log in /home/postedism/.cache/rl-check-d/out/fuzz/ipc_packet_fuzz.log
+    resp_parser_fuzz: exit code 0; log in /home/postedism/.cache/rl-check-d/out/fuzz/resp_parser_fuzz.log
+2026-11-10 15:59:11 PST waiting for quiet window: kl-check-d 2026-11-10T15:54:13-08:00 2026-11-10T16:44:13-08:00
+2026-11-10 16:19:11 PST === imp-prof start, load 3.90 3.63 4.75
+2026-11-10 16:19:25 PST === imp-prof rc=0, load 6.29 4.19 4.92
+    [29/34] Building CXX object CMakeFiles/server_tests.dir/tests/server_tests.cpp.o
+    [30/34] Linking CXX executable server_tests
+    [31/34] Building CXX object CMakeFiles/runtime_tests.dir/tests/runtime_tests.cpp.o
+    [32/34] Linking CXX executable runtime_tests
+    [33/34] Building CXX object CMakeFiles/reactor_tests.dir/tests/reactor_tests.cpp.o
+    [34/34] Linking CXX executable reactor_tests
+2026-11-10 16:19:25 PST === main-prof start, load 6.29 4.19 4.92
+2026-11-10 16:19:39 PST === main-prof rc=0, load 7.21 4.47 5.00
+    [29/34] Building CXX object CMakeFiles/reactor_tests.dir/tests/reactor_tests.cpp.o
+    [30/34] Linking CXX executable reactor_tests
+    [31/34] Building CXX object CMakeFiles/runtime_tests.dir/tests/runtime_tests.cpp.o
+    [32/34] Linking CXX executable runtime_tests
+    [33/34] Building CXX object CMakeFiles/server_tests.dir/tests/server_tests.cpp.o
+    [34/34] Linking CXX executable server_tests
+2026-11-10 16:19:39 PST === cg-main-uring-1c start, load 7.21 4.47 5.00
+2026-11-10 16:19:49 PST === cg-main-uring-1c rc=0, load 6.41 4.38 4.97
+    port 18432
+    sending command zero to pid 4012952
+    sending command dump to pid 4012952
+    {"mode":"closed","pipeline":16,"rps":205442.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":1734016,"errors":0,"batches":102721,"rtt_p50_us":3511.8,"rtt_p99_us":7353.9,"rtt_p999_us":8200.9,"client_cpu_s":3.733}
+2026-11-10 16:19:49 PST === cg-main-uring-2c start, load 6.41 4.38 4.97
+2026-11-10 16:19:59 PST === cg-main-uring-2c rc=0, load 5.88 4.34 4.95
+    port 18809
+    sending command zero to pid 4013513
+    sending command dump to pid 4013513
+    {"mode":"closed","pipeline":16,"rps":264878.0,"duration_s":8.0,"conns":100,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2239680,"errors":0,"batches":132439,"rtt_p50_us":5539.6,"rtt_p99_us":10431.6,"rtt_p999_us":12718.8,"client_cpu_s":3.872}
+2026-11-10 16:19:59 PST === cg-main-uring-4c start, load 5.88 4.34 4.95
+2026-11-10 16:20:09 PST === cg-main-uring-4c rc=0, load 5.44 4.29 4.92
+    port 18849
+    sending command zero to pid 4014378
+    sending command dump to pid 4014378
+    {"mode":"closed","pipeline":16,"rps":222182.0,"duration_s":8.0,"conns":200,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":1894960,"errors":0,"batches":111091,"rtt_p50_us":13845.6,"rtt_p99_us":25412.0,"rtt_p999_us":30695.7,"client_cpu_s":3.747}
+2026-11-10 16:20:09 PST === cg-main-epoll-1c start, load 5.44 4.29 4.92
+2026-11-10 16:20:20 PST === cg-main-epoll-1c rc=0, load 5.13 4.28 4.91
+    port 18159
+    sending command zero to pid 4014962
+    sending command dump to pid 4014962
+    {"mode":"closed","pipeline":16,"rps":343594.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2916112,"errors":0,"batches":171797,"rtt_p50_us":2267.6,"rtt_p99_us":4516.1,"rtt_p999_us":5001.8,"client_cpu_s":4.113}
+2026-11-10 16:20:20 PST === cg-main-epoll-2c start, load 5.13 4.28 4.91
+2026-11-10 16:20:30 PST === cg-main-epoll-2c rc=0, load 4.95 4.27 4.90
+    port 18432
+    sending command zero to pid 4015758
+    sending command dump to pid 4015758
+    {"mode":"closed","pipeline":16,"rps":283178.0,"duration_s":8.0,"conns":100,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2417664,"errors":0,"batches":141589,"rtt_p50_us":5294.1,"rtt_p99_us":9414.5,"rtt_p999_us":11162.2,"client_cpu_s":3.907}
+2026-11-10 16:20:30 PST === cg-main-epoll-4c start, load 4.95 4.27 4.90
+2026-11-10 16:20:40 PST === cg-main-epoll-4c rc=0, load 4.50 4.20 4.87
+    port 18240
+    sending command zero to pid 4016229
+    sending command dump to pid 4016229
+    {"mode":"closed","pipeline":16,"rps":271002.0,"duration_s":8.0,"conns":200,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2305072,"errors":0,"batches":135501,"rtt_p50_us":11426.7,"rtt_p99_us":19056.6,"rtt_p999_us":21809.3,"client_cpu_s":3.849}
+2026-11-10 16:20:40 PST === cg-imp-uring-1c start, load 4.50 4.20 4.87
+2026-11-10 16:20:50 PST === cg-imp-uring-1c rc=0, load 4.11 4.12 4.84
+    port 18898
+    sending command zero to pid 4016679
+    sending command dump to pid 4016679
+    {"mode":"closed","pipeline":16,"rps":356652.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":3035648,"errors":0,"batches":178326,"rtt_p50_us":1828.5,"rtt_p99_us":3758.0,"rtt_p999_us":4912.8,"client_cpu_s":4.885}
+2026-11-10 16:20:50 PST === cg-imp-uring-2c start, load 4.11 4.12 4.84
+2026-11-10 16:21:01 PST === cg-imp-uring-2c rc=0, load 3.96 4.09 4.82
+    port 18171
+    sending command zero to pid 4017158
+    sending command dump to pid 4017158
+    {"mode":"closed","pipeline":16,"rps":314548.0,"duration_s":8.0,"conns":100,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2656256,"errors":0,"batches":157274,"rtt_p50_us":4838.6,"rtt_p99_us":7605.2,"rtt_p999_us":9234.9,"client_cpu_s":4.280}
+2026-11-10 16:21:01 PST === cg-imp-uring-4c start, load 3.96 4.09 4.82
+2026-11-10 16:21:11 PST === cg-imp-uring-4c rc=0, load 4.41 4.18 4.84
+    port 18742
+    sending command zero to pid 4017678
+    sending command dump to pid 4017678
+    {"mode":"closed","pipeline":16,"rps":268304.0,"duration_s":8.0,"conns":200,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2283056,"errors":0,"batches":134152,"rtt_p50_us":11510.5,"rtt_p99_us":21532.6,"rtt_p999_us":32380.0,"client_cpu_s":3.959}
+2026-11-10 16:21:11 PST === cg-imp-epoll-1c start, load 4.41 4.18 4.84
+2026-11-10 16:21:21 PST === cg-imp-epoll-1c rc=0, load 4.41 4.19 4.84
+    port 18383
+    sending command zero to pid 4019259
+    sending command dump to pid 4019259
+    {"mode":"closed","pipeline":16,"rps":342760.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2915808,"errors":0,"batches":171380,"rtt_p50_us":2192.6,"rtt_p99_us":4949.5,"rtt_p999_us":12995.8,"client_cpu_s":4.233}
+2026-11-10 16:21:21 PST === cg-imp-epoll-2c start, load 4.41 4.19 4.84
+2026-11-10 16:21:31 PST === cg-imp-epoll-2c rc=0, load 4.27 4.17 4.82
+    port 18726
+    sending command zero to pid 4020509
+    sending command dump to pid 4020509
+    {"mode":"closed","pipeline":16,"rps":235166.0,"duration_s":8.0,"conns":100,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2026992,"errors":0,"batches":117583,"rtt_p50_us":7184.8,"rtt_p99_us":9781.5,"rtt_p999_us":19803.3,"client_cpu_s":3.709}
+2026-11-10 16:21:32 PST === cg-imp-epoll-4c start, load 4.27 4.17 4.82
+2026-11-10 16:21:42 PST === cg-imp-epoll-4c rc=0, load 3.92 4.10 4.79
+    port 18529
+    sending command zero to pid 4021391
+    sending command dump to pid 4021391
+    {"mode":"closed","pipeline":16,"rps":258156.0,"duration_s":8.0,"conns":200,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2189408,"errors":0,"batches":129078,"rtt_p50_us":11389.1,"rtt_p99_us":22465.3,"rtt_p999_us":74740.2,"client_cpu_s":3.767}
+2026-11-10 16:21:43 PST === valkey start, load 3.92 4.10 4.79
+2026-11-10 16:22:24 PST === valkey rc=0, load 8.75 5.24 5.14
+    /home/postedism/.cache/rl-check-d/improve/.cache/downloads/valkey-9.1.3.tar.gz: OK
+    valkey 9.1.3 built in /home/postedism/.cache/rl-check-d/improve/.cache/valkey-9.1.3/bin
+2026-11-10 16:22:24 PST === smoke start, load 8.75 5.24 5.14
+2026-11-10 16:22:24 PST === smoke rc=0, load 8.75 5.24 5.14
+    port 16379
+    client: .cache/valkey-9.1.3/bin/valkey-cli
+    OK
+    v
+    kv_server exit status after SIGINT: 0
+2026-11-10 16:22:24 PST checks done; git status improve: []
+2026-11-10 16:48:24 PST marker taken: rl-check-d 2026-11-10T16:48:24-08:00 2026-11-10T18:03:24-08:00
+2026-11-10 16:49:24 PST === s2-cores12 start, load 1.87 2.46 3.15
+2026-11-10 17:08:36 PST === s2-cores12 rc=0, load 5.59 6.31 5.68
+      rep 6 uring-main             cores=2 get_p1           rps=625,088.4 cpu_us/req=3.170 load=5.96 MHz=5310/5310 intf=0.007 vcsw/1k=2.0
+      rep 6 uring-main             cores=2 get_p16          rps=5,656,499.2 cpu_us/req=0.319 load=5.97 MHz=5307/5307 intf=0.006 vcsw/1k=0.6
+      rep 6 uring-main             cores=2 set_p16          rps=5,492,089.6 cpu_us/req=0.362 load=5.81 MHz=5300/5300 intf=0.135 vcsw/1k=0.5
+      rep 6 uring-imp              cores=2 get_p1           rps=613,547.6 cpu_us/req=3.276 load=5.68 MHz=5277/5277 intf=0.047 vcsw/1k=2.4
+      rep 6 uring-imp              cores=2 get_p16          rps=5,851,814.4 cpu_us/req=0.305 load=6.19 MHz=5301/5302 intf=0.006 vcsw/1k=0.6
+      rep 6 uring-imp              cores=2 set_p16          rps=5,776,707.2 cpu_us/req=0.327 load=5.77 MHz=5311/5311 intf=0.022 vcsw/1k=0.5
+2026-11-10 17:08:36 PST === s2-cores4 start, load 5.59 6.31 5.68
+2026-11-10 17:14:42 PST === s2-cores4 rc=0, load 9.26 9.28 7.30
+      rep 6 epoll-main             cores=4 get_p16          rps=8,875,404.8 cpu_us/req=0.337 load=10.45 MHz=5232/5228/5232/5234 intf=0.214 vcsw/1k=4.0
+      rep 6 epoll-main             cores=4 set_p16          rps=9,194,832.0 cpu_us/req=0.342 load=9.85 MHz=5273/5274/5275/5276 intf=0.026 vcsw/1k=3.3
+      rep 6 uring-main             cores=4 get_p16          rps=8,825,494.4 cpu_us/req=0.373 load=9.41 MHz=5275/5274/5270/5270 intf=0.087 vcsw/1k=3.2
+      rep 6 uring-main             cores=4 set_p16          rps=9,491,916.8 cpu_us/req=0.386 load=8.98 MHz=5245/5248/5248/5253 intf=0.054 vcsw/1k=2.4
+      rep 6 uring-imp              cores=4 get_p16          rps=9,164,684.8 cpu_us/req=0.344 load=8.98 MHz=5288/5273/5271/5271 intf=0.070 vcsw/1k=3.5
+      rep 6 uring-imp              cores=4 set_p16          rps=9,812,876.8 cpu_us/req=0.366 load=9.19 MHz=5250/5253/5250/5249 intf=0.038 vcsw/1k=2.7
+2026-11-10 17:14:42 PST marker released
+2026-11-10 17:14:42 PST session 2 done
+2026-11-10 17:14:42 PST driver done

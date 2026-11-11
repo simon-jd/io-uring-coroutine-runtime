@@ -1,0 +1,4 @@
+port 18432
+sending command zero to pid 4012952
+sending command dump to pid 4012952
+{"mode":"closed","pipeline":16,"rps":205442.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":1734016,"errors":0,"batches":102721,"rtt_p50_us":3511.8,"rtt_p99_us":7353.9,"rtt_p999_us":8200.9,"client_cpu_s":3.733}

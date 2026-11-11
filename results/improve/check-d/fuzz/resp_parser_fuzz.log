@@ -1,0 +1,25 @@
+date: 2026-11-10T23:54:10Z
+commit: 10c00f5
+clang: Ubuntu clang version 21.1.8 (6ubuntu1)
+command: resp_parser_fuzz -max_total_time=300 -print_final_stats=1 <corpus>
+
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3385730822
+INFO: Loaded 1 modules   (1097 inline 8-bit counters): 1097 [0x654af5f26ce0, 0x654af5f27129), 
+INFO: Loaded 1 PC tables (1097 PCs): 1097 [0x654af5f27130,0x654af5f2b5c0), 
+INFO:        5 files found in ./.cache/fuzz-corpus-resp
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: seed corpus: files: 5 min: 22b max: 459b total: 643b rss: 32Mb
+#6	INITED cov: 309 ft: 489 corp: 5/643b exec/s: 0 rss: 34Mb
+#10	NEW    cov: 314 ft: 496 corp: 6/673b lim: 459 exec/s: 0 rss: 34Mb L: 30/459 MS: 4 ChangeBinInt-CopyPart-CopyPart-CMP- DE: "Q\000\000\000\000\000\000\000"-
+#11	NEW    cov: 316 ft: 499 corp: 7/761b lim: 459 exec/s: 0 rss: 35Mb L: 88/459 MS: 1 ChangeASCIIInt-
+#13	NEW    cov: 316 ft: 502 corp: 8/794b lim: 459 exec/s: 0 rss: 35Mb L: 33/459 MS: 2 ChangeASCIIInt-CMP- DE: "DEL"-
+#17	NEW    cov: 329 ft: 526 corp: 9/825b lim: 459 exec/s: 0 rss: 35Mb L: 31/459 MS: 4 InsertByte-ChangeASCIIInt-ChangeBinInt-ChangeBit-
+#23908	NEW    cov: 411 ft: 1434 corp: 237/30Kb lim: 459 exec/s: 23908 rss: 304Mb L: 344/459 MS: 3 ChangeBit-CopyPart-CopyPart-
+Done 1732461 runs in 301 second(s)
+stat::number_of_executed_units: 1732461
+stat::average_exec_per_sec:     5755
+stat::new_units_added:          6039
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              528
+exit code: 0

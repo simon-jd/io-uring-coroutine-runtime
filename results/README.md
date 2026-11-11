@@ -34,6 +34,7 @@ c3 (c2 + one hash per key), c4 (c3 + inline receive path).
 | [kv-bench/imp-session-2/](kv-bench/imp-session-2) | the same | the same | the same comparison, 11:13–12:28 |
 | [test-matrix/](test-matrix) | `taskset -c 10-15,24-31 nice scripts/test-matrix.sh` | 660d3d7 (code of c9bf7bb) | 10 suites, 156 cases, GCC and clang, each plain, ASan + UBSan and TSan: 6 of 6 pass |
 | [deliberate-bugs/](deliberate-bugs) | `taskset -c 10-15,24-31 nice python3 scripts/deliberate-bugs.py` | 660d3d7 | 15 contract violations (new: n, a call node destroyed at detach; o, the wrong hash carried to the owner), each caught by its named assertion |
+| [improve/check-d/](improve/check-d) | the README build commands in fresh clones, the test scripts, `scripts/callgrind-profile.sh`, and `scripts/kv-bench.py --suite compare --reps 7` (exact commands in its README) | fresh clones of main a48c76c and improve 10c00f5, built separately | an independent check of the round; 2026-11-10 15:16–18:27 PST |
 | [fuzz/](fuzz) | `scripts/run-fuzz.sh 600` | the c9bf7bb sources (`fuzz/SOURCE.txt`) | IPC validator 512,780,559 executions, RESP parser 4,511,062; no findings |
 
 ### Final comparison: imp-session-1 / imp-session-2
@@ -62,6 +63,42 @@ published `main`:
   siblings (interference median 0.87 of the window; session 2: 0.05; the
   recorded bystander was a process named `auto-app`). At 1 and 2 cores the
   rejection rule repeated 5 runs in session 1 and 13 in session 2.
+
+### Check D: fresh clones, three more quiet windows
+
+`main` and `improve` were cloned fresh and built separately. Every arm used
+`main`'s load generator, and the build-comparison suite ran at 7 repetitions
+with the epoll build of both trees. Session 1 (15:16–15:42 PST) and session 2
+(16:49–17:14) each ran 1, 2 and 4 cores. In session 1's 4-core part,
+another project's job ran on the server CPUs' SMT siblings (interference
+median 1.13), so by the rules written before session 2
+([check-d/RULES.md](improve/check-d/RULES.md)) that part was rerun alone as
+session 3 (18:21–18:27). The commands, all tables and a claim-by-claim list
+are in [improve/check-d/](improve/check-d).
+
+The test matrix passed in all 6 configurations (156 cases), 15 of 15
+deliberate bugs were caught, the restored tree passed, and both fuzz
+targets ran 300 s clean. Callgrind on the fresh builds reproduced the round's
+instruction counts within 2 per request. Server CPU per request, paired
+(median; repetitions below 1 of 7), with 1 and 2 cores from sessions 1 / 2
+and 4 cores from sessions 3 / 2:
+
+| | io_uring / epoll, GET | io_uring / epoll, SET | io_uring / `main`, GET | io_uring / `main`, SET |
+| --- | ---: | ---: | ---: | ---: |
+| 1 core, depth 1 | 0.951 (7) / 0.967 (5) | | 0.983 (5) / 0.990 (4) | |
+| 1 core, depth 16 | 0.973 (6) / 1.025 (2) | 1.035 (1 of 6) / 1.075 (1) | 0.991 (4) / 0.998 (4) | 0.941 (7) / 0.974 (5) |
+| 2 cores, depth 16 | 0.988 (4) / 1.001 (3) | 1.084 (1) / 1.108 (0) | 1.005 (3) / 0.940 (5) | 0.985 (4) / 1.011 (3) |
+| 4 cores, depth 16 | 1.053 (2) / 1.096 (0) | 1.065 (3) / 1.106 (1) | 0.943 (7) / 0.950 (6) | 0.885 (7) / 0.963 (7) |
+
+It confirms the 1-core depth-1 result, the losses to epoll for SET at
+1 and 2 cores and at 4 cores (5–11% here), and the gain over `main` at 4 cores
+(4–12% here, 6–7 of 7). It does not confirm the 2-core GET loss to epoll
+(0.99 and 1.00). Two losses were missing from the text: GET throughput at 2
+cores against `main`, which was lower in three of the four sessions (0.977,
+0.926, 0.869; 1.017 in check D's session 2), and SET throughput against
+epoll at depth 16, which was lower in all four (1 core 3–7%, 2 cores 9–13%).
+Window C's c2 result was missing too: against `main` at 4 cores it was 0.990
+and 0.972 (5 of 7), with GET throughput 1.005 (4 of 7 higher).
 
 
 ## Performance round (2026-11-08 and 11-09)

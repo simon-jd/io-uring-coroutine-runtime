@@ -1,0 +1,4 @@
+port 18159
+sending command zero to pid 4014962
+sending command dump to pid 4014962
+{"mode":"closed","pipeline":16,"rps":343594.0,"duration_s":8.0,"conns":50,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2916112,"errors":0,"batches":171797,"rtt_p50_us":2267.6,"rtt_p99_us":4516.1,"rtt_p999_us":5001.8,"client_cpu_s":4.113}

@@ -1,0 +1,4 @@
+port 18742
+sending command zero to pid 4017678
+sending command dump to pid 4017678
+{"mode":"closed","pipeline":16,"rps":268304.0,"duration_s":8.0,"conns":200,"threads":8,"get_ratio":1.00,"keys":100000,"value_size":64,"completed":2283056,"errors":0,"batches":134152,"rtt_p50_us":11510.5,"rtt_p99_us":21532.6,"rtt_p999_us":32380.0,"client_cpu_s":3.959}

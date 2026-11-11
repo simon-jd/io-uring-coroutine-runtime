@@ -1,0 +1,22 @@
+mutation: c-release-on-coroutine-destroy
+what: Release the operation's buffer when the awaiting coroutine is destroyed (detach) instead of at the operation's CQE.
+test: reactor_tests destroyed_coroutine_keeps_fixed_buffer_until_cqe
+expected: assertion 'a new lease holder's bytes are not overwritten by the kernel' failed
+
+--- src/reactor.cpp
++++ src/reactor.cpp (mutated)
+@@ -403,6 +403,7 @@
+     s.waiter = {};
+     s.join = nullptr;
+     s.detached = true;
++    s.lease.reset();
+     ++stats_.detached;
+     unregister_source(s, ref);
+     if (s.pending == 0) {
+
+baseline (unmutated) exit code: 0
+mutated exit code: 1
+mutated output (last lines):
+FAIL destroyed_coroutine_keeps_fixed_buffer_until_cqe: assertion 'a new lease holder's bytes are not overwritten by the kernel' failed: all_bytes(early->data(), 'Z') at <work>/c-release-on-coroutine-destroy/src/tests/reactor_tests.cpp:144
+
+result: CAUGHT
