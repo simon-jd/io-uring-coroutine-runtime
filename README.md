@@ -35,17 +35,17 @@ per key; [design trade-offs](docs/design-tradeoffs.md), Part 4) cut user-space
 instructions per request by 6% at 2 cores and 11% at 4 (callgrind), and CPU
 per request at 4 cores by 3–5% in three decision windows (a 4-core cell at 7
 of 7 in each), 1–4% in sessions 1 and 2 (GET 4 of 7 in session 2) and 4–12% in
-check D; at 1 and 2 cores no CPU difference against `main` held in all four
-sessions. Throughput at 2 cores was below `main`'s: GET by 2–13% in three of
-the four sessions (1.02 times in the fourth), SET by 0.3–7% in all four (4 of
-7 in check D's session 2; **loss**). What is left is user time (4 cores, GET:
-145–168 ns per request against epoll's 121–135; system time the same): per
-read, an operation slot for every send and call, three coroutine resumptions
-and a message node per call, the bookkeeping that makes the ownership contract
-hold. Tried and dropped: an inline receive path that ran fewer instructions
-but needed 4% more CPU. The test suites (156 cases) pass in 6 compiler ×
-sanitizer configurations, 15 of 15 deliberate contract violations fail their
-named assertions, and both fuzz targets run clean.
+check D; at 1 and 2 cores no CPU difference against `main` met the rule in all
+four sessions. Throughput at 2 cores was below `main`'s: GET by 2–13% in three
+of the four sessions (1.02 times in the fourth), SET by 0.3–7% in all four (4
+of 7 in check D's session 2; **loss**). What is left is user time (4 cores,
+GET: 145–168 ns per request against epoll's 121–135; system time the same):
+per read, an operation slot for every send and call, three coroutine
+resumptions and a message node per call, the bookkeeping that makes the
+ownership contract hold. Tried and dropped: an inline receive path that ran
+fewer instructions but needed 4% more CPU. The test suites (156 cases) pass in
+6 compiler × sanitizer configurations, 15 of 15 deliberate contract violations
+fail their named assertions, and both fuzz targets run clean.
 
 Limitations: one shared machine (other jobs' interference is recorded per
 run; session 1's 4-core runs shared the server CPUs' SMT siblings with another

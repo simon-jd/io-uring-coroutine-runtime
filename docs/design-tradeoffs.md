@@ -1007,19 +1007,21 @@ and `imp-session-2`, 07:44–08:58 and 11:13–12:28 PST, the build of c3 agains
 | 4 cores, SET depth 16 | 1.085 (2) / 1.108 (0) | 1.124 (2) / 1.130 (0) | 0.966 (6) / 0.967 (5) |
 
 (medians, repetitions below 1 of 7 in brackets). Within each session the gap
-to epoll at 4 cores is smaller than `main`'s (7–12% against 12–15%; in check
-D 5–11% against 11–18%). The difference to `main` itself was 1–4% at 4 cores
+to epoll at 4 cores is smaller than `main`'s by median (7–12% against 12–15%;
+in check D 5–11% against 11–18%); paired by repetition this is the comparison
+with `main` that follows. The difference to `main` itself was 1–4% at 4 cores
 in both sessions (4–6 of 7; GET at 4 in session 2) and 4–12% in check D (6–7
 of 7). It changed sign between the sessions at 2 cores, and at 1 core GET
-depth 16 was lower in both (0.990 and 0.957, 5 and 6 of 7) but in check D
-only at 4 of 7 (0.991 and 0.998). The decision windows, with fewer arms and
-no open-loop runs between them, resolved the 4-core difference at 3–5%.
-Session 1's 4-core runs shared the server CPUs' SMT siblings with another
-project's job (interference median 0.87 of the window, against 0.05 in
-session 2). The extra time is user time: at 4 cores, GET, 168 / 148 ns per
-request against epoll's 135 / 121 (check D: 145 / 160 against 135 / 128),
-system time 222 / 201 against 213 / 203 (check D: 202 / 208 against 203 /
-204).
+depth 16 was lower in both (0.990 and 0.957, 5 and 6 of 7) but in check D only
+at 4 of 7 (0.991 and 0.998), and 1-core SET depth 16 was lower in check D
+(0.941 and 0.974) and in session 2 (0.976) but not in session 1 (1.006). The
+decision windows, with fewer arms and no open-loop runs between them, resolved
+the 4-core difference at 3–5%. Session 1's 4-core runs shared the server CPUs'
+SMT siblings with another project's job (interference median 0.87 of the
+window, against 0.05 in session 2). The extra time is user time: at 4 cores,
+GET, 168 / 148 ns per request against epoll's 135 / 121 (check D: 145 / 160
+against 135 / 128), system time 222 / 201 against 213 / 203 (check D: 202 /
+208 against 203 / 204).
 
 ## GET throughput at 2 cores
 

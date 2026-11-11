@@ -51,15 +51,15 @@ published `main`:
 | 2 cores, depth 16 | 1.030 (0) / 1.091 (2) | 1.082 (1) / 1.075 (3) | 0.926 (6) / 1.070 (3) | 0.961 (6) / 0.984 (4) |
 | 4 cores, depth 16 | 1.116 (1) / 1.073 (1) | 1.085 (2) / 1.108 (0) | 0.989 (5) / 0.972 (4) | 0.966 (6) / 0.967 (5) |
 
-- **Holds in both sessions:** against epoll, 4–8% less CPU per request at 1
+- **In both final sessions:** against epoll, 4–8% less CPU per request at 1
   core and depth 1 (GET and SET, 6–7 of 7), and more at depth 16 for GET at 2
   cores (3% and 9%), at 4 cores (7–12%) and for SET at 1 core (3–8%). SET at 2
   cores, depth 16, needed more by median in both (1.082 and 1.075) but at only
   4 of 7 in session 2. In the same sessions `main` / epoll was 1.131 / 1.153
   (GET) and 1.124 / 1.130 (SET) at 4 cores. Check D (below) did not run SET at
   depth 1, so the README claims GET only there; it did not confirm the 2-core
-  GET loss, and its 4-core GET in session 3 (5.3%) is outside 7–12% (the
-  four-session ranges are below).
+  GET loss; in its session 3 the 4-core GET (5.3%) is outside 7–12% and the
+  4-core SET was higher at only 4 of 7 (the four-session ranges are below).
 - **Losses in throughput** (requests per second, paired by repetition from
   `main.jsonl`; repetitions higher of 7): against `main` at 2 cores, GET
   0.977 / 0.926 (2 and 0) and SET 0.967 / 0.985 (1 and 2); against epoll at
@@ -113,7 +113,7 @@ the four) and SET at 4 of 7 there. `main`'s 12–15% over epoll at 4 cores was
 18.0% for SET in session 3 (11–18% over the four). The 2-core GET loss to
 epoll does not hold (0.99 and 1.00). The gain over `main` at 4 cores, 1–4% in
 the final sessions (GET at 4 of 7 in imp-session-2), was 4–12% here (6–7 of
-7). At 1 and 2 cores no CPU difference against `main` held in all four
+7). At 1 and 2 cores no CPU difference against `main` met the rule in all four
 sessions: 1-core GET depth 16 was lower in both final sessions but at only 4
 of 7 here (0.991, 0.998), and 1-core SET depth 16 was lower here (0.941,
 0.974) and in imp-session-2 (0.976) but not in imp-session-1 (1.006).
