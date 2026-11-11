@@ -264,6 +264,11 @@ queues found a message and skipped the wait between 4 and 1,313 times per
 configuration; refused replies were sent again and refused doorbells rung
 again.
 
+On GitHub's `ubuntu-24.04` runners (Linux 6.8) the CI workflow passed on this
+branch at `82fc4f3`: the six configurations above (gcc and clang, each with no
+sanitizer, ASan + UBSan and TSan), the deliberate bugs and 60 seconds of fuzzing
+per target. CI times nothing.
+
 ### Deliberate bugs at 5d86cbd
 
 | Mutation | Caught by (named assertion) |
@@ -460,5 +465,3 @@ history of `results/test-matrix`, `results/deliberate-bugs` and
 - Cache behaviour: callgrind counts instructions, not cache misses, so the
   shard table's fewer memory reads per lookup follow from its layout and were
   not measured on the hardware.
-- This branch has not run on the GitHub CI runners (Linux 6.8). It uses no
-  io_uring feature that the published `main` did not already use.
