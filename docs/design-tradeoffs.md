@@ -3,10 +3,12 @@
 Decisions, the alternatives rejected, and the measurement or reasoning behind
 each. The first part covers the runtime core; the second the key-value server,
 the baselines and the round-3 performance study; the third the performance
-round that followed (what was optimized, what was tried and dropped, and
-where the remaining loss sits). Numbers come from the files under
-[results/](../results/README.md); each section names its source. Numbers from
-different measurement sessions are never compared with each other.
+round that followed (what was optimized, what was tried and dropped, and where
+the remaining loss sits); the fourth the improvement round that went after
+that loss (what was kept, what was rejected, and what is left). Numbers come
+from the files under [results/](../results/README.md); each section names its
+source. Numbers from different measurement sessions are never compared with
+each other.
 
 # Part 1: the runtime core
 
@@ -586,7 +588,8 @@ order, under a decision rule committed before the run
 are not in the code, and their diffs are in
 [`results/perf/candidates/`](../results/perf/candidates) so they can be
 measured again. The comparison with the other front ends at the end of the
-round is in the README (sessions `perf-session-a` and `perf-session-b`).
+round is in [results/](../results/README.md) (sessions `perf-session-a` and
+`perf-session-b`).
 
 ## Where the CPU goes
 
@@ -759,8 +762,8 @@ the limit (window 2, load-generator table).
 - Send and receive bundles (6.10), incremental provided-buffer consumption
   (6.12): a read here is at most a few hundred bytes and fits one provided
   buffer, and buffer handling is a few instructions per request in the
-  profile. Both would need a runtime probe and a fallback for the 6.8 CI
-  kernels.
+  profile. Both would need a runtime probe and a fallback for Linux 6.8, the
+  oldest kernel the README names.
 - Zero-copy send for large values: over loopback the kernel copies anyway
   (Part 2, "Zero-copy send is not in the performance table").
 
@@ -1025,10 +1028,10 @@ against 135 / 128), system time 222 / 201 against 213 / 203 (check D: 202 /
 
 ## GET throughput at 2 cores
 
-Part 3 saw GET throughput at 2 cores, depth 16, stay flat against `main` while
-CPU per request fell, and check C saw it rise. This round's windows show why
-one should not read much into it: at 2 cores neither the server nor the load
-generator is saturated (server cores busy 67–81% of the time for GET and
+Part 3 saw GET throughput at 2 cores, depth 16, stay flat against 3eb4121
+while CPU per request fell, and check C saw it rise. This round's windows show
+why one should not read much into it: at 2 cores neither the server nor the
+load generator is saturated (server cores busy 67–81% of the time for GET and
 85–90% for SET, the generator's 8 CPUs 33–40%), and throughput moves with how
 often the server's threads go to sleep. Across the runs of each window,
 requests per second correlated with voluntary context switches per 1,000

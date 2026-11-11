@@ -10,7 +10,7 @@ messages over `IORING_OP_MSG_RING` or shared-memory queues with a doorbell), a
 sealed-memfd IPC protocol, and the server with its benchmark harness, all on
 one Linux machine over loopback.
 
-| GET, loopback, medians of 7 interleaved runs: [session 1](results/kv-bench/imp-session-1/summary.md) / [session 2](results/kv-bench/imp-session-2/summary.md) | io_uring runtime | same, published `main` | epoll | Asio | Valkey 9.1.3 |
+| GET, loopback, medians of 7 interleaved runs: [session 1](results/kv-bench/imp-session-1/summary.md) / [session 2](results/kv-bench/imp-session-2/summary.md) | io_uring runtime | same, previous `main` (`a48c76c`) | epoll | Asio | Valkey 9.1.3 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 server core, closed loop, pipeline depth 1: requests/s | 348 k / 343 k | 349 k / 344 k | 329 k / 320 k | 327 k / 322 k | 296 k / 296 k |
 | 1 core, depth 1: server CPU per request, µs | 2.87 / **2.88** | **2.86** / 2.92 | 3.02 / 3.15 | 3.01 / 3.07 | 3.39 / 3.34 |
@@ -26,26 +26,27 @@ needs 3–8% less CPU per GET at 1 core and depth 1 (5–7 of 7 repetitions) and
 3–8% more for SET at 1 core, depth 16. **Losses** by median in all four
 sessions, each with one session under check D's 5 of 7: more CPU at depth 16
 for SET at 2 cores (7–11%; 4 of 7 in session 2) and for GET and SET at 4 cores
-(5–12%; SET 4 of 7 in check D's session 3; `main` needed 11–18%), and lower
-SET throughput at 1 and 2 cores, depth 16 (3–7% and 8–13%; 4 of 6 at 1 core in
-check D's session 1, 4 of 7 at 2 cores in session 2). GET at 2 cores needed 3%
-and 9% more CPU in sessions 1 and 2, not in check D. This round's changes
-(call nodes in their operation slots, a slot table of fixed chunks, one hash
-per key; [design trade-offs](docs/design-tradeoffs.md), Part 4) cut user-space
-instructions per request by 6% at 2 cores and 11% at 4 (callgrind), and CPU
-per request at 4 cores by 3–5% in three decision windows (a 4-core cell at 7
-of 7 in each), 1–4% in sessions 1 and 2 (GET 4 of 7 in session 2) and 4–12% in
-check D; at 1 and 2 cores no CPU difference against `main` met the rule in all
-four sessions. Throughput at 2 cores was below `main`'s: GET by 2–13% in three
-of the four sessions (1.02 times in the fourth), SET by 0.3–7% in all four (4
-of 7 in check D's session 2; **loss**). What is left is user time (4 cores,
-GET: 145–168 ns per request against epoll's 121–135; system time the same):
-per read, an operation slot for every send and call, three coroutine
-resumptions and a message node per call, the bookkeeping that makes the
-ownership contract hold. Tried and dropped: an inline receive path that ran
-fewer instructions but needed 4% more CPU. The test suites (156 cases) pass in
-6 compiler × sanitizer configurations, 15 of 15 deliberate contract violations
-fail their named assertions, and both fuzz targets run clean.
+(5–12%; SET 4 of 7 in check D's session 3; previous `main` needed 11–18%), and
+lower SET throughput at 1 and 2 cores, depth 16 (3–7% and 8–13%; 4 of 6 at 1
+core in check D's session 1, 4 of 7 at 2 cores in session 2). GET at 2 cores
+needed 3% and 9% more CPU in sessions 1 and 2, not in check D. This round's
+changes (call nodes in their operation slots, a slot table of fixed chunks,
+one hash per key; [design trade-offs](docs/design-tradeoffs.md), Part 4) cut
+user-space instructions per request by 6% at 2 cores and 11% at 4 (callgrind),
+and CPU per request at 4 cores by 3–5% in three decision windows (a 4-core
+cell at 7 of 7 in each), 1–4% in sessions 1 and 2 (GET 4 of 7 in session 2)
+and 4–12% in check D; at 1 and 2 cores no CPU difference against previous
+`main` met the rule in all four sessions. Throughput at 2 cores was below
+previous `main`'s: GET by 2–13% in three of the four sessions (1.02 times in
+the fourth), SET by 0.3–7% in all four (4 of 7 in check D's session 2;
+**loss**). What is left is user time (4 cores, GET: 145–168 ns per request
+against epoll's 121–135; system time the same): per read, an operation slot
+for every send and call, three coroutine resumptions and a message node per
+call, the bookkeeping that makes the ownership contract hold. Tried and
+dropped: an inline receive path that ran fewer instructions but needed 4% more
+CPU. The test suites (156 cases) pass in 6 compiler × sanitizer
+configurations, 15 of 15 deliberate contract violations fail their named
+assertions, and both fuzz targets run clean.
 
 Limitations: one shared machine (other jobs' interference is recorded per
 run; session 1's 4-core runs shared the server CPUs' SMT siblings with another
@@ -61,8 +62,9 @@ Details: [results](results/README.md), [ownership contract](docs/CONTRACT.md),
 
 ## Build and test
 
-Linux 6.8 or newer (developed on 7.0), CMake 3.22+, Ninja, GCC 14+ or clang 18+,
-Python 3 for the scripts. Dependencies are pinned and checked by SHA256:
+Linux 6.8 or newer (developed and tested on 7.0 only), CMake 3.22+, Ninja, GCC
+14+ or clang 18+, Python 3 for the scripts. Dependencies are pinned and checked
+by SHA256:
 
 ```sh
 scripts/build-liburing.sh            # liburing 2.14 into .cache/

@@ -2,16 +2,19 @@
 
 All runs on one shared machine: Intel Core i9-13900K (CPUs 0–15 are 8 P-cores ×
 2 SMT threads, 16–31 are E-cores), Linux 7.0.0 (-38-generic in round 3,
--42-generic in the performance round), GCC 15.2, clang 21.1.8, liburing 2.14
-(pinned, static). Every file below was produced by a script in `scripts/`; the
-commit each run used is recorded in the file or in its `*-meta.txt`. Round-3
-commits belong to the development history, which was squashed into a single
-commit when the repository was published; performance-round commits are on
-this branch, except the candidates' own commits (their diffs are in
-[perf/candidates/](perf/candidates)). Other projects ran on the machine at the same time (a model
-training job that takes one full CPU and is not pinned, container services,
-another project's builds and VMs). Numbers from different sessions are never
-put in one comparison.
+-42-generic in the performance and improvement rounds), GCC 15.2, clang 21.1.8,
+liburing 2.14 (pinned, static). Every file below was produced by a script in
+`scripts/`; the commit each run used is recorded in the file or in its
+`*-meta.txt`. Round-3 commits belong to the development history, which was
+squashed into a single commit when the repository was published;
+performance- and improvement-round commits are on this branch, except the
+candidates' own commits: the performance round's rejected diffs are in
+[perf/candidates/](perf/candidates), the improvement round's c1 and c2 landed
+together as 9a07e32, c3 as c9bf7bb, and the rejected c4's diff is in
+[improve/candidates/](improve/candidates). Other projects ran on the machine at
+the same time (a model training job that takes one full CPU and is not pinned,
+container services, another project's builds and VMs). Numbers from different
+sessions are never put in one comparison.
 
 ## Improvement round (2026-11-09 and 11-10)
 
@@ -41,7 +44,7 @@ c3 (c2 + one hash per key), c4 (c3 + inline receive path).
 
 Server CPU per request, paired by repetition (median; repetitions below 1
 of 7), the io_uring build of this round against epoll and against the
-published `main`:
+previous `main` (a48c76c):
 
 | | io_uring / epoll, GET | io_uring / epoll, SET | io_uring / `main`, GET | io_uring / `main`, SET |
 | --- | ---: | ---: | ---: | ---: |
@@ -79,12 +82,12 @@ published `main`:
 
 ### Check D: fresh clones, three more quiet windows
 
-`main` and `improve` were cloned fresh and built separately. Every arm used
-`main`'s load generator, and the build-comparison suite ran at 7 repetitions
-with the epoll build of both trees. Session 1 (15:16–15:42 PST) and session 2
-(16:49–17:14) each ran 1, 2 and 4 cores. In session 1's 4-core part,
-another project's job ran on the server CPUs' SMT siblings (interference
-median 1.13), so by the rules written before session 2
+`main` (a48c76c) and `improve` (10c00f5) were cloned fresh and built
+separately. Every arm used `main`'s load generator, and the build-comparison
+suite ran at 7 repetitions with the epoll build of both trees. Session 1
+(15:16–15:42 PST) and session 2 (16:49–17:14) each ran 1, 2 and 4 cores. In
+session 1's 4-core part, another project's job ran on the server CPUs' SMT
+siblings (interference median 1.13), so by the rules written before session 2
 ([check-d/RULES.md](improve/check-d/RULES.md)) that part was rerun alone as
 session 3 (18:21–18:27). The commands, all tables and a claim-by-claim list
 are in [improve/check-d/](improve/check-d).
@@ -190,7 +193,7 @@ Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
 | 2 cores, depth 16 | 1.036 (1) / 1.059 (0) | 1.080 (1) / 1.051 (1) | 0.841 (6) / 0.842 (7) | 0.815 (7) / 0.807 (7) |
 | 4 cores, depth 16 | 1.117 (0) / 1.114 (0) | 1.133 (0) / 1.123 (0) | 0.833 (7) / 0.844 (7) | 0.815 (7) / 0.823 (7) |
 
-- **Holds in both sessions:** against the published code, 16–26% less CPU per
+- **Holds in both sessions:** against `main` (3eb4121), 16–26% less CPU per
   request at depth 16 on 1, 2 and 4 cores (6 or 7 of 7 repetitions in every
   cell), 2–5% at depth 1 for GET. Against epoll, less CPU per request at 1
   core (depth 1 GET and SET, depth 16 GET), more at 2 cores and depth 16
@@ -216,13 +219,13 @@ Server CPU per request, paired by repetition (median; repetitions below 1 of 7):
 
 ### Check C: fresh clones, one more quiet window
 
-Main and perf were cloned fresh and built separately (perf 932122c has the
-same code as 5d86cbd). All three arms used main's load generator, and the
+Main (3eb4121) and perf (932122c, the same code as 5d86cbd) were cloned fresh
+and built separately. All three arms used main's load generator, and the
 build-comparison suite ran at 5 repetitions (13:37–13:50 PST). Its meta file
 says "(uncommitted changes)" because the test matrix, deliberate bugs and a
-60 s fuzz run had just rewritten result logs in that clone; all of them
-passed, with 13 of 13 bugs caught. Server CPU per request, paired by
-repetition (median; repetitions below 1 of 5):
+60 s fuzz run had just rewritten result logs in that clone; all of them passed,
+with 13 of 13 bugs caught. Server CPU per request, paired by repetition
+(median; repetitions below 1 of 5):
 
 | | io_uring / `main`, GET | io_uring / `main`, SET | io_uring / epoll, GET | io_uring / epoll, SET |
 | --- | ---: | ---: | ---: | ---: |
@@ -232,7 +235,7 @@ repetition (median; repetitions below 1 of 5):
 | 2 cores, depth 16 | 0.823 (5) | 0.814 (5) | 1.083 (0) | 1.103 (0) |
 | 4 cores, depth 16 | 0.842 (5) | 0.810 (5) | 1.172 (0) | 1.130 (0) |
 
-It confirms the gain over the published code and the losses to epoll at 2
+It confirms the gain over `main` (3eb4121) and the losses to epoll at 2
 and 4 cores (here somewhat larger), but not the 1-core depth-16 GET result
 (1.02 instead of 0.95), which the README therefore does not claim.
 
@@ -264,10 +267,10 @@ queues found a message and skipped the wait between 4 and 1,313 times per
 configuration; refused replies were sent again and refused doorbells rung
 again.
 
-On GitHub's `ubuntu-24.04` runners (Linux 6.8) the CI workflow passed on this
-branch at `82fc4f3`: the six configurations above (gcc and clang, each with no
-sanitizer, ASan + UBSan and TSan), the deliberate bugs and 60 seconds of fuzzing
-per target. CI times nothing.
+On GitHub's `ubuntu-24.04` runners (image 20261101.360, Linux 7.0.0-1017-azure)
+the CI workflow passed on this branch at `82fc4f3`: the test suites built with
+GCC 14.2 and clang 18.1.3, each with no sanitizer, ASan + UBSan and TSan; the
+deliberate bugs; and 60 seconds of fuzzing per target. CI times nothing.
 
 ### Deliberate bugs at 5d86cbd
 
@@ -451,7 +454,8 @@ Explanations in [design-tradeoffs.md](../docs/design-tradeoffs.md).
 Round 3's test matrix, deliberate-bug and fuzz results (df7ae97: 134 cases, 10
 of 10 mutations, 482,464,087 and 10,346,156 fuzz executions) are in the git
 history of `results/test-matrix`, `results/deliberate-bugs` and
-`results/fuzz`; those directories now hold the performance round's runs.
+`results/fuzz` at 3eb4121; those directories now hold the improvement round's
+runs, and the performance round's are in their history at a48c76c.
 
 # Not verified
 
@@ -465,3 +469,6 @@ history of `results/test-matrix`, `results/deliberate-bugs` and
 - Cache behaviour: callgrind counts instructions, not cache misses, so the
   shard table's fewer memory reads per lookup follow from its layout and were
   not measured on the hardware.
+- Linux 6.8, the oldest kernel the top-level README names: this branch was
+  developed on 7.0, and the CI runs at `82fc4f3` (above) used runner image
+  20261101.360, which runs 7.0.0-1017-azure.
