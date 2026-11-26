@@ -16,6 +16,14 @@ the same time (a model training job that takes one full CPU and is not pinned,
 container services, another project's builds and VMs). Numbers from different
 sessions are never put in one comparison.
 
+## Hardware counters (2026-11-26)
+
+[perf-hw/](perf-hw/README.md): `sudo bash scripts/perf-hw.sh` at caa38ad,
+perf stat and perf record on the P-core PMU for the io_uring and epoll front
+ends (1, 2 and 4 server cores; 7 repetitions; 2026-11-26 03:41–03:58 UTC),
+with the setup, the conditions of the window and an earlier run on a busy
+machine that is used only as a direction check.
+
 ## Improvement round (2026-11-09 and 11-10)
 
 What was changed, what was dropped and why: [design-tradeoffs.md, Part
@@ -466,9 +474,10 @@ runs, and the performance round's are in their history at a48c76c.
   or scheduler tracing on this host).
 - Why a 20 µs spin before sleeping cut depth-16 throughput by a quarter or
   more on both transports (window 2).
-- Cache behaviour: callgrind counts instructions, not cache misses, so the
-  shard table's fewer memory reads per lookup follow from its layout and were
-  not measured on the hardware.
+- Cache behaviour per function: perf stat now counts LLC and L1D misses per
+  request ([perf-hw/](perf-hw/README.md)), but which code takes the io_uring
+  build's extra LLC misses was not sampled, and the shard table's fewer memory
+  reads per lookup were not measured against the old table on the hardware.
 - Linux 6.8, the oldest kernel the top-level README names: this branch was
   developed on 7.0, and the CI runs at `82fc4f3` (above) used runner image
   20261101.360, which runs 7.0.0-1017-azure.

@@ -48,13 +48,29 @@ CPU. The test suites (156 cases) pass in 6 compiler × sanitizer
 configurations, 15 of 15 deliberate contract violations fail their named
 assertions, and both fuzz targets run clean.
 
+Hardware counters (`sudo bash scripts/perf-hw.sh`: perf stat on the P-core
+PMU, user + kernel, 7 interleaved repetitions in one quiet window;
+[details](results/perf-hw/README.md)): at 1 core, GET depth 1, io_uring took
+15,594 cycles per request against epoll's 16,370 (paired 0.946, lower in 6 of
+7) while retiring 4% more instructions (25,641 against 24,572; IPC 1.64
+against 1.50). 91% of the instructions are the kernel's; most of the saving
+is in user mode (1,105 against 1,571 cycles, user IPC 2.02 against 0.88). At
+4 cores, depth 16, the loss is user-mode work: 12–13% more user instructions
+at lower IPC, 1.16–1.33 times the user cycles and 2.1–2.5 times the LLC
+misses per request (0 of 7 lower), with kernel instructions the same. At
+depth 16 on 1 and 2 cores CPU per request did not separate the two in this
+window, but io_uring had 1.2–2.2 times the LLC misses in every cell and 9–16%
+fewer L1D load misses at 1 core. Cycle profiles show the host's netfilter
+rules taking about 18% of the server's cycles on loopback at 1 core in both.
+
 Limitations: one shared machine (other jobs' interference is recorded per
 run; session 1's 4-core runs shared the server CPUs' SMT siblings with another
 project's job), loopback only (client and server share the kernel's TCP
 work), 1, 2 and 4 server cores (4 at depth 16 only: at depth 1 the load
 generator is the limit), no rejection rule above 1 core, tail latencies
-dominated by other jobs, no hardware counters (`perf` is blocked; callgrind
-counts instructions and simulates caches, it does not measure the hardware),
+dominated by other jobs, hardware counters from one window, on server CPUs
+2, 4, 6 and 0 rather than kv-bench's 2,4,6,8 (where the extra LLC misses arise was not
+sampled),
 zero-copy send measured only on loopback.
 
 Details: [results](results/README.md), [ownership contract](docs/CONTRACT.md),
@@ -85,6 +101,7 @@ with TSan. Without Asio the build skips that front end and its tests.
 | `scripts/build-valkey.sh` | Valkey 9.1.3 and valkey-benchmark from source (benchmark reference) |
 | `scripts/xcore-study.sh 4,6` | cross-core messaging study on two CPUs |
 | `scripts/kv-bench.py --suite main` | the server comparison, with per-run clock and interference records (also `variants`, `diag`, `crosscheck`, `probe`, and `compare` for one build against another: `--arm NAME=IO@BUILD`) |
+| `sudo bash scripts/perf-hw.sh` | hardware counters (perf stat) and call graphs (perf record) for the io_uring and epoll front ends, with a quiet-machine gate and per-run interference records; no sysctl changed |
 | `scripts/callgrind-profile.sh`, `scripts/callgrind-summary.py`, `scripts/callgrind-jobs.py` | user-space instructions per request under callgrind, by module and by the io_uring front end's jobs |
 | `scripts/kv-summary.py` | tables from the raw benchmark lines |
 

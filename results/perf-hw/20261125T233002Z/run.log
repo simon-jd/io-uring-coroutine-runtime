@@ -1,0 +1,379 @@
+23:30:02Z perf-hw: {"stamp": "20261125T233002Z", "start": "2026-11-25T23:30:02Z", "commit": "caa38ad", "kernel": "7.0.0-42-generic", "perf": "perf version 7.0.14", "cpu": "13th Gen Intel(R) Core(TM) i9-13900K", "microcode": "0x133", "governor / no_turbo": "powersave 0", "perf_event_paranoid / kptr_restrict / nmi_watchdog (unchanged)": "4 1 1", "build": "<repo>/build-release (Release, -O3)", "kv_server sha256": "884fc71de6329608", "server CPUs": "first N of 2,4,6,0 (P-cores; SMT siblings [1, 3, 5, 7] kept idle by the gate)", "client CPUs": "16-23 (E-cores), kvload 8 threads, 50 connections per server core", "harness CPUs": "[24, 25, 26, 27, 28, 29, 30, 31]", "workloads": "closed loop, 100k keys preloaded, 64-byte values; 1 core(s): get_p1, get_p16, set_p16; 2 core(s): get_p16, set_p16; 4 core(s): get_p16, set_p16", "reps": "7, arm order rotated per repetition", "events": "cpu_core/cycles/,cpu_core/instructions/,cpu_core/cycles/u,cpu_core/instructions/u,cpu_core/branches/,cpu_core/branch-misses/,cpu_core/cache-references/,cpu_core/cache-misses/,cpu_core/L1-dcache-load-misses/", "record": "perf record -e cpu_core/cycles/ -F 999 --call-graph dwarf,8192 on 1 core(s) get_p1, 4 core(s) get_p16 for each arm", "gate": "10 s sample; CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean <= 15% and each <= 35%, client CPUs mean <= 35%, machine mean <= 30%, loadavg <= 8.0; wait up to 43200 s at start, 7200 s per repetition", "rejection": "1-core runs with interference > 0.05 repeated up to 2 times", "dry run": false}
+23:30:02Z event check: 3684116,,cpu_core/cycles/,316186,43.00,, | 2733698,,cpu_core/instructions/,316186,43.00,, | 732656,,cpu_core/cycles/u,316186,43.00,, | 309692,,cpu_core/instructions/u,316186,43.00,, | 501361,,cpu_core/branches/,316186,43.00,, | 18227,,cpu_core/branch-misses/,316186,43.00,, | 121395,,cpu_core/cache-references/,316186,43.00,, | 55262,,cpu_core/cache-misses/,316186,43.00,, | 27667,,cpu_core/L1-dcache-load-misses/,316186,43.00,,
+23:30:12Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 19% > 15%; CPU 4 busy 48% > 35%; loadavg 9.06 > 8.0); waiting 30 s (10/43200 s)
+23:30:52Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 42% > 15%; CPU 6 busy 60% > 35%; whole machine mean busy 42% > 30%; loadavg 13.37 > 8.0); waiting 30 s (50/43200 s)
+23:31:32Z gate start: busy (CPU 4 busy 36% > 35%; loadavg 8.65 > 8.0); waiting 30 s (90/43200 s)
+23:32:12Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 20% > 15%; CPU 6 busy 44% > 35%); waiting 30 s (130/43200 s)
+23:32:52Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 18% > 15%; CPU 1 busy 36% > 35%; loadavg 10.58 > 8.0); waiting 30 s (170/43200 s)
+23:33:32Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 6 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 14.25 > 8.0); waiting 30 s (210/43200 s)
+23:34:12Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 95% > 15%; CPU 3 busy 99% > 35%; client CPUs 16-23 mean busy 98% > 35%; whole machine mean busy 97% > 30%; loadavg 19.88 > 8.0); waiting 30 s (250/43200 s)
+23:34:52Z gate start: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 21% > 15%; CPU 0 busy 36% > 35%; loadavg 14.49 > 8.0); waiting 30 s (290/43200 s)
+23:35:32Z gate start: busy (loadavg 9.59 > 8.0); waiting 30 s (330/43200 s)
+23:36:12Z gate start: quiet (load 6.77, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 11%, client 9%, machine 14%; waited 370 s)
+23:36:19Z rep 0 uring c1 get_p1  rps=     276,314 cpu_us/req=3.704 cyc/req=19,437 ins/req=25,729 IPC=1.32 load=6.77 intf=0.578 REJECTED
+23:36:27Z rep 0 uring c1 get_p1  rps=     315,334 cpu_us/req=3.225 cyc/req=16,764 ins/req=25,661 IPC=1.53 load=7.01 intf=0.137 REJECTED
+23:36:34Z rep 0 uring c1 get_p1  rps=     330,068 cpu_us/req=3.031 cyc/req=16,013 ins/req=25,623 IPC=1.60 load=6.93 intf=0.033
+23:36:40Z rep 0 uring c1 get_p16 rps=   2,632,474 cpu_us/req=0.380 cyc/req=1,964 ins/req=2,384 IPC=1.21 load=7.01 intf=0.069 REJECTED
+23:36:47Z rep 0 uring c1 get_p16 rps=   2,801,226 cpu_us/req=0.365 cyc/req=1,935 ins/req=2,382 IPC=1.23 load=7.17 intf=0.035
+23:36:54Z rep 0 uring c1 set_p16 rps=   2,847,331 cpu_us/req=0.356 cyc/req=1,899 ins/req=2,401 IPC=1.26 load=6.91 intf=0.012
+23:37:01Z rep 0 epoll c1 get_p1  rps=     320,789 cpu_us/req=3.116 cyc/req=16,581 ins/req=24,539 IPC=1.48 load=7.44 intf=0.004
+23:37:08Z rep 0 epoll c1 get_p16 rps=   2,652,016 cpu_us/req=0.368 cyc/req=1,887 ins/req=2,320 IPC=1.23 load=7.41 intf=0.033
+23:37:15Z rep 0 epoll c1 set_p16 rps=   2,834,416 cpu_us/req=0.345 cyc/req=1,833 ins/req=2,342 IPC=1.28 load=7.04 intf=0.006
+23:37:22Z rep 0 uring c2 get_p16 rps=   4,416,960 cpu_us/req=0.383 cyc/req=1,968 ins/req=2,574 IPC=1.31 load=6.95 intf=0.354
+23:37:29Z rep 0 uring c2 set_p16 rps=   5,239,152 cpu_us/req=0.369 cyc/req=1,940 ins/req=2,624 IPC=1.35 load=6.96 intf=0.055
+23:37:37Z rep 0 epoll c2 get_p16 rps=   4,080,029 cpu_us/req=0.417 cyc/req=2,083 ins/req=2,510 IPC=1.20 load=10.38 intf=0.852
+23:37:44Z rep 0 epoll c2 set_p16 rps=   1,348,954 cpu_us/req=0.813 cyc/req=3,891 ins/req=2,633 IPC=0.68 load=10.35 intf=2.954
+23:37:51Z rep 0 uring c4 get_p16 rps=   1,709,360 cpu_us/req=1.099 cyc/req=4,996 ins/req=2,909 IPC=0.58 load=15.85 intf=5.980
+23:37:58Z rep 0 uring c4 set_p16 rps=   5,765,440 cpu_us/req=0.572 cyc/req=2,835 ins/req=2,847 IPC=1.00 load=18.66 intf=2.660
+23:38:05Z rep 0 epoll c4 get_p16 rps=   7,878,461 cpu_us/req=0.371 cyc/req=1,836 ins/req=2,630 IPC=1.43 load=17.43 intf=0.286
+23:38:12Z rep 0 epoll c4 set_p16 rps=   7,116,256 cpu_us/req=0.422 cyc/req=2,036 ins/req=2,713 IPC=1.33 load=16.44 intf=0.914
+23:38:22Z gate rep 1: busy (loadavg 14.66 > 8.0); waiting 30 s (10/7200 s)
+23:39:02Z gate rep 1: busy (loadavg 10.20 > 8.0); waiting 30 s (50/7200 s)
+23:39:42Z gate rep 1: quiet (load 7.59, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 14%, client 11%, machine 16%; waited 90 s)
+23:39:49Z rep 1 epoll c1 get_p1  rps=     321,569 cpu_us/req=3.293 cyc/req=17,412 ins/req=24,556 IPC=1.41 load=7.59 intf=0.215 REJECTED
+23:39:56Z rep 1 epoll c1 get_p1  rps=     312,426 cpu_us/req=3.188 cyc/req=16,813 ins/req=24,529 IPC=1.46 load=8.18 intf=0.079 REJECTED
+23:40:03Z rep 1 epoll c1 get_p1  rps=     312,914 cpu_us/req=3.235 cyc/req=16,898 ins/req=24,516 IPC=1.45 load=8.17 intf=0.016
+23:40:10Z rep 1 epoll c1 get_p16 rps=   2,691,715 cpu_us/req=0.372 cyc/req=1,934 ins/req=2,317 IPC=1.20 load=8.06 intf=0.048
+23:40:17Z rep 1 epoll c1 set_p16 rps=   2,581,213 cpu_us/req=0.385 cyc/req=2,029 ins/req=2,342 IPC=1.15 load=7.97 intf=0.049
+23:40:24Z rep 1 uring c1 get_p1  rps=     326,743 cpu_us/req=3.075 cyc/req=16,096 ins/req=25,604 IPC=1.59 load=7.90 intf=0.009
+23:40:31Z rep 1 uring c1 get_p16 rps=   2,298,144 cpu_us/req=0.428 cyc/req=2,163 ins/req=2,390 IPC=1.10 load=8.20 intf=0.148 REJECTED
+23:40:38Z rep 1 uring c1 get_p16 rps=   2,722,125 cpu_us/req=0.367 cyc/req=1,937 ins/req=2,386 IPC=1.23 load=7.94 intf=0.007
+23:40:45Z rep 1 uring c1 set_p16 rps=   2,575,824 cpu_us/req=0.393 cyc/req=2,043 ins/req=2,401 IPC=1.18 load=8.10 intf=0.033
+23:40:52Z rep 1 epoll c2 get_p16 rps=   3,337,642 cpu_us/req=0.504 cyc/req=2,475 ins/req=2,512 IPC=1.01 load=8.09 intf=1.220
+23:40:59Z rep 1 epoll c2 set_p16 rps=   3,705,651 cpu_us/req=0.477 cyc/req=2,430 ins/req=2,568 IPC=1.06 load=8.08 intf=1.210
+23:41:07Z rep 1 uring c2 get_p16 rps=   4,730,125 cpu_us/req=0.396 cyc/req=2,014 ins/req=2,575 IPC=1.28 load=8.36 intf=0.389
+23:41:14Z rep 1 uring c2 set_p16 rps=   5,050,256 cpu_us/req=0.390 cyc/req=2,045 ins/req=2,626 IPC=1.28 load=8.17 intf=0.267
+23:41:21Z rep 1 epoll c4 get_p16 rps=   7,790,835 cpu_us/req=0.392 cyc/req=1,964 ins/req=2,632 IPC=1.34 load=8.60 intf=0.598
+23:41:28Z rep 1 epoll c4 set_p16 rps=   7,825,680 cpu_us/req=0.398 cyc/req=1,983 ins/req=2,703 IPC=1.36 load=8.79 intf=0.498
+23:41:35Z rep 1 uring c4 get_p16 rps=   6,002,771 cpu_us/req=0.496 cyc/req=2,459 ins/req=2,784 IPC=1.13 load=8.81 intf=1.516
+23:41:42Z rep 1 uring c4 set_p16 rps=   8,480,509 cpu_us/req=0.423 cyc/req=2,100 ins/req=2,831 IPC=1.35 load=8.80 intf=0.272
+23:41:52Z gate rep 2: busy (loadavg 8.13 > 8.0); waiting 30 s (10/7200 s)
+23:42:32Z gate rep 2: quiet (load 5.77, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 11%, client 7%, machine 13%; waited 50 s)
+23:42:39Z rep 2 uring c1 get_p1  rps=     323,605 cpu_us/req=3.014 cyc/req=15,522 ins/req=25,583 IPC=1.65 load=5.77 intf=0.009
+23:42:46Z rep 2 uring c1 get_p16 rps=   2,711,722 cpu_us/req=0.379 cyc/req=1,941 ins/req=2,385 IPC=1.23 load=6.04 intf=0.015
+23:42:53Z rep 2 uring c1 set_p16 rps=   2,374,710 cpu_us/req=0.411 cyc/req=2,164 ins/req=2,407 IPC=1.11 load=6.19 intf=0.165 REJECTED
+23:43:00Z rep 2 uring c1 set_p16 rps=   1,381,347 cpu_us/req=0.702 cyc/req=3,420 ins/req=2,467 IPC=0.72 load=7.14 intf=1.008 REJECTED
+23:43:07Z rep 2 uring c1 set_p16 rps=   1,210,566 cpu_us/req=0.731 cyc/req=3,536 ins/req=2,466 IPC=0.70 load=9.87 intf=1.203 REJECTED
+23:43:14Z rep 2 epoll c1 get_p1  rps=     220,835 cpu_us/req=4.505 cyc/req=22,142 ins/req=25,069 IPC=1.13 load=13.88 intf=0.845 REJECTED
+23:43:21Z rep 2 epoll c1 get_p1  rps=     292,149 cpu_us/req=3.333 cyc/req=16,857 ins/req=24,592 IPC=1.46 load=16.08 intf=0.083 REJECTED
+23:43:28Z rep 2 epoll c1 get_p1  rps=     293,833 cpu_us/req=3.350 cyc/req=17,373 ins/req=24,799 IPC=1.43 load=15.59 intf=0.209 REJECTED
+23:43:35Z rep 2 epoll c1 get_p16 rps=   1,383,082 cpu_us/req=0.737 cyc/req=3,345 ins/req=2,396 IPC=0.72 load=14.90 intf=1.132 REJECTED
+23:43:42Z rep 2 epoll c1 get_p16 rps=   1,419,939 cpu_us/req=0.691 cyc/req=3,332 ins/req=2,390 IPC=0.72 load=19.38 intf=1.138 REJECTED
+23:43:49Z rep 2 epoll c1 get_p16 rps=   2,296,819 cpu_us/req=0.463 cyc/req=2,310 ins/req=2,340 IPC=1.01 load=21.59 intf=0.567 REJECTED
+23:43:56Z rep 2 epoll c1 set_p16 rps=   2,469,734 cpu_us/req=0.422 cyc/req=2,147 ins/req=2,355 IPC=1.10 load=22.51 intf=0.158 REJECTED
+23:44:03Z rep 2 epoll c1 set_p16 rps=   2,045,366 cpu_us/req=0.460 cyc/req=2,270 ins/req=2,357 IPC=1.04 load=21.75 intf=0.337 REJECTED
+23:44:10Z rep 2 epoll c1 set_p16 rps=   1,433,898 cpu_us/req=0.689 cyc/req=3,318 ins/req=2,411 IPC=0.73 load=20.49 intf=1.137 REJECTED
+23:44:17Z rep 2 uring c2 get_p16 rps=   1,720,186 cpu_us/req=0.802 cyc/req=3,661 ins/req=2,666 IPC=0.73 load=25.67 intf=2.759
+23:44:24Z rep 2 uring c2 set_p16 rps=   1,557,085 cpu_us/req=0.814 cyc/req=3,883 ins/req=2,717 IPC=0.70 load=26.98 intf=2.864
+23:44:31Z rep 2 epoll c2 get_p16 rps=   1,571,667 cpu_us/req=0.771 cyc/req=3,600 ins/req=2,584 IPC=0.72 load=30.13 intf=2.908
+23:44:38Z rep 2 epoll c2 set_p16 rps=   1,680,224 cpu_us/req=0.760 cyc/req=3,616 ins/req=2,638 IPC=0.73 load=31.56 intf=2.857
+23:44:46Z rep 2 uring c4 get_p16 rps=   2,141,286 cpu_us/req=0.941 cyc/req=4,433 ins/req=2,897 IPC=0.65 load=32.99 intf=6.113
+23:44:53Z rep 2 uring c4 set_p16 rps=   2,299,914 cpu_us/req=0.932 cyc/req=4,352 ins/req=2,953 IPC=0.68 load=35.07 intf=6.085
+23:45:00Z rep 2 epoll c4 get_p16 rps=   2,245,162 cpu_us/req=0.861 cyc/req=4,045 ins/req=2,726 IPC=0.67 load=36.27 intf=6.191
+23:45:07Z rep 2 epoll c4 set_p16 rps=   2,398,118 cpu_us/req=0.872 cyc/req=3,923 ins/req=2,799 IPC=0.71 load=37.88 intf=6.176
+23:45:17Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 4 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 40.38 > 8.0); waiting 30 s (10/7200 s)
+23:45:57Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 26% > 15%; CPU 5 busy 37% > 35%; loadavg 37.45 > 8.0); waiting 30 s (50/7200 s)
+23:46:37Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 0 busy 99% > 35%; client CPUs 16-23 mean busy 99% > 35%; whole machine mean busy 99% > 30%; loadavg 29.68 > 8.0); waiting 30 s (90/7200 s)
+23:47:17Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 37.41 > 8.0); waiting 30 s (130/7200 s)
+23:47:57Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 24% > 15%; loadavg 36.55 > 8.0); waiting 30 s (170/7200 s)
+23:48:37Z gate rep 3: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 17% > 15%; loadavg 24.03 > 8.0); waiting 30 s (210/7200 s)
+23:49:17Z gate rep 3: busy (loadavg 14.32 > 8.0); waiting 30 s (250/7200 s)
+23:49:57Z gate rep 3: busy (loadavg 9.42 > 8.0); waiting 30 s (290/7200 s)
+23:50:37Z gate rep 3: quiet (load 5.52, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 3%, machine 6%; waited 330 s)
+23:50:44Z rep 3 epoll c1 get_p1  rps=     314,488 cpu_us/req=3.175 cyc/req=16,837 ins/req=24,609 IPC=1.46 load=5.52 intf=0.017
+23:50:51Z rep 3 epoll c1 get_p16 rps=   3,201,664 cpu_us/req=0.305 cyc/req=1,588 ins/req=2,315 IPC=1.46 load=5.81 intf=0.004
+23:50:58Z rep 3 epoll c1 set_p16 rps=   2,435,936 cpu_us/req=0.407 cyc/req=2,100 ins/req=2,340 IPC=1.11 load=5.91 intf=0.124 REJECTED
+23:51:05Z rep 3 epoll c1 set_p16 rps=   2,438,864 cpu_us/req=0.416 cyc/req=2,143 ins/req=2,342 IPC=1.09 load=6.24 intf=0.684 REJECTED
+23:51:12Z rep 3 epoll c1 set_p16 rps=   2,332,730 cpu_us/req=0.437 cyc/req=2,162 ins/req=2,349 IPC=1.09 load=6.90 intf=0.215 REJECTED
+23:51:19Z rep 3 uring c1 get_p1  rps=     175,344 cpu_us/req=5.047 cyc/req=24,276 ins/req=26,257 IPC=1.08 load=7.87 intf=0.749 REJECTED
+23:51:26Z rep 3 uring c1 get_p1  rps=     166,156 cpu_us/req=5.781 cyc/req=27,977 ins/req=26,523 IPC=0.95 load=10.68 intf=1.155 REJECTED
+23:51:33Z rep 3 uring c1 get_p1  rps=     184,726 cpu_us/req=5.395 cyc/req=25,679 ins/req=26,142 IPC=1.02 load=13.51 intf=1.083 REJECTED
+23:51:40Z rep 3 uring c1 get_p16 rps=   3,113,130 cpu_us/req=0.327 cyc/req=1,675 ins/req=2,380 IPC=1.42 load=16.27 intf=0.091 REJECTED
+23:51:47Z rep 3 uring c1 get_p16 rps=   2,682,774 cpu_us/req=0.370 cyc/req=1,837 ins/req=2,386 IPC=1.30 load=14.92 intf=0.041
+23:51:54Z rep 3 uring c1 set_p16 rps=   1,592,806 cpu_us/req=0.600 cyc/req=3,041 ins/req=2,428 IPC=0.80 load=14.37 intf=0.810 REJECTED
+23:52:01Z rep 3 uring c1 set_p16 rps=   1,358,938 cpu_us/req=0.741 cyc/req=3,453 ins/req=2,467 IPC=0.71 load=16.56 intf=1.138 REJECTED
+23:52:08Z rep 3 uring c1 set_p16 rps=   1,465,507 cpu_us/req=0.671 cyc/req=3,245 ins/req=2,436 IPC=0.75 load=19.00 intf=1.009 REJECTED
+23:52:15Z rep 3 epoll c2 get_p16 rps=   3,066,467 cpu_us/req=0.610 cyc/req=2,928 ins/req=2,517 IPC=0.86 load=20.92 intf=1.893
+23:52:22Z rep 3 epoll c2 set_p16 rps=   3,726,323 cpu_us/req=0.510 cyc/req=2,555 ins/req=2,574 IPC=1.01 load=21.76 intf=1.752
+23:52:29Z rep 3 uring c2 get_p16 rps=   4,155,574 cpu_us/req=0.436 cyc/req=2,184 ins/req=2,580 IPC=1.18 load=20.81 intf=0.796
+23:52:36Z rep 3 uring c2 set_p16 rps=   3,111,082 cpu_us/req=0.584 cyc/req=2,880 ins/req=2,639 IPC=0.92 load=19.81 intf=1.647
+23:52:43Z rep 3 epoll c4 get_p16 rps=   2,301,962 cpu_us/req=0.878 cyc/req=4,098 ins/req=2,713 IPC=0.66 load=19.34 intf=6.126
+23:52:50Z rep 3 epoll c4 set_p16 rps=   2,011,616 cpu_us/req=0.944 cyc/req=4,484 ins/req=2,807 IPC=0.63 load=20.92 intf=6.298
+23:52:58Z rep 3 uring c4 get_p16 rps=   3,710,262 cpu_us/req=0.854 cyc/req=3,941 ins/req=2,841 IPC=0.72 load=25.58 intf=4.944
+23:53:05Z rep 3 uring c4 set_p16 rps=   7,801,357 cpu_us/req=0.445 cyc/req=2,200 ins/req=2,839 IPC=1.29 load=27.22 intf=1.368
+23:53:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 25% > 15%; CPU 7 busy 56% > 35%; loadavg 22.86 > 8.0); waiting 30 s (10/7200 s)
+23:53:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 31% > 15%; CPU 7 busy 61% > 35%; whole machine mean busy 34% > 30%; loadavg 20.57 > 8.0); waiting 30 s (50/7200 s)
+23:54:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 4 busy 59% > 35%; whole machine mean busy 32% > 30%; loadavg 21.21 > 8.0); waiting 30 s (90/7200 s)
+23:55:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 77% > 15%; CPU 7 busy 91% > 35%; client CPUs 16-23 mean busy 69% > 35%; whole machine mean busy 74% > 30%; loadavg 17.80 > 8.0); waiting 30 s (130/7200 s)
+23:55:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 28.87 > 8.0); waiting 30 s (170/7200 s)
+23:56:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 35.72 > 8.0); waiting 30 s (210/7200 s)
+23:57:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 40.65 > 8.0); waiting 30 s (250/7200 s)
+23:57:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 33% > 15%; CPU 1 busy 45% > 35%; whole machine mean busy 37% > 30%; loadavg 27.77 > 8.0); waiting 30 s (290/7200 s)
+23:58:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 44% > 15%; CPU 1 busy 61% > 35%; client CPUs 16-23 mean busy 41% > 35%; whole machine mean busy 49% > 30%; loadavg 26.24 > 8.0); waiting 30 s (330/7200 s)
+23:59:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 4 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 41.86 > 8.0); waiting 30 s (370/7200 s)
+23:59:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 97% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 45.44 > 8.0); waiting 30 s (410/7200 s)
+00:00:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 4 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 49.86 > 8.0); waiting 30 s (450/7200 s)
+00:01:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 50.60 > 8.0); waiting 30 s (490/7200 s)
+00:01:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 64% > 15%; CPU 7 busy 76% > 35%; client CPUs 16-23 mean busy 69% > 35%; whole machine mean busy 71% > 30%; loadavg 47.79 > 8.0); waiting 30 s (530/7200 s)
+00:02:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 41% > 15%; CPU 3 busy 57% > 35%; whole machine mean busy 40% > 30%; loadavg 40.78 > 8.0); waiting 30 s (570/7200 s)
+00:03:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 6 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 49.80 > 8.0); waiting 30 s (610/7200 s)
+00:03:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 63.81 > 8.0); waiting 30 s (650/7200 s)
+00:04:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 57.00 > 8.0); waiting 30 s (690/7200 s)
+00:05:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 53% > 15%; CPU 7 busy 70% > 35%; client CPUs 16-23 mean busy 53% > 35%; whole machine mean busy 59% > 30%; loadavg 41.12 > 8.0); waiting 30 s (730/7200 s)
+00:05:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 44% > 15%; CPU 1 busy 56% > 35%; whole machine mean busy 41% > 30%; loadavg 38.00 > 8.0); waiting 30 s (770/7200 s)
+00:06:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 40% > 15%; CPU 7 busy 72% > 35%; client CPUs 16-23 mean busy 39% > 35%; whole machine mean busy 47% > 30%; loadavg 28.49 > 8.0); waiting 30 s (810/7200 s)
+00:07:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 88% > 15%; CPU 1 busy 95% > 35%; client CPUs 16-23 mean busy 87% > 35%; whole machine mean busy 89% > 30%; loadavg 44.04 > 8.0); waiting 30 s (850/7200 s)
+00:07:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 75% > 15%; CPU 3 busy 86% > 35%; client CPUs 16-23 mean busy 79% > 35%; whole machine mean busy 81% > 30%; loadavg 50.35 > 8.0); waiting 30 s (890/7200 s)
+00:08:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 67% > 15%; CPU 3 busy 75% > 35%; client CPUs 16-23 mean busy 65% > 35%; whole machine mean busy 69% > 30%; loadavg 39.60 > 8.0); waiting 30 s (930/7200 s)
+00:09:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 97% > 15%; CPU 5 busy 99% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 98% > 30%; loadavg 35.32 > 8.0); waiting 30 s (970/7200 s)
+00:09:55Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 52% > 15%; CPU 5 busy 70% > 35%; client CPUs 16-23 mean busy 42% > 35%; whole machine mean busy 52% > 30%; loadavg 38.67 > 8.0); waiting 30 s (1010/7200 s)
+00:10:35Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 38% > 15%; CPU 5 busy 70% > 35%; whole machine mean busy 33% > 30%; loadavg 30.36 > 8.0); waiting 30 s (1050/7200 s)
+00:11:15Z gate rep 4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 15% > 15%; loadavg 18.70 > 8.0); waiting 30 s (1090/7200 s)
+00:11:55Z gate rep 4: busy (loadavg 11.81 > 8.0); waiting 30 s (1130/7200 s)
+00:12:35Z gate rep 4: busy (CPU 2 busy 35% > 35%; loadavg 8.25 > 8.0); waiting 30 s (1170/7200 s)
+00:13:15Z gate rep 4: quiet (load 6.01, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 14%, client 4%, machine 12%; waited 1210 s)
+00:13:22Z rep 4 uring c1 get_p1  rps=     302,205 cpu_us/req=3.325 cyc/req=16,518 ins/req=25,641 IPC=1.55 load=6.01 intf=0.266 REJECTED
+00:13:29Z rep 4 uring c1 get_p1  rps=     297,846 cpu_us/req=3.337 cyc/req=16,768 ins/req=25,710 IPC=1.53 load=6.49 intf=0.169 REJECTED
+00:13:36Z rep 4 uring c1 get_p1  rps=     276,025 cpu_us/req=3.614 cyc/req=17,905 ins/req=25,977 IPC=1.45 load=6.57 intf=0.261 REJECTED
+00:13:43Z rep 4 uring c1 get_p16 rps=   2,607,626 cpu_us/req=0.379 cyc/req=1,921 ins/req=2,390 IPC=1.24 load=6.69 intf=0.179 REJECTED
+00:13:50Z rep 4 uring c1 get_p16 rps=   2,787,363 cpu_us/req=0.365 cyc/req=1,805 ins/req=2,395 IPC=1.33 load=6.39 intf=0.119 REJECTED
+00:13:57Z rep 4 uring c1 get_p16 rps=   2,828,432 cpu_us/req=0.350 cyc/req=1,779 ins/req=2,393 IPC=1.35 load=6.50 intf=0.163 REJECTED
+00:14:04Z rep 4 uring c1 set_p16 rps=   2,766,003 cpu_us/req=0.369 cyc/req=1,880 ins/req=2,414 IPC=1.28 load=6.94 intf=0.106 REJECTED
+00:14:11Z rep 4 uring c1 set_p16 rps=   2,524,285 cpu_us/req=0.387 cyc/req=1,880 ins/req=2,409 IPC=1.28 load=6.63 intf=0.098 REJECTED
+00:14:18Z rep 4 uring c1 set_p16 rps=   2,562,432 cpu_us/req=0.381 cyc/req=1,937 ins/req=2,420 IPC=1.25 load=6.66 intf=0.161 REJECTED
+00:14:25Z rep 4 epoll c1 get_p1  rps=     316,996 cpu_us/req=3.163 cyc/req=16,688 ins/req=24,671 IPC=1.48 load=6.37 intf=0.076 REJECTED
+00:14:32Z rep 4 epoll c1 get_p1  rps=     291,382 cpu_us/req=3.451 cyc/req=17,632 ins/req=24,660 IPC=1.40 load=5.94 intf=0.240 REJECTED
+00:14:39Z rep 4 epoll c1 get_p1  rps=     306,074 cpu_us/req=3.381 cyc/req=17,256 ins/req=24,625 IPC=1.43 load=5.94 intf=0.258 REJECTED
+00:14:46Z rep 4 epoll c1 get_p16 rps=   2,782,000 cpu_us/req=0.360 cyc/req=1,781 ins/req=2,320 IPC=1.30 load=6.39 intf=0.147 REJECTED
+00:14:53Z rep 4 epoll c1 get_p16 rps=   1,764,182 cpu_us/req=0.407 cyc/req=2,019 ins/req=2,336 IPC=1.16 load=6.28 intf=0.901 REJECTED
+00:15:00Z rep 4 epoll c1 get_p16 rps=   2,089,594 cpu_us/req=0.431 cyc/req=2,097 ins/req=2,340 IPC=1.12 load=6.10 intf=0.915 REJECTED
+00:15:07Z rep 4 epoll c1 set_p16 rps=   2,809,664 cpu_us/req=0.352 cyc/req=1,792 ins/req=2,347 IPC=1.31 load=8.06 intf=0.104 REJECTED
+00:15:14Z rep 4 epoll c1 set_p16 rps=   2,867,603 cpu_us/req=0.357 cyc/req=1,835 ins/req=2,341 IPC=1.28 load=8.14 intf=0.128 REJECTED
+00:15:21Z rep 4 epoll c1 set_p16 rps=   2,281,994 cpu_us/req=0.410 cyc/req=2,068 ins/req=2,360 IPC=1.14 load=8.03 intf=0.341 REJECTED
+00:15:28Z rep 4 uring c2 get_p16 rps=   1,611,034 cpu_us/req=0.468 cyc/req=2,240 ins/req=2,611 IPC=1.17 load=10.19 intf=2.090
+00:15:35Z rep 4 uring c2 set_p16 rps=   3,079,283 cpu_us/req=0.498 cyc/req=2,436 ins/req=2,649 IPC=1.09 load=12.74 intf=2.061
+00:15:42Z rep 4 epoll c2 get_p16 rps=   1,862,083 cpu_us/req=0.576 cyc/req=2,801 ins/req=2,543 IPC=0.91 load=14.72 intf=2.730
+00:15:49Z rep 4 epoll c2 set_p16 rps=   1,744,976 cpu_us/req=0.547 cyc/req=2,643 ins/req=2,592 IPC=0.98 load=14.90 intf=2.622
+00:15:57Z rep 4 uring c4 get_p16 rps=   1,768,829 cpu_us/req=0.746 cyc/req=3,480 ins/req=2,834 IPC=0.81 load=19.37 intf=5.235
+00:16:04Z rep 4 uring c4 set_p16 rps=   1,985,779 cpu_us/req=0.731 cyc/req=3,462 ins/req=2,898 IPC=0.84 load=21.98 intf=4.952
+00:16:11Z rep 4 epoll c4 get_p16 rps=   2,797,203 cpu_us/req=0.666 cyc/req=2,999 ins/req=2,680 IPC=0.89 load=21.11 intf=4.796
+00:16:18Z rep 4 epoll c4 set_p16 rps=   2,957,350 cpu_us/req=0.663 cyc/req=3,084 ins/req=2,748 IPC=0.89 load=21.74 intf=5.757
+00:16:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 74% > 15%; CPU 5 busy 85% > 35%; client CPUs 16-23 mean busy 74% > 35%; whole machine mean busy 75% > 30%; loadavg 26.92 > 8.0); waiting 30 s (10/7200 s)
+00:17:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 17% > 15%; loadavg 16.79 > 8.0); waiting 30 s (50/7200 s)
+00:17:48Z gate rep 5: busy (loadavg 13.31 > 8.0); waiting 30 s (90/7200 s)
+00:18:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 20% > 15%; CPU 5 busy 77% > 35%; loadavg 9.72 > 8.0); waiting 30 s (130/7200 s)
+00:19:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 23% > 15%; CPU 6 busy 54% > 35%); waiting 30 s (170/7200 s)
+00:19:48Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 25% > 15%; CPU 4 busy 37% > 35%); waiting 30 s (210/7200 s)
+00:20:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 48% > 15%; CPU 3 busy 65% > 35%; client CPUs 16-23 mean busy 50% > 35%; whole machine mean busy 50% > 30%; loadavg 10.27 > 8.0); waiting 30 s (250/7200 s)
+00:21:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 72% > 15%; CPU 3 busy 79% > 35%; client CPUs 16-23 mean busy 76% > 35%; whole machine mean busy 76% > 30%; loadavg 21.54 > 8.0); waiting 30 s (290/7200 s)
+00:21:48Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 60% > 15%; CPU 7 busy 67% > 35%; client CPUs 16-23 mean busy 62% > 35%; whole machine mean busy 63% > 30%; loadavg 27.84 > 8.0); waiting 30 s (330/7200 s)
+00:22:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 35% > 15%; CPU 5 busy 47% > 35%; client CPUs 16-23 mean busy 37% > 35%; whole machine mean busy 39% > 30%; loadavg 21.76 > 8.0); waiting 30 s (370/7200 s)
+00:23:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 6 busy 36% > 35%; client CPUs 16-23 mean busy 36% > 35%; whole machine mean busy 36% > 30%; loadavg 17.18 > 8.0); waiting 30 s (410/7200 s)
+00:23:48Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 5 busy 46% > 35%; client CPUs 16-23 mean busy 44% > 35%; whole machine mean busy 41% > 30%; loadavg 16.52 > 8.0); waiting 30 s (450/7200 s)
+00:24:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 67% > 15%; CPU 5 busy 76% > 35%; client CPUs 16-23 mean busy 67% > 35%; whole machine mean busy 67% > 30%; loadavg 22.58 > 8.0); waiting 30 s (490/7200 s)
+00:25:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 20% > 15%; loadavg 18.92 > 8.0); waiting 30 s (530/7200 s)
+00:25:48Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 7 busy 42% > 35%; whole machine mean busy 33% > 30%; loadavg 13.87 > 8.0); waiting 30 s (570/7200 s)
+00:26:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 82% > 15%; CPU 7 busy 90% > 35%; client CPUs 16-23 mean busy 84% > 35%; whole machine mean busy 85% > 30%; loadavg 21.57 > 8.0); waiting 30 s (610/7200 s)
+00:27:08Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 79% > 15%; CPU 5 busy 82% > 35%; client CPUs 16-23 mean busy 82% > 35%; whole machine mean busy 82% > 30%; loadavg 26.40 > 8.0); waiting 30 s (650/7200 s)
+00:27:48Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 70% > 15%; CPU 7 busy 79% > 35%; client CPUs 16-23 mean busy 70% > 35%; whole machine mean busy 73% > 30%; loadavg 32.25 > 8.0); waiting 30 s (690/7200 s)
+00:28:28Z gate rep 5: busy (loadavg 25.83 > 8.0); waiting 30 s (730/7200 s)
+00:29:08Z gate rep 5: busy (loadavg 16.54 > 8.0); waiting 30 s (770/7200 s)
+00:29:48Z gate rep 5: busy (loadavg 11.09 > 8.0); waiting 30 s (810/7200 s)
+00:30:28Z gate rep 5: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 17% > 15%); waiting 30 s (850/7200 s)
+00:31:08Z gate rep 5: quiet (load 5.54, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 10%, client 3%, machine 11%; waited 890 s)
+00:31:15Z rep 5 epoll c1 get_p1  rps=     318,248 cpu_us/req=3.212 cyc/req=16,593 ins/req=24,725 IPC=1.49 load=5.54 intf=0.014
+00:31:22Z rep 5 epoll c1 get_p16 rps=   2,782,819 cpu_us/req=0.379 cyc/req=1,961 ins/req=2,331 IPC=1.19 load=5.74 intf=0.298 REJECTED
+00:31:29Z rep 5 epoll c1 get_p16 rps=   2,564,221 cpu_us/req=0.380 cyc/req=2,004 ins/req=2,332 IPC=1.16 load=5.68 intf=0.101 REJECTED
+00:31:36Z rep 5 epoll c1 get_p16 rps=   2,427,027 cpu_us/req=0.410 cyc/req=2,108 ins/req=2,339 IPC=1.11 load=6.39 intf=0.242 REJECTED
+00:31:43Z rep 5 epoll c1 set_p16 rps=   2,429,642 cpu_us/req=0.419 cyc/req=2,125 ins/req=2,364 IPC=1.11 load=6.52 intf=0.204 REJECTED
+00:31:50Z rep 5 epoll c1 set_p16 rps=   2,472,963 cpu_us/req=0.406 cyc/req=2,069 ins/req=2,356 IPC=1.14 load=7.27 intf=0.130 REJECTED
+00:31:57Z rep 5 epoll c1 set_p16 rps=   2,715,203 cpu_us/req=0.375 cyc/req=1,889 ins/req=2,352 IPC=1.25 load=7.55 intf=0.213 REJECTED
+00:32:04Z rep 5 uring c1 get_p1  rps=     230,937 cpu_us/req=4.056 cyc/req=20,251 ins/req=26,203 IPC=1.29 load=9.03 intf=0.657 REJECTED
+00:32:11Z rep 5 uring c1 get_p1  rps=     178,647 cpu_us/req=5.518 cyc/req=26,186 ins/req=26,740 IPC=1.02 load=13.02 intf=1.136 REJECTED
+00:32:18Z rep 5 uring c1 get_p1  rps=     184,197 cpu_us/req=5.311 cyc/req=25,356 ins/req=26,732 IPC=1.05 load=15.90 intf=1.149 REJECTED
+00:32:25Z rep 5 uring c1 get_p16 rps=   1,262,406 cpu_us/req=0.683 cyc/req=3,148 ins/req=2,458 IPC=0.78 load=21.11 intf=1.240 REJECTED
+00:32:32Z rep 5 uring c1 get_p16 rps=   2,136,950 cpu_us/req=0.445 cyc/req=2,231 ins/req=2,415 IPC=1.08 load=26.58 intf=0.468 REJECTED
+00:32:39Z rep 5 uring c1 get_p16 rps=   2,006,262 cpu_us/req=0.483 cyc/req=2,402 ins/req=2,415 IPC=1.01 load=25.57 intf=0.441 REJECTED
+00:32:46Z rep 5 uring c1 set_p16 rps=   1,241,478 cpu_us/req=0.674 cyc/req=3,033 ins/req=2,471 IPC=0.81 load=24.80 intf=1.232 REJECTED
+00:32:53Z rep 5 uring c1 set_p16 rps=   1,431,677 cpu_us/req=0.693 cyc/req=3,342 ins/req=2,477 IPC=0.74 load=28.88 intf=1.137 REJECTED
+00:33:00Z rep 5 uring c1 set_p16 rps=   1,371,085 cpu_us/req=0.686 cyc/req=3,195 ins/req=2,474 IPC=0.77 load=30.81 intf=1.194 REJECTED
+00:33:07Z rep 5 epoll c2 get_p16 rps=   1,454,848 cpu_us/req=0.781 cyc/req=3,707 ins/req=2,593 IPC=0.70 load=41.19 intf=2.994
+00:33:14Z rep 5 epoll c2 set_p16 rps=   1,439,341 cpu_us/req=0.760 cyc/req=3,587 ins/req=2,646 IPC=0.74 load=44.29 intf=3.051
+00:33:21Z rep 5 uring c2 get_p16 rps=   1,297,206 cpu_us/req=0.837 cyc/req=3,922 ins/req=2,673 IPC=0.68 load=46.72 intf=3.057
+00:33:28Z rep 5 uring c2 set_p16 rps=   1,480,778 cpu_us/req=0.792 cyc/req=3,732 ins/req=2,720 IPC=0.73 load=51.07 intf=2.934
+00:33:36Z rep 5 epoll c4 get_p16 rps=   1,940,826 cpu_us/req=0.880 cyc/req=3,982 ins/req=2,739 IPC=0.69 load=51.22 intf=6.502
+00:33:43Z rep 5 epoll c4 set_p16 rps=   2,776,406 cpu_us/req=0.811 cyc/req=3,768 ins/req=2,799 IPC=0.74 load=54.90 intf=6.035
+00:33:52Z rep 5 uring c4 get_p16 rps=   2,240,579 cpu_us/req=0.959 cyc/req=4,522 ins/req=2,906 IPC=0.64 load=56.65 intf=6.152
+00:33:59Z rep 5 uring c4 set_p16 rps=   1,876,739 cpu_us/req=0.935 cyc/req=4,355 ins/req=2,970 IPC=0.68 load=59.24 intf=6.368
+00:34:09Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 62.16 > 8.0); waiting 30 s (10/7200 s)
+00:34:49Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 72.12 > 8.0); waiting 30 s (50/7200 s)
+00:35:29Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 69% > 15%; CPU 4 busy 77% > 35%; client CPUs 16-23 mean busy 66% > 35%; whole machine mean busy 69% > 30%; loadavg 63.34 > 8.0); waiting 30 s (90/7200 s)
+00:36:09Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 80% > 15%; CPU 6 busy 86% > 35%; client CPUs 16-23 mean busy 80% > 35%; whole machine mean busy 81% > 30%; loadavg 47.77 > 8.0); waiting 30 s (130/7200 s)
+00:36:49Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 0 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 54.84 > 8.0); waiting 30 s (170/7200 s)
+00:37:29Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 59.05 > 8.0); waiting 30 s (210/7200 s)
+00:38:09Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 50% > 15%; CPU 1 busy 54% > 35%; client CPUs 16-23 mean busy 48% > 35%; whole machine mean busy 52% > 30%; loadavg 53.57 > 8.0); waiting 30 s (250/7200 s)
+00:38:49Z gate rep 6: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 17% > 15%; CPU 2 busy 36% > 35%; loadavg 34.40 > 8.0); waiting 30 s (290/7200 s)
+00:39:29Z gate rep 6: busy (loadavg 20.66 > 8.0); waiting 30 s (330/7200 s)
+00:40:09Z gate rep 6: busy (loadavg 11.62 > 8.0); waiting 30 s (370/7200 s)
+00:40:49Z gate rep 6: busy (loadavg 8.18 > 8.0); waiting 30 s (410/7200 s)
+00:41:29Z gate rep 6: quiet (load 6.87, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 14%, client 5%, machine 13%; waited 450 s)
+00:41:36Z rep 6 uring c1 get_p1  rps=     325,221 cpu_us/req=3.065 cyc/req=16,120 ins/req=25,613 IPC=1.59 load=6.48 intf=0.020
+00:41:43Z rep 6 uring c1 get_p16 rps=   2,629,747 cpu_us/req=0.377 cyc/req=1,935 ins/req=2,393 IPC=1.24 load=6.44 intf=0.019
+00:41:50Z rep 6 uring c1 set_p16 rps=   2,442,090 cpu_us/req=0.402 cyc/req=2,058 ins/req=2,406 IPC=1.17 load=6.17 intf=0.103 REJECTED
+00:41:57Z rep 6 uring c1 set_p16 rps=   2,575,139 cpu_us/req=0.391 cyc/req=2,063 ins/req=2,410 IPC=1.17 load=6.30 intf=0.019
+00:42:04Z rep 6 epoll c1 get_p1  rps=     286,341 cpu_us/req=3.391 cyc/req=17,073 ins/req=24,647 IPC=1.44 load=6.11 intf=0.239 REJECTED
+00:42:11Z rep 6 epoll c1 get_p1  rps=     313,677 cpu_us/req=3.161 cyc/req=16,661 ins/req=24,705 IPC=1.48 load=5.93 intf=0.060 REJECTED
+00:42:18Z rep 6 epoll c1 get_p1  rps=     302,020 cpu_us/req=3.331 cyc/req=17,036 ins/req=24,690 IPC=1.45 load=5.77 intf=0.076 REJECTED
+00:42:25Z rep 6 epoll c1 get_p16 rps=   2,667,990 cpu_us/req=0.372 cyc/req=1,969 ins/req=2,319 IPC=1.18 load=5.87 intf=0.049
+00:42:32Z rep 6 epoll c1 set_p16 rps=   2,713,472 cpu_us/req=0.370 cyc/req=1,916 ins/req=2,341 IPC=1.22 load=5.81 intf=0.020
+00:42:39Z rep 6 uring c2 get_p16 rps=   5,260,387 cpu_us/req=0.369 cyc/req=1,915 ins/req=2,576 IPC=1.34 load=6.07 intf=0.188
+00:42:46Z rep 6 uring c2 set_p16 rps=   4,524,029 cpu_us/req=0.407 cyc/req=2,066 ins/req=2,631 IPC=1.27 load=5.66 intf=0.299
+00:42:53Z rep 6 epoll c2 get_p16 rps=   4,028,022 cpu_us/req=0.462 cyc/req=2,326 ins/req=2,518 IPC=1.08 load=5.77 intf=1.242
+00:43:00Z rep 6 epoll c2 set_p16 rps=   1,556,483 cpu_us/req=0.792 cyc/req=3,829 ins/req=2,639 IPC=0.69 load=5.87 intf=2.876
+00:43:08Z rep 6 uring c4 get_p16 rps=   2,346,938 cpu_us/req=0.974 cyc/req=4,631 ins/req=2,888 IPC=0.62 load=12.01 intf=5.684
+00:43:15Z rep 6 uring c4 set_p16 rps=   5,366,752 cpu_us/req=0.652 cyc/req=3,103 ins/req=2,866 IPC=0.92 load=14.81 intf=3.252
+00:43:22Z rep 6 epoll c4 get_p16 rps=   6,343,485 cpu_us/req=0.456 cyc/req=2,219 ins/req=2,647 IPC=1.19 load=16.42 intf=1.741
+00:43:29Z rep 6 epoll c4 set_p16 rps=   6,167,549 cpu_us/req=0.530 cyc/req=2,548 ins/req=2,725 IPC=1.07 load=16.06 intf=2.384
+00:43:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 16% > 15%; CPU 3 busy 41% > 35%; loadavg 14.11 > 8.0); waiting 30 s (10/7200 s)
+00:44:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 21% > 15%; CPU 4 busy 41% > 35%; loadavg 16.45 > 8.0); waiting 30 s (50/7200 s)
+00:44:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 98% > 15%; CPU 3 busy 99% > 35%; client CPUs 16-23 mean busy 99% > 35%; whole machine mean busy 98% > 30%; loadavg 17.84 > 8.0); waiting 30 s (90/7200 s)
+00:45:39Z gate record uring c1: busy (loadavg 10.72 > 8.0); waiting 30 s (130/7200 s)
+00:46:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 25% > 15%; CPU 2 busy 52% > 35%); waiting 30 s (170/7200 s)
+00:46:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 73% > 15%; CPU 1 busy 90% > 35%; client CPUs 16-23 mean busy 67% > 35%; whole machine mean busy 73% > 30%; loadavg 11.88 > 8.0); waiting 30 s (210/7200 s)
+00:47:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 0 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 27.46 > 8.0); waiting 30 s (250/7200 s)
+00:48:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 37.19 > 8.0); waiting 30 s (290/7200 s)
+00:48:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 6 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 51.21 > 8.0); waiting 30 s (330/7200 s)
+00:49:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 4 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 50.04 > 8.0); waiting 30 s (370/7200 s)
+00:50:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 49.99 > 8.0); waiting 30 s (410/7200 s)
+00:50:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 36.73 > 8.0); waiting 30 s (450/7200 s)
+00:51:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 42.52 > 8.0); waiting 30 s (490/7200 s)
+00:52:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 53.32 > 8.0); waiting 30 s (530/7200 s)
+00:52:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 61.59 > 8.0); waiting 30 s (570/7200 s)
+00:53:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 43% > 15%; CPU 5 busy 69% > 35%; whole machine mean busy 37% > 30%; loadavg 43.59 > 8.0); waiting 30 s (610/7200 s)
+00:54:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 61% > 15%; CPU 5 busy 89% > 35%; client CPUs 16-23 mean busy 85% > 35%; whole machine mean busy 76% > 30%; loadavg 35.29 > 8.0); waiting 30 s (650/7200 s)
+00:54:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 5 busy 57% > 35%; whole machine mean busy 33% > 30%; loadavg 22.76 > 8.0); waiting 30 s (690/7200 s)
+00:55:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 96% > 15%; CPU 5 busy 97% > 35%; client CPUs 16-23 mean busy 98% > 35%; whole machine mean busy 97% > 30%; loadavg 31.15 > 8.0); waiting 30 s (730/7200 s)
+00:56:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 6 busy 55% > 35%; whole machine mean busy 36% > 30%; loadavg 29.11 > 8.0); waiting 30 s (770/7200 s)
+00:56:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 91% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 89% > 35%; whole machine mean busy 91% > 30%; loadavg 31.24 > 8.0); waiting 30 s (810/7200 s)
+00:57:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 75% > 15%; CPU 7 busy 90% > 35%; client CPUs 16-23 mean busy 79% > 35%; whole machine mean busy 79% > 30%; loadavg 46.09 > 8.0); waiting 30 s (850/7200 s)
+00:58:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 6 busy 49% > 35%; whole machine mean busy 30% > 30%; loadavg 33.69 > 8.0); waiting 30 s (890/7200 s)
+00:58:59Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 94% > 15%; CPU 1 busy 98% > 35%; client CPUs 16-23 mean busy 98% > 35%; whole machine mean busy 96% > 30%; loadavg 32.66 > 8.0); waiting 30 s (930/7200 s)
+00:59:39Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 77% > 15%; CPU 3 busy 97% > 35%; client CPUs 16-23 mean busy 91% > 35%; whole machine mean busy 86% > 30%; loadavg 31.73 > 8.0); waiting 30 s (970/7200 s)
+01:00:19Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 35% > 15%; CPU 2 busy 52% > 35%; whole machine mean busy 31% > 30%; loadavg 22.07 > 8.0); waiting 30 s (1010/7200 s)
+01:01:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 0 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 27.41 > 8.0); waiting 30 s (1050/7200 s)
+01:01:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 50% > 15%; CPU 1 busy 78% > 35%; client CPUs 16-23 mean busy 50% > 35%; whole machine mean busy 56% > 30%; loadavg 36.76 > 8.0); waiting 30 s (1090/7200 s)
+01:02:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 4 busy 55% > 35%; whole machine mean busy 36% > 30%; loadavg 33.19 > 8.0); waiting 30 s (1130/7200 s)
+01:03:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 4 busy 52% > 35%; loadavg 23.08 > 8.0); waiting 30 s (1170/7200 s)
+01:03:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 29.98 > 8.0); waiting 30 s (1210/7200 s)
+01:04:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 32.13 > 8.0); waiting 30 s (1250/7200 s)
+01:05:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 30% > 15%; CPU 3 busy 41% > 35%; whole machine mean busy 34% > 30%; loadavg 25.78 > 8.0); waiting 30 s (1290/7200 s)
+01:05:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 40% > 15%; CPU 3 busy 78% > 35%; whole machine mean busy 39% > 30%; loadavg 20.84 > 8.0); waiting 30 s (1330/7200 s)
+01:06:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 49% > 15%; CPU 3 busy 61% > 35%; client CPUs 16-23 mean busy 50% > 35%; whole machine mean busy 55% > 30%; loadavg 23.53 > 8.0); waiting 30 s (1370/7200 s)
+01:07:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 85% > 15%; CPU 1 busy 92% > 35%; client CPUs 16-23 mean busy 84% > 35%; whole machine mean busy 86% > 30%; loadavg 25.85 > 8.0); waiting 30 s (1410/7200 s)
+01:07:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 40% > 15%; CPU 3 busy 49% > 35%; whole machine mean busy 38% > 30%; loadavg 22.94 > 8.0); waiting 30 s (1450/7200 s)
+01:08:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 93% > 15%; CPU 1 busy 97% > 35%; client CPUs 16-23 mean busy 98% > 35%; whole machine mean busy 96% > 30%; loadavg 36.11 > 8.0); waiting 30 s (1490/7200 s)
+01:09:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 40% > 15%; CPU 5 busy 63% > 35%; whole machine mean busy 38% > 30%; loadavg 28.45 > 8.0); waiting 30 s (1530/7200 s)
+01:09:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 87% > 15%; CPU 6 busy 92% > 35%; client CPUs 16-23 mean busy 80% > 35%; whole machine mean busy 84% > 30%; loadavg 26.48 > 8.0); waiting 30 s (1570/7200 s)
+01:10:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 35.48 > 8.0); waiting 30 s (1610/7200 s)
+01:11:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 42% > 15%; CPU 1 busy 52% > 35%; whole machine mean busy 43% > 30%; loadavg 29.95 > 8.0); waiting 30 s (1650/7200 s)
+01:11:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 49.01 > 8.0); waiting 30 s (1690/7200 s)
+01:12:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 97% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 96% > 35%; whole machine mean busy 97% > 30%; loadavg 41.50 > 8.0); waiting 30 s (1730/7200 s)
+01:13:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 43.33 > 8.0); waiting 30 s (1770/7200 s)
+01:13:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 48.89 > 8.0); waiting 30 s (1810/7200 s)
+01:14:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 64.50 > 8.0); waiting 30 s (1850/7200 s)
+01:15:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 7 busy 65% > 35%; whole machine mean busy 40% > 30%; loadavg 37.67 > 8.0); waiting 30 s (1890/7200 s)
+01:15:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 41.34 > 8.0); waiting 30 s (1930/7200 s)
+01:16:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 6 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 46.58 > 8.0); waiting 30 s (1970/7200 s)
+01:17:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 53% > 15%; CPU 7 busy 71% > 35%; client CPUs 16-23 mean busy 46% > 35%; whole machine mean busy 53% > 30%; loadavg 37.91 > 8.0); waiting 30 s (2010/7200 s)
+01:17:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 7 busy 76% > 35%; client CPUs 16-23 mean busy 36% > 35%; whole machine mean busy 41% > 30%; loadavg 36.34 > 8.0); waiting 30 s (2050/7200 s)
+01:18:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 7 busy 69% > 35%; whole machine mean busy 30% > 30%; loadavg 24.77 > 8.0); waiting 30 s (2090/7200 s)
+01:19:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 2 busy 65% > 35%; loadavg 18.07 > 8.0); waiting 30 s (2130/7200 s)
+01:19:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 67% > 15%; CPU 7 busy 89% > 35%; client CPUs 16-23 mean busy 62% > 35%; whole machine mean busy 66% > 30%; loadavg 23.37 > 8.0); waiting 30 s (2170/7200 s)
+01:20:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 4 busy 69% > 35%; loadavg 16.49 > 8.0); waiting 30 s (2210/7200 s)
+01:21:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 60% > 15%; CPU 4 busy 76% > 35%; client CPUs 16-23 mean busy 50% > 35%; whole machine mean busy 57% > 30%; loadavg 17.42 > 8.0); waiting 30 s (2250/7200 s)
+01:21:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 47.90 > 8.0); waiting 30 s (2290/7200 s)
+01:22:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 6 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 60.92 > 8.0); waiting 30 s (2330/7200 s)
+01:23:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 48% > 15%; CPU 4 busy 64% > 35%; client CPUs 16-23 mean busy 39% > 35%; whole machine mean busy 45% > 30%; loadavg 44.86 > 8.0); waiting 30 s (2370/7200 s)
+01:23:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 7 busy 48% > 35%; whole machine mean busy 33% > 30%; loadavg 26.59 > 8.0); waiting 30 s (2410/7200 s)
+01:24:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 19% > 15%; CPU 6 busy 38% > 35%; loadavg 18.24 > 8.0); waiting 30 s (2450/7200 s)
+01:25:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 17% > 15%; loadavg 12.75 > 8.0); waiting 30 s (2490/7200 s)
+01:25:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 78% > 15%; CPU 7 busy 86% > 35%; client CPUs 16-23 mean busy 77% > 35%; whole machine mean busy 78% > 30%; loadavg 11.79 > 8.0); waiting 30 s (2530/7200 s)
+01:26:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 6 busy 63% > 35%; loadavg 23.66 > 8.0); waiting 30 s (2570/7200 s)
+01:27:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 34.18 > 8.0); waiting 30 s (2610/7200 s)
+01:27:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 52.45 > 8.0); waiting 30 s (2650/7200 s)
+01:28:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 0 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 66.99 > 8.0); waiting 30 s (2690/7200 s)
+01:29:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 7 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 63.08 > 8.0); waiting 30 s (2730/7200 s)
+01:29:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 63% > 15%; CPU 3 busy 82% > 35%; client CPUs 16-23 mean busy 63% > 35%; whole machine mean busy 67% > 30%; loadavg 49.08 > 8.0); waiting 30 s (2770/7200 s)
+01:30:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 0 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 61.55 > 8.0); waiting 30 s (2810/7200 s)
+01:31:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 63.34 > 8.0); waiting 30 s (2850/7200 s)
+01:31:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 2 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 68.90 > 8.0); waiting 30 s (2890/7200 s)
+01:32:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 98% > 15%; CPU 3 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 55.60 > 8.0); waiting 30 s (2930/7200 s)
+01:33:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 95% > 15%; CPU 3 busy 96% > 35%; client CPUs 16-23 mean busy 97% > 35%; whole machine mean busy 96% > 30%; loadavg 45.54 > 8.0); waiting 30 s (2970/7200 s)
+01:33:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 35% > 15%; CPU 3 busy 47% > 35%; whole machine mean busy 36% > 30%; loadavg 39.11 > 8.0); waiting 30 s (3010/7200 s)
+01:34:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 43% > 15%; CPU 4 busy 56% > 35%; client CPUs 16-23 mean busy 36% > 35%; whole machine mean busy 44% > 30%; loadavg 35.41 > 8.0); waiting 30 s (3050/7200 s)
+01:35:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 46% > 15%; CPU 2 busy 51% > 35%; client CPUs 16-23 mean busy 43% > 35%; whole machine mean busy 47% > 30%; loadavg 36.27 > 8.0); waiting 30 s (3090/7200 s)
+01:35:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 47% > 15%; CPU 5 busy 58% > 35%; client CPUs 16-23 mean busy 41% > 35%; whole machine mean busy 47% > 30%; loadavg 38.72 > 8.0); waiting 30 s (3130/7200 s)
+01:36:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 39% > 15%; CPU 5 busy 45% > 35%; whole machine mean busy 39% > 30%; loadavg 37.25 > 8.0); waiting 30 s (3170/7200 s)
+01:37:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 94% > 15%; CPU 3 busy 96% > 35%; client CPUs 16-23 mean busy 96% > 35%; whole machine mean busy 95% > 30%; loadavg 35.36 > 8.0); waiting 30 s (3210/7200 s)
+01:37:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 58% > 15%; CPU 5 busy 67% > 35%; client CPUs 16-23 mean busy 51% > 35%; whole machine mean busy 57% > 30%; loadavg 35.11 > 8.0); waiting 30 s (3250/7200 s)
+01:38:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 30% > 15%; CPU 6 busy 49% > 35%; loadavg 26.73 > 8.0); waiting 30 s (3290/7200 s)
+01:39:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 40% > 15%; CPU 7 busy 61% > 35%; client CPUs 16-23 mean busy 41% > 35%; whole machine mean busy 45% > 30%; loadavg 26.94 > 8.0); waiting 30 s (3330/7200 s)
+01:39:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 27% > 15%; CPU 6 busy 45% > 35%; loadavg 17.00 > 8.0); waiting 30 s (3370/7200 s)
+01:40:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 26% > 15%; CPU 7 busy 55% > 35%; loadavg 13.25 > 8.0); waiting 30 s (3410/7200 s)
+01:41:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 18% > 15%; loadavg 10.31 > 8.0); waiting 30 s (3450/7200 s)
+01:41:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 37% > 15%; CPU 5 busy 83% > 35%; loadavg 8.95 > 8.0); waiting 30 s (3490/7200 s)
+01:42:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 50% > 15%; CPU 1 busy 62% > 35%; client CPUs 16-23 mean busy 38% > 35%; whole machine mean busy 47% > 30%; loadavg 20.89 > 8.0); waiting 30 s (3530/7200 s)
+01:43:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 1 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 28.82 > 8.0); waiting 30 s (3570/7200 s)
+01:43:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 100% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 100% > 30%; loadavg 39.88 > 8.0); waiting 30 s (3610/7200 s)
+01:44:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 28% > 15%; CPU 7 busy 58% > 35%; loadavg 36.53 > 8.0); waiting 30 s (3650/7200 s)
+01:45:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 98% > 15%; CPU 4 busy 100% > 35%; client CPUs 16-23 mean busy 98% > 35%; whole machine mean busy 98% > 30%; loadavg 27.10 > 8.0); waiting 30 s (3690/7200 s)
+01:45:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 99% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 100% > 35%; whole machine mean busy 99% > 30%; loadavg 36.98 > 8.0); waiting 30 s (3730/7200 s)
+01:46:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 21% > 15%; loadavg 34.03 > 8.0); waiting 30 s (3770/7200 s)
+01:47:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 28% > 15%; CPU 6 busy 57% > 35%; loadavg 24.83 > 8.0); waiting 30 s (3810/7200 s)
+01:47:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 39% > 15%; CPU 4 busy 58% > 35%; whole machine mean busy 31% > 30%; loadavg 18.95 > 8.0); waiting 30 s (3850/7200 s)
+01:48:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 26% > 15%; CPU 2 busy 42% > 35%; loadavg 15.46 > 8.0); waiting 30 s (3890/7200 s)
+01:49:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 76% > 15%; CPU 3 busy 82% > 35%; client CPUs 16-23 mean busy 73% > 35%; whole machine mean busy 76% > 30%; loadavg 16.19 > 8.0); waiting 30 s (3930/7200 s)
+01:49:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 74% > 15%; CPU 4 busy 78% > 35%; client CPUs 16-23 mean busy 75% > 35%; whole machine mean busy 77% > 30%; loadavg 26.77 > 8.0); waiting 30 s (3970/7200 s)
+01:50:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 7 busy 70% > 35%; whole machine mean busy 31% > 30%; loadavg 24.76 > 8.0); waiting 30 s (4010/7200 s)
+01:51:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 33% > 15%; CPU 6 busy 68% > 35%; loadavg 15.81 > 8.0); waiting 30 s (4050/7200 s)
+01:51:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 29% > 15%; CPU 1 busy 72% > 35%; loadavg 19.69 > 8.0); waiting 30 s (4090/7200 s)
+01:52:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 35% > 15%; CPU 5 busy 58% > 35%; whole machine mean busy 31% > 30%; loadavg 14.35 > 8.0); waiting 30 s (4130/7200 s)
+01:53:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 5 busy 72% > 35%; loadavg 9.91 > 8.0); waiting 30 s (4170/7200 s)
+01:53:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 53% > 15%; CPU 3 busy 86% > 35%; client CPUs 16-23 mean busy 38% > 35%; whole machine mean busy 47% > 30%; loadavg 9.92 > 8.0); waiting 30 s (4210/7200 s)
+01:54:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 82% > 15%; CPU 5 busy 100% > 35%; client CPUs 16-23 mean busy 83% > 35%; whole machine mean busy 83% > 30%; loadavg 22.57 > 8.0); waiting 30 s (4250/7200 s)
+01:55:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 85% > 15%; CPU 5 busy 89% > 35%; client CPUs 16-23 mean busy 87% > 35%; whole machine mean busy 88% > 30%; loadavg 27.42 > 8.0); waiting 30 s (4290/7200 s)
+01:55:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 49% > 15%; CPU 7 busy 79% > 35%; client CPUs 16-23 mean busy 38% > 35%; whole machine mean busy 46% > 30%; loadavg 24.93 > 8.0); waiting 30 s (4330/7200 s)
+01:56:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 27% > 15%; CPU 6 busy 45% > 35%; loadavg 18.02 > 8.0); waiting 30 s (4370/7200 s)
+01:57:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 28% > 15%; CPU 7 busy 79% > 35%; loadavg 13.70 > 8.0); waiting 30 s (4410/7200 s)
+01:57:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 32% > 15%; CPU 3 busy 69% > 35%; loadavg 10.35 > 8.0); waiting 30 s (4450/7200 s)
+01:58:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 45% > 15%; CPU 3 busy 95% > 35%; whole machine mean busy 31% > 30%; loadavg 9.92 > 8.0); waiting 30 s (4490/7200 s)
+01:59:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 43% > 15%; CPU 7 busy 49% > 35%; client CPUs 16-23 mean busy 55% > 35%; whole machine mean busy 53% > 30%; loadavg 15.47 > 8.0); waiting 30 s (4530/7200 s)
+01:59:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 76% > 15%; CPU 3 busy 92% > 35%; client CPUs 16-23 mean busy 81% > 35%; whole machine mean busy 81% > 30%; loadavg 19.55 > 8.0); waiting 30 s (4570/7200 s)
+02:00:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 86% > 15%; CPU 5 busy 92% > 35%; client CPUs 16-23 mean busy 90% > 35%; whole machine mean busy 89% > 30%; loadavg 32.08 > 8.0); waiting 30 s (4610/7200 s)
+02:01:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 46% > 15%; CPU 5 busy 73% > 35%; whole machine mean busy 44% > 30%; loadavg 28.20 > 8.0); waiting 30 s (4650/7200 s)
+02:01:40Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 36% > 15%; CPU 4 busy 45% > 35%; whole machine mean busy 34% > 30%; loadavg 19.35 > 8.0); waiting 30 s (4690/7200 s)
+02:02:20Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 49% > 15%; CPU 7 busy 70% > 35%; client CPUs 16-23 mean busy 50% > 35%; whole machine mean busy 53% > 30%; loadavg 21.26 > 8.0); waiting 30 s (4730/7200 s)
+02:03:00Z gate record uring c1: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 45% > 15%; CPU 7 busy 60% > 35%; client CPUs 16-23 mean busy 36% > 35%; whole machine mean busy 43% > 30%; loadavg 20.23 > 8.0); waiting 30 s (4770/7200 s)
+02:03:40Z gate record uring c1: busy (loadavg 13.98 > 8.0); waiting 30 s (4810/7200 s)
+02:04:20Z gate record uring c1: busy (loadavg 8.64 > 8.0); waiting 30 s (4850/7200 s)
+02:05:00Z gate record uring c1: quiet (load 6.54, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 10%, client 7%, machine 12%; waited 4890 s)
+02:05:07Z record uring-c1-get_p1: rps=343,397
+02:05:08Z   report uring-c1-get_p1-flat: 104 lines, 1 s
+02:05:09Z   report uring-c1-get_p1-dso: 20 lines, 1 s
+02:05:10Z   report uring-c1-get_p1-callers: 4001 lines, 1 s
+02:05:20Z gate record uring c4: quiet (load 6.20, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 6%, client 4%, machine 9%; waited 10 s)
+02:05:27Z record uring-c4-get_p16: rps=7,769,158
+02:05:28Z   report uring-c4-get_p16-flat: 82 lines, 1 s
+02:05:29Z   report uring-c4-get_p16-dso: 20 lines, 1 s
+02:05:31Z   report uring-c4-get_p16-callers: 4001 lines, 3 s
+02:05:41Z gate record epoll c1: quiet (load 6.75, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 9%, client 7%, machine 12%; waited 10 s)
+02:05:49Z record epoll-c1-get_p1: rps=317,618
+02:05:50Z   report epoll-c1-get_p1-flat: 113 lines, 1 s
+02:05:50Z   report epoll-c1-get_p1-dso: 20 lines, 1 s
+02:05:52Z   report epoll-c1-get_p1-callers: 4001 lines, 1 s
+02:06:02Z gate record epoll c4: quiet (load 6.01, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 4%, machine 8%; waited 10 s)
+02:06:09Z record epoll-c4-get_p16: rps=7,978,819
+02:06:10Z   report epoll-c4-get_p16-flat: 88 lines, 1 s
+02:06:11Z   report epoll-c4-get_p16-dso: 19 lines, 1 s
+02:06:13Z   report epoll-c4-get_p16-callers: 3626 lines, 2 s
+02:06:13Z summary written: <repo>/results/perf-hw/20261125T233002Z/summary.md

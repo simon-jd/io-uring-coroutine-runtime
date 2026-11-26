@@ -1,0 +1,147 @@
+03:40:43Z perf-hw: {"stamp": "20261126T034043Z", "start": "2026-11-26T03:40:43Z", "commit": "caa38ad", "kernel": "7.0.0-42-generic", "perf": "perf version 7.0.14", "cpu": "13th Gen Intel(R) Core(TM) i9-13900K", "microcode": "0x133", "governor / no_turbo": "powersave 0", "perf_event_paranoid / kptr_restrict / nmi_watchdog (unchanged)": "4 1 1", "build": "<repo>/build-release (Release, -O3)", "kv_server sha256": "884fc71de6329608", "server CPUs": "first N of 2,4,6,0 (P-cores; SMT siblings [1, 3, 5, 7] kept idle by the gate)", "client CPUs": "16-23 (E-cores), kvload 8 threads, 50 connections per server core", "harness CPUs": "[24, 25, 26, 27, 28, 29, 30, 31]", "workloads": "closed loop, 100k keys preloaded, 64-byte values; 1 core(s): get_p1, get_p16, set_p16; 2 core(s): get_p16, set_p16; 4 core(s): get_p16, set_p16", "reps": "7, arm order rotated per repetition", "events": "cpu_core/cycles/,cpu_core/instructions/,cpu_core/cycles/u,cpu_core/instructions/u,cpu_core/branches/,cpu_core/branch-misses/,cpu_core/cache-references/,cpu_core/cache-misses/,cpu_core/L1-dcache-load-misses/", "record": "perf record -e cpu_core/cycles/ -F 999 --call-graph dwarf,8192 on 1 core(s) get_p1, 4 core(s) get_p16 for each arm", "gate": "10 s sample; CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean <= 15% and each <= 35%, client CPUs mean <= 35%, machine mean <= 30%, loadavg <= 8.0; wait up to 1800 s at start, 600 s per repetition", "rejection": "1-core runs with interference > 0.05 repeated up to 2 times", "dry run": false}
+03:40:43Z event check: 3307036,,cpu_core/cycles/,327939,49.00,, | 2527269,,cpu_core/instructions/,327939,49.00,, | 614600,,cpu_core/cycles/u,327939,49.00,, | 269561,,cpu_core/instructions/u,327939,49.00,, | 462199,,cpu_core/branches/,327939,49.00,, | 17913,,cpu_core/branch-misses/,327939,49.00,, | 125641,,cpu_core/cache-references/,327939,49.00,, | 44803,,cpu_core/cache-misses/,327939,49.00,, | 26757,,cpu_core/L1-dcache-load-misses/,327939,49.00,,
+03:40:53Z gate start: quiet (load 3.22, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 3%, machine 7%; waited 10 s)
+03:41:00Z rep 0 uring c1 get_p1  rps=     330,370 cpu_us/req=3.029 cyc/req=16,127 ins/req=25,656 IPC=1.59 load=3.22 intf=0.022
+03:41:07Z rep 0 uring c1 get_p16 rps=   2,614,026 cpu_us/req=0.368 cyc/req=1,907 ins/req=2,382 IPC=1.25 load=3.20 intf=0.050 REJECTED
+03:41:14Z rep 0 uring c1 get_p16 rps=   3,025,526 cpu_us/req=0.338 cyc/req=1,706 ins/req=2,382 IPC=1.40 load=4.06 intf=0.045
+03:41:21Z rep 0 uring c1 set_p16 rps=   2,705,645 cpu_us/req=0.364 cyc/req=1,875 ins/req=2,400 IPC=1.28 load=3.97 intf=0.020
+03:41:28Z rep 0 epoll c1 get_p1  rps=     298,684 cpu_us/req=3.352 cyc/req=16,928 ins/req=24,664 IPC=1.46 load=3.96 intf=0.070 REJECTED
+03:41:35Z rep 0 epoll c1 get_p1  rps=     334,227 cpu_us/req=3.014 cyc/req=15,709 ins/req=24,543 IPC=1.56 load=4.21 intf=0.025
+03:41:42Z rep 0 epoll c1 get_p16 rps=   3,120,902 cpu_us/req=0.324 cyc/req=1,662 ins/req=2,311 IPC=1.39 load=4.59 intf=0.033
+03:41:49Z rep 0 epoll c1 set_p16 rps=   2,893,626 cpu_us/req=0.342 cyc/req=1,694 ins/req=2,338 IPC=1.38 load=5.04 intf=0.012
+03:41:56Z rep 0 uring c2 get_p16 rps=   5,358,861 cpu_us/req=0.349 cyc/req=1,731 ins/req=2,571 IPC=1.49 load=5.19 intf=0.100
+03:42:03Z rep 0 uring c2 set_p16 rps=   5,707,043 cpu_us/req=0.343 cyc/req=1,807 ins/req=2,623 IPC=1.45 load=5.60 intf=0.026
+03:42:10Z rep 0 epoll c2 get_p16 rps=   5,470,208 cpu_us/req=0.313 cyc/req=1,649 ins/req=2,502 IPC=1.52 load=6.03 intf=0.069
+03:42:17Z rep 0 epoll c2 set_p16 rps=   4,742,934 cpu_us/req=0.373 cyc/req=1,931 ins/req=2,568 IPC=1.33 load=6.19 intf=0.366
+03:42:25Z rep 0 uring c4 get_p16 rps=   7,226,915 cpu_us/req=0.405 cyc/req=2,086 ins/req=2,774 IPC=1.33 load=6.86 intf=0.666
+03:42:32Z rep 0 uring c4 set_p16 rps=   8,671,965 cpu_us/req=0.401 cyc/req=2,030 ins/req=2,829 IPC=1.39 load=7.43 intf=0.393
+03:42:39Z rep 0 epoll c4 get_p16 rps=   7,998,346 cpu_us/req=0.357 cyc/req=1,793 ins/req=2,631 IPC=1.47 load=7.53 intf=0.331
+03:42:46Z rep 0 epoll c4 set_p16 rps=   8,492,221 cpu_us/req=0.365 cyc/req=1,886 ins/req=2,704 IPC=1.43 load=7.73 intf=0.494
+03:42:56Z gate rep 1: quiet (load 7.03, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 4%, client 3%, machine 6%; waited 10 s)
+03:43:03Z rep 1 epoll c1 get_p1  rps=     328,164 cpu_us/req=2.992 cyc/req=16,062 ins/req=24,593 IPC=1.53 load=7.03 intf=0.040
+03:43:10Z rep 1 epoll c1 get_p16 rps=   3,285,907 cpu_us/req=0.301 cyc/req=1,618 ins/req=2,310 IPC=1.43 load=6.48 intf=0.006
+03:43:17Z rep 1 epoll c1 set_p16 rps=   3,038,221 cpu_us/req=0.331 cyc/req=1,753 ins/req=2,337 IPC=1.33 load=6.28 intf=0.027
+03:43:24Z rep 1 uring c1 get_p1  rps=     305,742 cpu_us/req=3.205 cyc/req=16,868 ins/req=25,629 IPC=1.52 load=6.31 intf=0.097 REJECTED
+03:43:31Z rep 1 uring c1 get_p1  rps=     339,563 cpu_us/req=2.951 cyc/req=15,737 ins/req=25,575 IPC=1.63 load=6.52 intf=0.022
+03:43:38Z rep 1 uring c1 get_p16 rps=   3,500,765 cpu_us/req=0.284 cyc/req=1,525 ins/req=2,383 IPC=1.56 load=6.64 intf=0.009
+03:43:45Z rep 1 uring c1 set_p16 rps=   2,491,117 cpu_us/req=0.394 cyc/req=2,071 ins/req=2,401 IPC=1.16 load=5.70 intf=0.059 REJECTED
+03:43:52Z rep 1 uring c1 set_p16 rps=   3,188,416 cpu_us/req=0.323 cyc/req=1,731 ins/req=2,404 IPC=1.39 load=5.48 intf=0.009
+03:43:59Z rep 1 epoll c2 get_p16 rps=   4,441,242 cpu_us/req=0.339 cyc/req=1,780 ins/req=2,510 IPC=1.41 load=5.49 intf=0.333
+03:44:06Z rep 1 epoll c2 set_p16 rps=   5,155,296 cpu_us/req=0.331 cyc/req=1,747 ins/req=2,562 IPC=1.47 load=5.61 intf=0.464
+03:44:13Z rep 1 uring c2 get_p16 rps=   4,578,506 cpu_us/req=0.351 cyc/req=1,847 ins/req=2,572 IPC=1.39 load=5.06 intf=0.379
+03:44:20Z rep 1 uring c2 set_p16 rps=   5,244,365 cpu_us/req=0.355 cyc/req=1,857 ins/req=2,625 IPC=1.41 load=5.13 intf=0.220
+03:44:27Z rep 1 epoll c4 get_p16 rps=   7,430,554 cpu_us/req=0.393 cyc/req=1,999 ins/req=2,635 IPC=1.32 load=5.44 intf=1.149
+03:44:34Z rep 1 epoll c4 set_p16 rps=   6,616,563 cpu_us/req=0.461 cyc/req=2,253 ins/req=2,723 IPC=1.21 load=5.75 intf=1.439
+03:44:42Z rep 1 uring c4 get_p16 rps=   8,309,808 cpu_us/req=0.379 cyc/req=1,963 ins/req=2,764 IPC=1.41 load=6.49 intf=0.223
+03:44:49Z rep 1 uring c4 set_p16 rps=   7,910,323 cpu_us/req=0.398 cyc/req=2,038 ins/req=2,832 IPC=1.39 load=7.27 intf=0.386
+03:44:59Z gate rep 2: quiet (load 6.66, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 3%, machine 6%; waited 10 s)
+03:45:06Z rep 2 uring c1 get_p1  rps=     343,484 cpu_us/req=2.902 cyc/req=15,594 ins/req=25,568 IPC=1.64 load=6.66 intf=0.003
+03:45:13Z rep 2 uring c1 get_p16 rps=   3,471,056 cpu_us/req=0.294 cyc/req=1,574 ins/req=2,379 IPC=1.51 load=6.36 intf=0.007
+03:45:20Z rep 2 uring c1 set_p16 rps=   3,014,394 cpu_us/req=0.327 cyc/req=1,750 ins/req=2,400 IPC=1.37 load=5.70 intf=0.017
+03:45:27Z rep 2 epoll c1 get_p1  rps=     326,496 cpu_us/req=3.043 cyc/req=16,217 ins/req=24,525 IPC=1.51 load=5.57 intf=0.007
+03:45:34Z rep 2 epoll c1 get_p16 rps=   3,307,622 cpu_us/req=0.303 cyc/req=1,623 ins/req=2,309 IPC=1.42 load=5.40 intf=0.007
+03:45:41Z rep 2 epoll c1 set_p16 rps=   2,793,011 cpu_us/req=0.344 cyc/req=1,816 ins/req=2,342 IPC=1.29 load=5.53 intf=0.051 REJECTED
+03:45:48Z rep 2 epoll c1 set_p16 rps=   3,167,523 cpu_us/req=0.324 cyc/req=1,686 ins/req=2,335 IPC=1.38 load=5.73 intf=0.143 REJECTED
+03:45:55Z rep 2 epoll c1 set_p16 rps=   3,236,493 cpu_us/req=0.309 cyc/req=1,631 ins/req=2,338 IPC=1.43 load=5.98 intf=0.016
+03:46:02Z rep 2 uring c2 get_p16 rps=   5,782,480 cpu_us/req=0.319 cyc/req=1,676 ins/req=2,568 IPC=1.53 load=5.98 intf=0.013
+03:46:09Z rep 2 uring c2 set_p16 rps=   5,351,872 cpu_us/req=0.336 cyc/req=1,781 ins/req=2,625 IPC=1.47 load=6.62 intf=0.079
+03:46:16Z rep 2 epoll c2 get_p16 rps=   4,539,011 cpu_us/req=0.335 cyc/req=1,752 ins/req=2,507 IPC=1.43 load=6.17 intf=0.395
+03:46:23Z rep 2 epoll c2 set_p16 rps=   4,645,974 cpu_us/req=0.369 cyc/req=1,939 ins/req=2,568 IPC=1.32 load=6.07 intf=0.702
+03:46:30Z rep 2 uring c4 get_p16 rps=   6,462,880 cpu_us/req=0.446 cyc/req=2,146 ins/req=2,776 IPC=1.29 load=7.16 intf=0.972
+03:46:37Z rep 2 uring c4 set_p16 rps=   6,758,413 cpu_us/req=0.443 cyc/req=2,218 ins/req=2,841 IPC=1.28 load=7.47 intf=1.140
+03:46:44Z rep 2 epoll c4 get_p16 rps=   7,591,034 cpu_us/req=0.370 cyc/req=1,839 ins/req=2,638 IPC=1.43 load=8.15 intf=0.495
+03:46:51Z rep 2 epoll c4 set_p16 rps=   7,746,880 cpu_us/req=0.407 cyc/req=2,098 ins/req=2,711 IPC=1.29 load=8.06 intf=1.251
+03:47:01Z gate rep 3: quiet (load 7.28, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 4%, machine 7%; waited 10 s)
+03:47:09Z rep 3 epoll c1 get_p1  rps=     324,009 cpu_us/req=3.078 cyc/req=16,522 ins/req=24,572 IPC=1.49 load=7.28 intf=0.007
+03:47:16Z rep 3 epoll c1 get_p16 rps=   3,400,816 cpu_us/req=0.296 cyc/req=1,589 ins/req=2,309 IPC=1.45 load=7.01 intf=0.004
+03:47:22Z rep 3 epoll c1 set_p16 rps=   3,015,603 cpu_us/req=0.327 cyc/req=1,754 ins/req=2,339 IPC=1.33 load=6.85 intf=0.049
+03:47:30Z rep 3 uring c1 get_p1  rps=     352,769 cpu_us/req=2.996 cyc/req=15,890 ins/req=25,597 IPC=1.61 load=6.93 intf=0.227 REJECTED
+03:47:37Z rep 3 uring c1 get_p1  rps=     340,571 cpu_us/req=2.916 cyc/req=15,582 ins/req=25,643 IPC=1.65 load=6.86 intf=0.023
+03:47:44Z rep 3 uring c1 get_p16 rps=   3,397,245 cpu_us/req=0.295 cyc/req=1,570 ins/req=2,379 IPC=1.52 load=6.67 intf=0.014
+03:47:51Z rep 3 uring c1 set_p16 rps=   3,120,464 cpu_us/req=0.321 cyc/req=1,707 ins/req=2,403 IPC=1.41 load=6.37 intf=0.010
+03:47:58Z rep 3 epoll c2 get_p16 rps=   5,589,866 cpu_us/req=0.330 cyc/req=1,734 ins/req=2,507 IPC=1.45 load=6.18 intf=0.267
+03:48:05Z rep 3 epoll c2 set_p16 rps=   6,135,686 cpu_us/req=0.316 cyc/req=1,663 ins/req=2,565 IPC=1.54 load=6.23 intf=0.210
+03:48:12Z rep 3 uring c2 get_p16 rps=   5,750,426 cpu_us/req=0.306 cyc/req=1,607 ins/req=2,571 IPC=1.60 load=5.97 intf=0.057
+03:48:19Z rep 3 uring c2 set_p16 rps=   5,290,963 cpu_us/req=0.344 cyc/req=1,809 ins/req=2,623 IPC=1.45 load=6.50 intf=0.056
+03:48:26Z rep 3 epoll c4 get_p16 rps=   7,310,115 cpu_us/req=0.381 cyc/req=1,905 ins/req=2,635 IPC=1.38 load=6.30 intf=0.748
+03:48:33Z rep 3 epoll c4 set_p16 rps=   7,966,835 cpu_us/req=0.378 cyc/req=1,947 ins/req=2,708 IPC=1.39 load=6.04 intf=0.550
+03:48:40Z rep 3 uring c4 get_p16 rps=   8,595,510 cpu_us/req=0.372 cyc/req=1,935 ins/req=2,760 IPC=1.43 load=5.65 intf=0.156
+03:48:47Z rep 3 uring c4 set_p16 rps=   9,344,445 cpu_us/req=0.379 cyc/req=1,975 ins/req=2,825 IPC=1.43 load=5.44 intf=0.113
+03:48:57Z gate rep 4: quiet (load 5.33, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 3%, client 3%, machine 5%; waited 10 s)
+03:49:04Z rep 4 uring c1 get_p1  rps=     333,912 cpu_us/req=3.037 cyc/req=16,159 ins/req=25,704 IPC=1.59 load=5.33 intf=0.054 REJECTED
+03:49:11Z rep 4 uring c1 get_p1  rps=     327,491 cpu_us/req=3.099 cyc/req=16,427 ins/req=25,546 IPC=1.56 load=5.07 intf=0.073 REJECTED
+03:49:18Z rep 4 uring c1 get_p1  rps=     349,954 cpu_us/req=2.873 cyc/req=15,383 ins/req=25,536 IPC=1.66 load=5.06 intf=0.000
+03:49:25Z rep 4 uring c1 get_p16 rps=   3,019,757 cpu_us/req=0.323 cyc/req=1,719 ins/req=2,380 IPC=1.38 load=5.37 intf=0.022
+03:49:32Z rep 4 uring c1 set_p16 rps=   3,017,277 cpu_us/req=0.332 cyc/req=1,769 ins/req=2,404 IPC=1.36 load=5.26 intf=0.019
+03:49:39Z rep 4 epoll c1 get_p1  rps=     324,506 cpu_us/req=3.045 cyc/req=16,370 ins/req=24,507 IPC=1.50 load=5.43 intf=0.030
+03:49:46Z rep 4 epoll c1 get_p16 rps=   3,384,595 cpu_us/req=0.295 cyc/req=1,580 ins/req=2,314 IPC=1.46 load=5.48 intf=0.014
+03:49:53Z rep 4 epoll c1 set_p16 rps=   3,086,253 cpu_us/req=0.327 cyc/req=1,740 ins/req=2,335 IPC=1.34 load=5.50 intf=0.063 REJECTED
+03:50:00Z rep 4 epoll c1 set_p16 rps=   3,104,282 cpu_us/req=0.319 cyc/req=1,701 ins/req=2,333 IPC=1.37 load=5.46 intf=0.033
+03:50:07Z rep 4 uring c2 get_p16 rps=   5,235,136 cpu_us/req=0.347 cyc/req=1,820 ins/req=2,574 IPC=1.41 load=5.50 intf=0.133
+03:50:14Z rep 4 uring c2 set_p16 rps=   5,462,237 cpu_us/req=0.346 cyc/req=1,817 ins/req=2,628 IPC=1.45 load=6.49 intf=0.107
+03:50:22Z rep 4 epoll c2 get_p16 rps=   4,563,923 cpu_us/req=0.350 cyc/req=1,804 ins/req=2,504 IPC=1.39 load=6.45 intf=0.569
+03:50:29Z rep 4 epoll c2 set_p16 rps=   5,008,461 cpu_us/req=0.355 cyc/req=1,861 ins/req=2,564 IPC=1.38 load=6.93 intf=0.429
+03:50:36Z rep 4 uring c4 get_p16 rps=   6,487,523 cpu_us/req=0.443 cyc/req=2,207 ins/req=2,779 IPC=1.26 load=6.78 intf=1.192
+03:50:43Z rep 4 uring c4 set_p16 rps=   7,740,819 cpu_us/req=0.425 cyc/req=2,146 ins/req=2,835 IPC=1.32 load=6.88 intf=0.900
+03:50:50Z rep 4 epoll c4 get_p16 rps=   8,150,618 cpu_us/req=0.355 cyc/req=1,766 ins/req=2,630 IPC=1.49 load=6.83 intf=0.312
+03:50:57Z rep 4 epoll c4 set_p16 rps=   8,290,474 cpu_us/req=0.369 cyc/req=1,872 ins/req=2,704 IPC=1.44 load=7.25 intf=0.403
+03:51:07Z gate rep 5: quiet (load 6.66, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 5%, client 4%, machine 7%; waited 10 s)
+03:51:14Z rep 5 epoll c1 get_p1  rps=     318,230 cpu_us/req=3.134 cyc/req=16,699 ins/req=24,671 IPC=1.48 load=6.66 intf=0.029
+03:51:21Z rep 5 epoll c1 get_p16 rps=   3,251,328 cpu_us/req=0.305 cyc/req=1,626 ins/req=2,319 IPC=1.43 load=6.61 intf=0.105 REJECTED
+03:51:28Z rep 5 epoll c1 get_p16 rps=   2,854,563 cpu_us/req=0.351 cyc/req=1,857 ins/req=2,311 IPC=1.24 load=6.72 intf=0.055 REJECTED
+03:51:35Z rep 5 epoll c1 get_p16 rps=   3,035,270 cpu_us/req=0.327 cyc/req=1,747 ins/req=2,311 IPC=1.32 load=6.37 intf=0.020
+03:51:42Z rep 5 epoll c1 set_p16 rps=   3,007,786 cpu_us/req=0.329 cyc/req=1,754 ins/req=2,338 IPC=1.33 load=6.10 intf=0.022
+03:51:49Z rep 5 uring c1 get_p1  rps=     348,798 cpu_us/req=2.829 cyc/req=15,041 ins/req=25,641 IPC=1.70 load=5.70 intf=0.007
+03:51:56Z rep 5 uring c1 get_p16 rps=   3,113,331 cpu_us/req=0.315 cyc/req=1,675 ins/req=2,384 IPC=1.42 load=5.80 intf=0.217 REJECTED
+03:52:03Z rep 5 uring c1 get_p16 rps=   3,387,168 cpu_us/req=0.295 cyc/req=1,573 ins/req=2,379 IPC=1.51 load=5.66 intf=0.022
+03:52:10Z rep 5 uring c1 set_p16 rps=   3,055,002 cpu_us/req=0.323 cyc/req=1,719 ins/req=2,397 IPC=1.39 load=5.48 intf=0.022
+03:52:17Z rep 5 epoll c2 get_p16 rps=   5,527,891 cpu_us/req=0.307 cyc/req=1,622 ins/req=2,504 IPC=1.54 load=5.60 intf=0.130
+03:52:24Z rep 5 epoll c2 set_p16 rps=   5,643,482 cpu_us/req=0.332 cyc/req=1,746 ins/req=2,563 IPC=1.47 load=5.28 intf=0.148
+03:52:31Z rep 5 uring c2 get_p16 rps=   5,591,786 cpu_us/req=0.335 cyc/req=1,761 ins/req=2,569 IPC=1.46 load=5.26 intf=0.139
+03:52:38Z rep 5 uring c2 set_p16 rps=   5,036,538 cpu_us/req=0.396 cyc/req=1,998 ins/req=2,625 IPC=1.31 load=5.40 intf=0.458
+03:52:45Z rep 5 epoll c4 get_p16 rps=   7,073,088 cpu_us/req=0.399 cyc/req=1,982 ins/req=2,635 IPC=1.33 load=5.82 intf=1.055
+03:52:52Z rep 5 epoll c4 set_p16 rps=   7,939,187 cpu_us/req=0.383 cyc/req=1,973 ins/req=2,709 IPC=1.37 load=6.07 intf=0.841
+03:53:00Z rep 5 uring c4 get_p16 rps=   7,932,672 cpu_us/req=0.399 cyc/req=2,007 ins/req=2,768 IPC=1.38 load=6.97 intf=0.493
+03:53:07Z rep 5 uring c4 set_p16 rps=   5,746,544 cpu_us/req=0.474 cyc/req=2,265 ins/req=2,849 IPC=1.26 load=7.14 intf=1.261
+03:53:17Z gate rep 6: quiet (load 6.80, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 8%, client 3%, machine 9%; waited 10 s)
+03:53:24Z rep 6 uring c1 get_p1  rps=     332,688 cpu_us/req=2.992 cyc/req=15,671 ins/req=25,699 IPC=1.64 load=6.80 intf=0.006
+03:53:31Z rep 6 uring c1 get_p16 rps=   2,707,891 cpu_us/req=0.357 cyc/req=1,764 ins/req=2,393 IPC=1.36 load=6.49 intf=0.055 REJECTED
+03:53:38Z rep 6 uring c1 get_p16 rps=   2,959,814 cpu_us/req=0.340 cyc/req=1,729 ins/req=2,395 IPC=1.38 load=6.13 intf=0.068 REJECTED
+03:53:45Z rep 6 uring c1 get_p16 rps=   2,707,328 cpu_us/req=0.371 cyc/req=1,943 ins/req=2,388 IPC=1.23 load=6.39 intf=0.079 REJECTED
+03:53:51Z rep 6 uring c1 set_p16 rps=   2,984,925 cpu_us/req=0.335 cyc/req=1,695 ins/req=2,408 IPC=1.42 load=6.68 intf=0.010
+03:53:59Z rep 6 epoll c1 get_p1  rps=     321,739 cpu_us/req=3.106 cyc/req=16,561 ins/req=24,662 IPC=1.49 load=6.41 intf=0.024
+03:54:06Z rep 6 epoll c1 get_p16 rps=   3,209,898 cpu_us/req=0.312 cyc/req=1,570 ins/req=2,320 IPC=1.48 load=6.38 intf=0.111 REJECTED
+03:54:12Z rep 6 epoll c1 get_p16 rps=   3,376,931 cpu_us/req=0.298 cyc/req=1,569 ins/req=2,312 IPC=1.47 load=6.59 intf=0.040
+03:54:19Z rep 6 epoll c1 set_p16 rps=   3,024,970 cpu_us/req=0.334 cyc/req=1,725 ins/req=2,347 IPC=1.36 load=6.86 intf=0.144 REJECTED
+03:54:26Z rep 6 epoll c1 set_p16 rps=   3,038,730 cpu_us/req=0.330 cyc/req=1,642 ins/req=2,346 IPC=1.43 load=6.87 intf=0.012
+03:54:34Z rep 6 uring c2 get_p16 rps=   5,352,829 cpu_us/req=0.358 cyc/req=1,788 ins/req=2,576 IPC=1.44 load=6.43 intf=0.167
+03:54:41Z rep 6 uring c2 set_p16 rps=   3,611,440 cpu_us/req=0.465 cyc/req=2,285 ins/req=2,643 IPC=1.16 load=6.96 intf=0.814
+03:54:48Z rep 6 epoll c2 get_p16 rps=   4,199,424 cpu_us/req=0.430 cyc/req=2,098 ins/req=2,514 IPC=1.20 load=7.12 intf=1.080
+03:54:55Z rep 6 epoll c2 set_p16 rps=   5,338,576 cpu_us/req=0.360 cyc/req=1,816 ins/req=2,565 IPC=1.41 load=8.03 intf=0.522
+03:55:02Z rep 6 uring c4 get_p16 rps=   6,258,819 cpu_us/req=0.457 cyc/req=2,169 ins/req=2,778 IPC=1.28 load=7.87 intf=1.147
+03:55:09Z rep 6 uring c4 set_p16 rps=   5,838,582 cpu_us/req=0.498 cyc/req=2,368 ins/req=2,849 IPC=1.20 load=8.75 intf=1.730
+03:55:16Z rep 6 epoll c4 get_p16 rps=   7,547,152 cpu_us/req=0.388 cyc/req=1,854 ins/req=2,635 IPC=1.42 load=8.69 intf=0.607
+03:55:23Z rep 6 epoll c4 set_p16 rps=   7,376,029 cpu_us/req=0.405 cyc/req=1,958 ins/req=2,714 IPC=1.39 load=9.28 intf=0.749
+03:55:33Z gate record uring c1: busy (loadavg 8.23 > 8.0); waiting 30 s (10/600 s)
+03:56:13Z gate record uring c1: quiet (load 5.74, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 7%, client 3%, machine 9%; waited 50 s)
+03:56:21Z record uring-c1-get_p1: rps=322,412
+03:56:21Z   report uring-c1-get_p1-flat: 106 lines, 1 s
+03:56:22Z   report uring-c1-get_p1-dso: 20 lines, 1 s
+03:56:23Z   report uring-c1-get_p1-callers: 4001 lines, 1 s
+03:56:33Z gate record uring c4: quiet (load 5.01, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 12%, client 5%, machine 12%; waited 10 s)
+03:56:41Z record uring-c4-get_p16: rps=6,450,560
+03:56:42Z   report uring-c4-get_p16-flat: 81 lines, 1 s
+03:56:42Z   report uring-c4-get_p16-dso: 19 lines, 1 s
+03:56:45Z   report uring-c4-get_p16-callers: 4001 lines, 3 s
+03:56:55Z gate record epoll c1: quiet (load 5.74, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 13%, client 8%, machine 16%; waited 10 s)
+03:57:03Z record epoll-c1-get_p1: rps=298,895
+03:57:03Z   report epoll-c1-get_p1-flat: 102 lines, 1 s
+03:57:04Z   report epoll-c1-get_p1-dso: 19 lines, 1 s
+03:57:05Z   report epoll-c1-get_p1-callers: 4001 lines, 1 s
+03:57:15Z gate record epoll c4: busy (server CPUs and siblings [0, 1, 2, 3, 4, 5, 6, 7] mean busy 22% > 15%; CPU 7 busy 41% > 35%); waiting 30 s (10/600 s)
+03:57:55Z gate record epoll c4: quiet (load 7.48, CPUs [0, 1, 2, 3, 4, 5, 6, 7] mean 9%, client 6%, machine 10%; waited 50 s)
+03:58:03Z record epoll-c4-get_p16: rps=7,078,858
+03:58:03Z   report epoll-c4-get_p16-flat: 87 lines, 1 s
+03:58:04Z   report epoll-c4-get_p16-dso: 19 lines, 1 s
+03:58:06Z   report epoll-c4-get_p16-callers: 3633 lines, 2 s
+03:58:06Z summary written: <repo>/results/perf-hw/20261126T034043Z/summary.md

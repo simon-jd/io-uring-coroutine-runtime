@@ -575,7 +575,10 @@ pushes) and the kernel source. The performance round added callgrind
 (valgrind 3.26) for user-space instruction counts per function
 (`scripts/callgrind-profile.sh`, Part 3) and the per-thread user/system split
 in every benchmark summary. Neither sees cache misses on real hardware or the
-kernel's instructions.
+kernel's instructions. Later, with sudo, `scripts/perf-hw.sh` added hardware
+counters and cycle profiles without changing any sysctl
+([results/perf-hw](../results/perf-hw/README.md)); the rounds in Parts 3 and
+4 predate it.
 
 # Part 3: the performance round
 

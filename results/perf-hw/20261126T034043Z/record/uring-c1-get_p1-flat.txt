@@ -1,0 +1,106 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 5K of event 'cpu_core/cycles/'
+# Event count (approx.): 29993518493
+#
+# Overhead  Shared Object      Symbol                                                                                                                                                                                                                                                                                                                                                                                                                           
+# ........  .................  .................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+     9.09%  [kernel.kallsyms]  [k] nft_do_chain
+     2.74%  [kernel.kallsyms]  [k] skb_defer_free_flush
+     2.58%  [kernel.kallsyms]  [k] tcp_rcv_established
+     2.57%  kv_server          [.] kv::shard::probe(std::basic_string_view<char, std::char_traits<char> >, unsigned long) const
+     2.47%  [kernel.kallsyms]  [k] skb_release_data
+     2.06%  [kernel.kallsyms]  [k] __raw_spin_lock_irqsave
+     1.72%  [kernel.kallsyms]  [k] tcp_sendmsg_locked
+     1.61%  [kernel.kallsyms]  [k] __inet_lookup_established
+     1.57%  [kernel.kallsyms]  [k] __nf_conntrack_find_get
+     1.50%  [kernel.kallsyms]  [k] __skb_datagram_iter
+     1.50%  [kernel.kallsyms]  [k] tcp_clean_rtx_queue
+     1.40%  [kernel.kallsyms]  [k] __dev_queue_xmit
+     1.28%  [kernel.kallsyms]  [k] tcp_rcv_space_adjust
+     1.20%  [kernel.kallsyms]  [k] __tcp_transmit_skb
+     1.13%  [kernel.kallsyms]  [k] ep_poll_callback
+     1.12%  [kernel.kallsyms]  [k] tcp_recvmsg_locked
+     1.11%  [kernel.kallsyms]  [k] tcp_recvmsg
+     1.10%  [kernel.kallsyms]  [k] llist_reverse_order
+     1.08%  [kernel.kallsyms]  [k] __alloc_skb
+     1.06%  [kernel.kallsyms]  [k] _raw_spin_lock_bh
+     1.04%  [kernel.kallsyms]  [k] skb_page_frag_refill
+     1.04%  [kernel.kallsyms]  [k] cleanup_module
+     1.02%  [kernel.kallsyms]  [k] nft_meta_get_eval
+     1.01%  [kernel.kallsyms]  [k] kfree_skbmem
+     1.00%  [kernel.kallsyms]  [k] __local_bh_enable_ip
+     0.92%  [kernel.kallsyms]  [k] __rcu_read_unlock
+     0.91%  [kernel.kallsyms]  [k] _copy_to_iter
+     0.88%  [kernel.kallsyms]  [k] nft_match_eval
+     0.88%  [kernel.kallsyms]  [k] nf_hook_slow
+     0.85%  [kernel.kallsyms]  [k] ip_finish_output2
+     0.83%  [kernel.kallsyms]  [k] fget
+     0.78%  kv_server          [.] kvs::(anonymous namespace)::connection(kvs::(anonymous namespace)::_ZN3kvs12_GLOBAL__N_1L10connectionERN3rol7reactorERNS0_6sharedERNS0_10core_stateEi.Frame*) [clone .actor]
+     0.73%  [kernel.kallsyms]  [k] check_heap_object
+     0.72%  [kernel.kallsyms]  [k] net_rx_action
+     0.72%  [kernel.kallsyms]  [k] read_tsc
+     0.70%  [kernel.kallsyms]  [k] __wake_up_common
+     0.70%  [kernel.kallsyms]  [k] native_queued_spin_lock_slowpath
+     0.69%  [kernel.kallsyms]  [k] tcp_v4_rcv
+     0.61%  [kernel.kallsyms]  [k] io_submit_sqes
+     0.59%  [kernel.kallsyms]  [k] aa_inet_msg_perm
+     0.59%  [kernel.kallsyms]  [k] ipv4_conntrack_defrag
+     0.58%  [kernel.kallsyms]  [k] nft_do_chain_ipv4
+     0.56%  [kernel.kallsyms]  [k] __siphash_unaligned
+     0.56%  [kernel.kallsyms]  [k] _raw_spin_lock
+     0.56%  [kernel.kallsyms]  [k] call_function_single_prep_ipi
+     0.55%  [kernel.kallsyms]  [k] tcp_ack
+     0.55%  [kernel.kallsyms]  [k] handle_softirqs
+     0.55%  [kernel.kallsyms]  [k] __rcu_read_lock
+     0.53%  [kernel.kallsyms]  [k] sock_sendmsg
+     0.52%  [kernel.kallsyms]  [k] io_issue_sqe
+     0.50%  [kernel.kallsyms]  [k] io_send
+     0.50%  [kernel.kallsyms]  [k] nft_meta_store_ifname
+     0.49%  [kernel.kallsyms]  [k] ip_finish_output
+     0.48%  [kernel.kallsyms]  [k] skb_attempt_defer_free
+     0.48%  [kernel.kallsyms]  [k] __ip_queue_xmit
+     0.47%  [kernel.kallsyms]  [k] nf_conntrack_in
+     0.47%  [kernel.kallsyms]  [k] __pi_memset
+     0.47%  [kernel.kallsyms]  [k] try_to_wake_up
+     0.46%  [kernel.kallsyms]  [k] io_submit_sqe
+     0.45%  [kernel.kallsyms]  [k] kmem_cache_alloc_node_noprof
+     0.45%  [kernel.kallsyms]  [k] nf_nat_ipv4_local_fn
+     0.44%  [kernel.kallsyms]  [k] _copy_from_iter
+     0.43%  [kernel.kallsyms]  [k] sized_strscpy
+     0.42%  [kernel.kallsyms]  [k] _raw_spin_lock_irq
+     0.42%  [kernel.kallsyms]  [k] nf_confirm
+     0.42%  [kernel.kallsyms]  [k] nft_counter_eval
+     0.41%  [kernel.kallsyms]  [k] tcp_event_new_data_sent
+     0.40%  [kernel.kallsyms]  [k] tcp_current_mss
+     0.40%  [kernel.kallsyms]  [k] skb_clone
+     0.40%  [kernel.kallsyms]  [k] ip_rcv
+     0.39%  [kernel.kallsyms]  [k] process_backlog
+     0.38%  [kernel.kallsyms]  [k] io_poll_check_events
+     0.38%  [kernel.kallsyms]  [k] _find_next_bit
+     0.37%  [kernel.kallsyms]  [k] ip_local_deliver
+     0.37%  [kernel.kallsyms]  [k] apparmor_ip_localout
+     0.37%  [kernel.kallsyms]  [k] __tcp_push_pending_frames
+     0.36%  [kernel.kallsyms]  [k] tcp_push
+     0.35%  [kernel.kallsyms]  [k] ip_output
+     0.35%  [kernel.kallsyms]  [k] __io_issue_sqe
+     0.35%  [kernel.kallsyms]  [k] ipv4_conntrack_local
+     0.35%  kv_server          [.] rol::reactor::on_op_cqe(io_uring_cqe const&)
+     0.34%  [kernel.kallsyms]  [k] nf_nat_inet_fn
+     0.34%  [kernel.kallsyms]  [k] cleanup_module
+     0.34%  [kernel.kallsyms]  [k] nft_immediate_eval
+     0.34%  [kernel.kallsyms]  [k] nf_nat_ipv4_pre_routing
+     0.33%  [kernel.kallsyms]  [k] sock_def_readable
+     0.32%  libc.so.6          [.] __memcmp_avx2_movbe
+     0.31%  [kernel.kallsyms]  [k] neigh_hh_output
+     0.31%  [kernel.kallsyms]  [k] conntrack_mt_v3
+     0.31%  [kernel.kallsyms]  [k] nf_nat_ipv4_out
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

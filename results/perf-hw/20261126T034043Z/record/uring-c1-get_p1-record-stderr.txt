@@ -1,0 +1,2 @@
+[ perf record: Woken up 198 times to write data ]
+[ perf record: Captured and wrote 49.421 MB <repo>/.cache/perf-hw/20261126T034043Z/uring-c1-get_p1.perf.data ]

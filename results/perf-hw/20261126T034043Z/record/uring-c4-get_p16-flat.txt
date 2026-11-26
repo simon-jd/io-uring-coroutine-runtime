@@ -1,0 +1,81 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 19K of event 'cpu_core/cycles/'
+# Event count (approx.): 86781747006
+#
+# Overhead  Shared Object      Symbol                                                                                                                                                                                                                                                                                                                                                                                                                           
+# ........  .................  .................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    14.38%  kv_server          [.] kv::shard::probe(std::basic_string_view<char, std::char_traits<char> >, unsigned long) const
+     4.51%  [kernel.kallsyms]  [k] nft_do_chain
+     4.05%  kv_server          [.] kv::plan::add(kv::command const&)
+     3.92%  libc.so.6          [.] __memmove_avx_unaligned_erms
+     3.57%  kv_server          [.] kv::batch::execute(kv::shard&)
+     2.83%  libc.so.6          [.] __memcmp_avx2_movbe
+     2.03%  kv_server          [.] kvs::(anonymous namespace)::connection(kvs::(anonymous namespace)::_ZN3kvs12_GLOBAL__N_1L10connectionERN3rol7reactorERNS0_6sharedERNS0_10core_stateEi.Frame*) [clone .actor]
+     1.68%  kv_server          [.] kv::parser::next(std::basic_string_view<char, std::char_traits<char> >, unsigned long&, kv::command&)
+     1.66%  kv_server          [.] kv::plan::part_reply(kv::plan::part const&) const
+     1.30%  kv_server          [.] rol::reactor::on_message_chain(rol::detail::xnode*)
+     1.24%  [kernel.kallsyms]  [k] __raw_spin_lock_irqsave
+     1.23%  [kernel.kallsyms]  [k] skb_release_data
+     1.18%  [kernel.kallsyms]  [k] tcp_clean_rtx_queue
+     1.14%  [kernel.kallsyms]  [k] __nf_conntrack_find_get
+     1.07%  [kernel.kallsyms]  [k] skb_defer_free_flush
+     0.99%  [kernel.kallsyms]  [k] _copy_to_iter
+     0.99%  [kernel.kallsyms]  [k] tcp_rcv_established
+     0.97%  kv_server          [.] kv::batch::add(kv::cmd_id, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>, unsigned long)
+     0.95%  kv_server          [.] kv::reply_bulk(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::basic_string_view<char, std::char_traits<char> >)
+     0.92%  kv_server          [.] kv::plan::route_hashed(kv::cmd_id, unsigned long, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>)
+     0.89%  [kernel.kallsyms]  [k] __inet_lookup_established
+     0.83%  [kernel.kallsyms]  [k] fget
+     0.82%  [kernel.kallsyms]  [k] sock_rfree
+     0.81%  [kernel.kallsyms]  [k] ep_poll_callback
+     0.79%  [kernel.kallsyms]  [k] cleanup_module
+     0.78%  [kernel.kallsyms]  [k] llist_reverse_order
+     0.75%  [kernel.kallsyms]  [k] tcp_sendmsg_locked
+     0.68%  [kernel.kallsyms]  [k] __skb_datagram_iter
+     0.65%  [kernel.kallsyms]  [k] tcp_recvmsg_locked
+     0.62%  [kernel.kallsyms]  [k] kernel_init_pages
+     0.61%  [kernel.kallsyms]  [k] __tcp_transmit_skb
+     0.61%  [kernel.kallsyms]  [k] aa_inet_msg_perm
+     0.56%  [kernel.kallsyms]  [k] _copy_from_iter
+     0.56%  [kernel.kallsyms]  [k] __dev_queue_xmit
+     0.56%  [kernel.kallsyms]  [k] __wake_up_common
+     0.55%  [kernel.kallsyms]  [k] tcp_rcv_space_adjust
+     0.50%  [kernel.kallsyms]  [k] _raw_spin_lock_bh
+     0.49%  [kernel.kallsyms]  [k] __local_bh_enable_ip
+     0.49%  kv_server          [.] rol::reactor::on_reply(rol::detail::xnode*)
+     0.47%  [kernel.kallsyms]  [k] nft_match_eval
+     0.47%  [kernel.kallsyms]  [k] __alloc_skb
+     0.46%  [kernel.kallsyms]  [k] tcp_recvmsg
+     0.46%  [kernel.kallsyms]  [k] nft_meta_get_eval
+     0.45%  kv_server          [.] rol::call_all_awaiter<kvs::(anonymous namespace)::run_batch, std::unique_ptr<kv::batch, std::default_delete<kv::batch> >, true>::await_suspend(std::__n4861::coroutine_handle<void>) [clone .isra.0]
+     0.45%  kv_server          [.] rol::reactor::flush_target(unsigned int)
+     0.45%  [kernel.kallsyms]  [k] nf_hook_slow
+     0.44%  [kernel.kallsyms]  [k] native_queued_spin_lock_slowpath
+     0.44%  [kernel.kallsyms]  [k] tcp_ack
+     0.43%  [kernel.kallsyms]  [k] ip_finish_output2
+     0.43%  [kernel.kallsyms]  [k] kfree_skbmem
+     0.42%  [kernel.kallsyms]  [k] tcp_v4_rcv
+     0.40%  kv_server          [.] kv::plan::begin()
+     0.40%  [kernel.kallsyms]  [k] check_heap_object
+     0.39%  [kernel.kallsyms]  [k] __rcu_read_unlock
+     0.39%  kv_server          [.] kv::(anonymous namespace)::classify(std::basic_string_view<char, std::char_traits<char> >)
+     0.38%  [kernel.kallsyms]  [k] io_submit_sqes
+     0.38%  kv_server          [.] kv::shard::execute_hashed(kv::cmd_id, std::span<std::basic_string_view<char, std::char_traits<char> > const, 18446744073709551615ul>, unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+     0.37%  [kernel.kallsyms]  [k] nft_do_chain_ipv4
+     0.36%  [kernel.kallsyms]  [k] net_rx_action
+     0.36%  kv_server          [.] kv::plan::assemble(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+     0.35%  [kernel.kallsyms]  [k] skb_page_frag_refill
+     0.33%  [kernel.kallsyms]  [k] apparmor_socket_sendmsg
+     0.32%  [kernel.kallsyms]  [k] nf_conntrack_in
+     0.31%  [kernel.kallsyms]  [k] read_tsc
+     0.30%  kv_server          [.] rol::reactor::slot_at(rol::detail::slot_ref)
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

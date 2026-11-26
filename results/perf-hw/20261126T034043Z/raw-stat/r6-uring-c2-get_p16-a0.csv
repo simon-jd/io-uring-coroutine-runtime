@@ -1,0 +1,11 @@
+# started on Wed Nov 25 19:54:27 2026
+
+56292452439,,cpu_core/cycles/,11271663453,100.00,,
+81123044774,,cpu_core/instructions/,11271663453,100.00,,
+24322171558,,cpu_core/cycles/u,11271663453,100.00,,
+34075015938,,cpu_core/instructions/u,11271663453,100.00,,
+15635827390,,cpu_core/branches/,11271663453,100.00,,
+158272324,,cpu_core/branch-misses/,11271663453,100.00,,
+1408082063,,cpu_core/cache-references/,11271663453,100.00,,
+210565298,,cpu_core/cache-misses/,11271663453,100.00,,
+760552315,,cpu_core/L1-dcache-load-misses/,11271663453,100.00,,

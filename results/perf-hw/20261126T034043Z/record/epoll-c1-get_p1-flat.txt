@@ -1,0 +1,102 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 5K of event 'cpu_core/cycles/'
+# Event count (approx.): 28855999147
+#
+# Overhead  Shared Object      Symbol                                                                                                                                                                                                                                    
+# ........  .................  ..........................................................................................................................................................................................................................................
+#
+     8.53%  [kernel.kallsyms]  [k] nft_do_chain
+     3.49%  kv_server          [.] kv::shard::probe(std::basic_string_view<char, std::char_traits<char> >, unsigned long) const
+     2.35%  [kernel.kallsyms]  [k] tcp_rcv_established
+     2.30%  [kernel.kallsyms]  [k] skb_release_data
+     2.08%  [kernel.kallsyms]  [k] skb_defer_free_flush
+     1.99%  [kernel.kallsyms]  [k] __raw_spin_lock_irqsave
+     1.94%  [kernel.kallsyms]  [k] __nf_conntrack_find_get
+     1.75%  [kernel.kallsyms]  [k] __inet_lookup_established
+     1.46%  [kernel.kallsyms]  [k] check_heap_object
+     1.45%  [kernel.kallsyms]  [k] entry_SYSCALL_64
+     1.39%  [kernel.kallsyms]  [k] tcp_sendmsg_locked
+     1.30%  [kernel.kallsyms]  [k] _copy_to_iter
+     1.24%  [kernel.kallsyms]  [k] tcp_recvmsg_locked
+     1.19%  [kernel.kallsyms]  [k] __alloc_skb
+     1.19%  [kernel.kallsyms]  [k] ep_deliver_event
+     1.14%  [kernel.kallsyms]  [k] __local_bh_enable_ip
+     1.13%  [kernel.kallsyms]  [k] ep_item_poll.isra.0
+     1.12%  [kernel.kallsyms]  [k] ep_poll_callback
+     1.12%  [kernel.kallsyms]  [k] __skb_datagram_iter
+     1.10%  kv_server          [.] kvs::(anonymous namespace)::epoll_frontend::run(kvs::(anonymous namespace)::core&)
+     1.08%  [kernel.kallsyms]  [k] __tcp_transmit_skb
+     1.06%  [kernel.kallsyms]  [k] skb_page_frag_refill
+     1.00%  [kernel.kallsyms]  [k] kfree_skbmem
+     0.91%  [kernel.kallsyms]  [k] _raw_spin_lock_bh
+     0.90%  [kernel.kallsyms]  [k] read_tsc
+     0.90%  [kernel.kallsyms]  [k] cleanup_module
+     0.88%  [kernel.kallsyms]  [k] nf_hook_slow
+     0.88%  [kernel.kallsyms]  [k] tcp_clean_rtx_queue
+     0.87%  [kernel.kallsyms]  [k] nft_match_eval
+     0.84%  [kernel.kallsyms]  [k] nft_meta_get_eval
+     0.80%  libc.so.6          [.] __syscall_cancel
+     0.78%  [kernel.kallsyms]  [k] ipv4_conntrack_defrag
+     0.77%  [kernel.kallsyms]  [k] __rcu_read_unlock
+     0.75%  [kernel.kallsyms]  [k] kmem_cache_alloc_node_noprof
+     0.73%  [kernel.kallsyms]  [k] nf_confirm
+     0.72%  [kernel.kallsyms]  [k] nft_do_chain_ipv4
+     0.71%  [kernel.kallsyms]  [k] __sys_sendto
+     0.71%  [kernel.kallsyms]  [k] skb_attempt_defer_free
+     0.69%  [kernel.kallsyms]  [k] net_rx_action
+     0.69%  [kernel.kallsyms]  [k] tcp_rcv_space_adjust
+     0.67%  [kernel.kallsyms]  [k] tcp_v4_rcv
+     0.65%  [kernel.kallsyms]  [k] _raw_spin_lock_irq
+     0.65%  [kernel.kallsyms]  [k] fdget_pos
+     0.64%  [kernel.kallsyms]  [k] handle_softirqs
+     0.63%  [kernel.kallsyms]  [k] __dev_queue_xmit
+     0.62%  [kernel.kallsyms]  [k] nft_meta_store_ifname
+     0.62%  [kernel.kallsyms]  [k] ip_finish_output2
+     0.60%  libc.so.6          [.] __syscall_cancel_arch_end
+     0.60%  [kernel.kallsyms]  [k] fput
+     0.56%  [kernel.kallsyms]  [k] nf_conntrack_in
+     0.55%  [kernel.kallsyms]  [k] aa_inet_msg_perm
+     0.55%  [kernel.kallsyms]  [k] arch_exit_to_user_mode_prepare.isra.0
+     0.50%  [kernel.kallsyms]  [k] __pi_memset
+     0.50%  [kernel.kallsyms]  [k] do_syscall_64
+     0.47%  [kernel.kallsyms]  [k] syscall_return_via_sysret
+     0.46%  [kernel.kallsyms]  [k] nf_nat_ipv4_out
+     0.46%  [kernel.kallsyms]  [k] entry_SYSCALL_64_after_hwframe
+     0.45%  [kernel.kallsyms]  [k] nf_nat_ipv4_local_fn
+     0.45%  [kernel.kallsyms]  [k] _copy_from_iter
+     0.45%  [kernel.kallsyms]  [k] conntrack_mt_v3
+     0.44%  [kernel.kallsyms]  [k] _raw_spin_lock
+     0.44%  [kernel.kallsyms]  [k] __wake_up_common
+     0.43%  [kernel.kallsyms]  [k] ip_send_check
+     0.43%  [kernel.kallsyms]  [k] try_to_wake_up
+     0.42%  [kernel.kallsyms]  [k] __siphash_unaligned
+     0.41%  [kernel.kallsyms]  [k] tcp_current_mss
+     0.41%  kv_server          [.] kv::parser::next(std::basic_string_view<char, std::char_traits<char> >, unsigned long&, kv::command&)
+     0.41%  [kernel.kallsyms]  [k] fdget
+     0.41%  [kernel.kallsyms]  [k] __rcu_read_lock
+     0.40%  [kernel.kallsyms]  [k] __ip_queue_xmit
+     0.39%  [kernel.kallsyms]  [k] nf_nat_inet_fn
+     0.38%  [kernel.kallsyms]  [k] tcp_ack
+     0.37%  [kernel.kallsyms]  [k] nft_counter_eval
+     0.37%  [kernel.kallsyms]  [k] call_function_single_prep_ipi
+     0.37%  [kernel.kallsyms]  [k] native_queued_spin_lock_slowpath
+     0.36%  [kernel.kallsyms]  [k] neigh_hh_output
+     0.36%  [kernel.kallsyms]  [k] ip_finish_output
+     0.36%  [kernel.kallsyms]  [k] skb_clone
+     0.36%  [kernel.kallsyms]  [k] tcp_event_new_data_sent
+     0.36%  [kernel.kallsyms]  [k] nft_do_chain_inet
+     0.32%  [kernel.kallsyms]  [k] tcp_write_xmit
+     0.32%  [kernel.kallsyms]  [k] inet_sendmsg
+     0.32%  [kernel.kallsyms]  [k] sized_strscpy
+     0.32%  [kernel.kallsyms]  [k] __netif_receive_skb_core.constprop.0
+     0.31%  [kernel.kallsyms]  [k] loopback_xmit
+     0.30%  [kernel.kallsyms]  [k] nf_nat_ipv4_pre_routing
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

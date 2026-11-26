@@ -1,0 +1,2 @@
+[ perf record: Woken up 645 times to write data ]
+[ perf record: Captured and wrote 161.782 MB <repo>/.cache/perf-hw/20261126T034043Z/epoll-c4-get_p16.perf.data ]
